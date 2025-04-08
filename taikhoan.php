@@ -656,6 +656,9 @@ $page_title = "Tài khoản của tôi";
                     reader.readAsDataURL(this.files[0]);
                 }
             });
+            
+            // Thay đổi từ
+            const vnpayPayment = document.getElementById('vnpay');
         });
     </script>
 </body>

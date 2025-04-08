@@ -199,6 +199,32 @@ if (!empty($product['hinhanh_phu'])) {
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/product-detail.css">
+    <style>
+        /* Thêm vào phần <head> của trang */
+        .stock-info {
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #6c757d;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+        
+        .stock-high {
+            border-left-color: #28a745;
+            background-color: #f0fff0;
+        }
+        
+        .stock-medium {
+            border-left-color: #ffc107;
+            background-color: #fffbf0;
+        }
+        
+        .stock-low {
+            border-left-color: #dc3545;
+            background-color: #fff5f5;
+        }
+    </style>
 </head>
 <body>
     <?php include('includes/header.php'); ?>
@@ -210,6 +236,18 @@ if (!empty($product['hinhanh_phu'])) {
     
     <script type="application/json" id="color-images-data">
         <?php echo json_encode($color_images); ?>
+    </script>
+    
+    <!-- Thêm dữ liệu tồn kho cho từng biến thể -->
+    <script type="application/json" id="variant-stock-data">
+        <?php 
+            $variant_stock = [];
+            $variants_result->data_seek(0);
+            while ($variant = $variants_result->fetch_assoc()) {
+                $variant_stock[$variant['id_kichthuoc']][$variant['id_mausac']] = $variant['soluong'];
+            }
+            echo json_encode($variant_stock);
+        ?>
     </script>
     
     <div class="container mt-5 mb-5">
@@ -323,22 +361,23 @@ if (!empty($product['hinhanh_phu'])) {
                         <div class="mb-3">
                             <?php if ($product['soluong'] > 0): ?>
                                 <span class="badge bg-success">Còn hàng</span>
+                                <span class="ms-2 text-muted">Còn <strong><?php echo $product['soluong']; ?></strong> sản phẩm</span>
                             <?php else: ?>
                                 <span class="badge bg-danger">Hết hàng</span>
                             <?php endif; ?>
                             <span class="ms-2 text-muted small">Đã bán: <?php 
-    // Truy vấn lấy tổng số lượng đã bán từ đơn hàng hoàn thành (trạng thái 4)
-    $sold_query = $conn->prepare("
-        SELECT COALESCE(SUM(dc.soluong), 0) as total_sold
-        FROM donhang_chitiet dc
-        JOIN donhang d ON dc.id_donhang = d.id_donhang
-        WHERE dc.id_sanpham = ? AND d.trangthai = 4
-    ");
-    $sold_query->bind_param("i", $product_id);
-    $sold_query->execute();
-    $sold_result = $sold_query->get_result()->fetch_assoc();
-    echo $sold_result['total_sold']; 
-?> sản phẩm</span>
+                            // Truy vấn lấy tổng số lượng đã bán từ đơn hàng hoàn thành (trạng thái 4)
+                            $sold_query = $conn->prepare("
+                                SELECT COALESCE(SUM(dc.soluong), 0) as total_sold
+                                FROM donhang_chitiet dc
+                                JOIN donhang d ON dc.id_donhang = d.id_donhang
+                                WHERE dc.id_sanpham = ? AND d.trangthai = 4
+                            ");
+                            $sold_query->bind_param("i", $product_id);
+                            $sold_query->execute();
+                            $sold_result = $sold_query->get_result()->fetch_assoc();
+                            echo $sold_result['total_sold']; 
+                            ?> sản phẩm</span>
                         </div>
                         
                         <!-- Price -->
@@ -402,6 +441,13 @@ if (!empty($product['hinhanh_phu'])) {
                                 <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="<?php echo $product['soluong']; ?>">
                                 <div class="quantity-btn" id="increaseBtn">+</div>
                             </div>
+                        </div>
+                        
+                        <!-- Hiển thị số lượng tồn kho cho biến thể đã chọn -->
+                        <div id="variant-stock-info" class="stock-info d-none mt-3">
+                            <i class="bi bi-box-seam me-2"></i>
+                            <span>Số lượng trong kho: <strong id="variant-stock-count">0</strong></span>
+                            <span id="stock-status-message"></span>
                         </div>
                         
                         <!-- Add to Cart and Buy Buttons -->
@@ -617,6 +663,9 @@ if (!empty($product['hinhanh_phu'])) {
     // Lấy dữ liệu từ JSON được nhúng trong trang
     const availableSizesByColor = JSON.parse(document.getElementById('available-sizes-data').textContent);
     const colorImagesData = JSON.parse(document.getElementById('color-images-data').textContent);
+    const variantStockData = JSON.parse(document.getElementById('variant-stock-data').textContent);
+    const variantStockInfo = document.getElementById('variant-stock-info');
+    const variantStockCount = document.getElementById('variant-stock-count');
     
     // Debug color images data
     console.log('Color Images Data:', colorImagesData);
@@ -684,6 +733,9 @@ if (!empty($product['hinhanh_phu'])) {
         
         // Cập nhật các kích thước có sẵn cho màu này
         updateAvailableSizes(colorOption.dataset.colorId);
+        
+        // Cập nhật thông tin tồn kho
+        updateStockInfo();
     }
     
     // Xử lý chọn màu
@@ -695,6 +747,8 @@ if (!empty($product['hinhanh_phu'])) {
         } else {
             option.addEventListener('click', function() {
                 if (this.classList.contains('disabled')) return;
+                
+                // Các xử lý hiện tại
                 
                 // Bỏ chọn màu hiện tại
                 colorOptions.forEach(opt => opt.classList.remove('active'));
@@ -712,6 +766,9 @@ if (!empty($product['hinhanh_phu'])) {
                 
                 // Cập nhật hình ảnh tương ứng với màu
                 updateImageForColor(colorId);
+                
+                // Cập nhật thông tin tồn kho
+                updateStockInfo();
             });
         }
     });
@@ -788,6 +845,51 @@ if (!empty($product['hinhanh_phu'])) {
         });
     }
     
+    // Cập nhật hiển thị số lượng tồn kho khi chọn kích thước và màu
+    function updateStockInfo() {
+        const selectedSize = document.querySelector('.size-btn.active');
+        const selectedColor = document.querySelector('.color-option.active');
+        const stockStatusMessage = document.getElementById('stock-status-message');
+        
+        if (selectedSize && selectedColor) {
+            const sizeId = parseInt(selectedSize.dataset.sizeId);
+            const colorId = parseInt(selectedColor.dataset.colorId);
+            
+            if (variantStockData[sizeId] && variantStockData[sizeId][colorId] !== undefined) {
+                const stock = variantStockData[sizeId][colorId];
+                variantStockCount.textContent = stock;
+                variantStockInfo.classList.remove('d-none');
+                
+                // Thêm trạng thái tồn kho
+                variantStockInfo.classList.remove('stock-high', 'stock-medium', 'stock-low');
+                
+                if (stock > 10) {
+                    variantStockInfo.classList.add('stock-high');
+                    stockStatusMessage.textContent = ' (Còn nhiều)';
+                } else if (stock > 5) {
+                    variantStockInfo.classList.add('stock-medium');
+                    stockStatusMessage.textContent = ' (Còn ít)';
+                } else {
+                    variantStockInfo.classList.add('stock-low');
+                    stockStatusMessage.textContent = ' (Sắp hết hàng)';
+                }
+                
+                // Cập nhật giá trị max cho input số lượng
+                const quantityInput = document.getElementById('quantity');
+                if (quantityInput) {
+                    quantityInput.setAttribute('max', stock);
+                    if (parseInt(quantityInput.value) > stock) {
+                        quantityInput.value = stock;
+                    }
+                }
+            } else {
+                variantStockInfo.classList.add('d-none');
+            }
+        } else {
+            variantStockInfo.classList.add('d-none');
+        }
+    }
+    
     // Xử lý chọn kích thước
     const sizeButtons = document.querySelectorAll('.size-btn');
     sizeButtons.forEach(button => {
@@ -799,6 +901,9 @@ if (!empty($product['hinhanh_phu'])) {
             
             // Đánh dấu kích thước được chọn
             this.classList.add('active');
+            
+            // Cập nhật thông tin tồn kho
+            updateStockInfo();
         });
     });
     

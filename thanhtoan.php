@@ -289,12 +289,22 @@ if ($user_id) {
                                             </label>
                                         </div>
                                         <div class="col-md-4">
-                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="momo" value="momo">
-                                            <label class="payment-method-label d-flex align-items-center" for="momo">
-                                                <i class="payment-method-icon bi bi-wallet2 text-danger"></i>
+                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="vnpay" value="vnpay">
+                                            <label class="payment-method-label d-flex align-items-center" for="vnpay">
+                                                <i class="payment-method-icon bi bi-qr-code-scan text-danger"></i>
                                                 <div>
-                                                    <strong>Ví MoMo</strong>
-                                                    <div class="small text-muted">Thanh toán qua ví MoMo</div>
+                                                    <strong>VNPAY</strong>
+                                                    <div class="small text-muted">Thanh toán qua VNPAY</div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="vnpay" value="vnpay">
+                                            <label class="payment-method-label d-flex align-items-center" for="vnpay">
+                                                <i class="payment-method-icon bi bi-qr-code-scan text-danger"></i>
+                                                <div>
+                                                    <strong>QR VNPAY</strong>
+                                                    <div class="small text-muted">Thanh toán qua QR VNPAY</div>
                                                 </div>
                                             </label>
                                         </div>
@@ -504,6 +514,9 @@ if ($user_id) {
                 defaultPaymentMethod.checked = true;
                 defaultPaymentMethod.parentNode.querySelector('.payment-method-label').classList.add('payment-method-selected');
             }
+
+            // Thay đổi từ
+            const vnpayPayment = document.getElementById('vnpay');
         });
     </script>
 </body>

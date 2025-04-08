@@ -22,6 +22,47 @@ function logError($message, $data = null) {
     file_put_contents('order_error.log', $log_message . PHP_EOL, FILE_APPEND);
 }
 
+// Nâng cấp hàm savePaymentInfo để hỗ trợ thanh toán thất bại
+function savePaymentInfo($conn, $order_id, $payment_method, $amount, $note = '', $is_success = true) {
+    // Tạo mã giao dịch cho các phương thức không có mã sẵn
+    $transaction_id = $payment_method . '-' . $order_id . '-' . time();
+    $bank_name = null;
+    $status = $is_success ? 1 : 0; // 1: Thành công, 0: Thất bại
+    
+    // Xử lý theo từng phương thức
+    switch($payment_method) {
+        case 'cod':
+            $note = $is_success ? 'Thanh toán khi nhận hàng' : 'Thanh toán COD thất bại: ' . $note;
+            break;
+        case 'bank_transfer':
+            $note = empty($note) ? 
+                ($is_success ? 'Chuyển khoản ngân hàng, chờ xác nhận' : 'Chuyển khoản thất bại') : 
+                $note;
+            $status = $is_success ? 0 : 0; // Chờ xác nhận khi thành công, thất bại khi không thành công
+            // Lấy thông tin ngân hàng nếu có
+            if (isset($_POST['bank_name'])) {
+                $bank_name = $_POST['bank_name'];
+            }
+            break;
+        case 'vnpay':
+            $note = $is_success ? 
+                'Thanh toán VNPAY thành công' : 
+                'Thanh toán VNPAY thất bại: ' . $note;
+            break;
+    }
+    
+    // Lưu thông tin thanh toán
+    $query = $conn->prepare(
+        "INSERT INTO thanh_toan (id_donhang, ma_giaodich, so_tien, phuong_thuc, ngan_hang, 
+        ngay_thanhtoan, trang_thai, ghi_chu) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)"
+    );
+    
+    $query->bind_param("isdssis", $order_id, $transaction_id, $amount, $payment_method, 
+                        $bank_name, $status, $note);
+    
+    return $query->execute();
+}
+
 logToFile('Bắt đầu xử lý đơn hàng');
 
 // Kiểm tra dữ liệu đầu vào
@@ -240,6 +281,31 @@ try {
     
     // Thêm đoạn code này vào process_order.php sau khi tạo đơn hàng thành công
     $_SESSION['last_order_id'] = $order_id;
+
+    // Sau khi đã insert đơn hàng thành công và có order_id
+    // Thêm đoạn code này trước khi chuyển hướng cho thanh toán VNPAY
+    if ($_POST['payment_method'] !== 'vnpay') {
+        // Lưu thông tin thanh toán cho các phương thức không phải VNPAY
+        savePaymentInfo($conn, $order_id, $_POST['payment_method'], $total_amount + $shipping_fee, $_POST['note'] ?? '');
+    }
+
+    // Còn với VNPAY, giữ nguyên code hiện tại vì sẽ được lưu sau khi thanh toán thành công
+    if ($_POST['payment_method'] === 'vnpay') {
+        // Lưu thông tin thanh toán vào session để sử dụng trong vnpay_create_payment.php
+        $_SESSION['payment_info'] = [
+            'order_id' => $order_id,
+            'amount' => $total_amount + $shipping_fee,
+            'order_desc' => 'Thanh toan don hang #' . $order_id . ' tai Bug Shop'
+        ];
+
+        // Chuyển hướng đến trang tạo thanh toán VNPAY
+        header('Location: vnpay_create_payment.php');
+        exit();
+    }
+
+    // Các phương thức thanh toán khác xử lý như hiện tại
+
+    // Đối với COD hoặc chuyển khoản thì chuyển hướng về trang cảm ơn
     header("Location: dathang_thanhcong.php");
     exit;
     
