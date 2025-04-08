@@ -1,0 +1,144 @@
+/* Admin styles for color selection */
+.color-checkbox-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.color-checkbox {
+  display: none;
+}
+
+.color-label {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.color-label:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.color-checkbox:checked + .color-label {
+  background-color: #e9f5ff;
+  border-color: #0d6efd;
+  box-shadow: 0 2px 5px rgba(13, 110, 253, 0.15);
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  margin-right: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.color-name {
+  font-size: 0.875rem;
+  color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.color-checkbox:checked + .color-label .color-name {
+  color: #0d6efd;
+  font-weight: 500;
+}
+
+/* Enhanced color selection interface */
+.color-container {
+  border: 1px solid #e9ecef;
+  border-radius: 5px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.color-item {
+  position: relative;
+  margin-bottom: 5px;
+  height: 100%;
+}
+
+/* Color picker styling */
+#colorPreview {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  transition: background-color 0.3s ease;
+}
+
+/* Color image items */
+.color-image-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  padding: 15px;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  background-color: white;
+}
+
+.color-image-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.color-preview {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.color-preview:hover {
+  transform: scale(1.05);
+}
+
+/* Add animation for image previews */
+.color-image-preview {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Debugging styles */
+.debug-info {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 12px;
+  margin: 10px 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
