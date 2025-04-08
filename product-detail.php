@@ -611,7 +611,7 @@ if (!empty($product['hinhanh_phu'])) {
      
     <?php include('includes/footer.php'); ?>
     
-    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    
     <script>
     document.addEventListener('DOMContentLoaded', function() {
     // Lấy dữ liệu từ JSON được nhúng trong trang

@@ -280,7 +280,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                         <i class="bi bi-cart"></i> Xem giỏ hàng
                                     </a>
                                     <?php if ($cart_count > 0): ?>
-                                    <a href="checkout.php" class="btn btn-success btn-sm">
+                                    <a href="thanhtoan.php" class="btn btn-success btn-sm">
                                         <i class="bi bi-credit-card"></i> Thanh toán
                                     </a>
                                     <?php else: ?>

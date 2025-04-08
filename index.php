@@ -95,7 +95,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                             <img src="images\giay_nam.png" class="card-img" alt="Men's Shoes">
                             <div class="card-img-overlay d-flex align-items-center justify-content-center">
                                 <h3 class="card-title">Giày Nam</h3>
-                                <a href="#" class="stretched-link"></a>
+                                <a href="sanpham.php?loai=1" class="stretched-link"></a>
                             </div>
                         </div>
                     </div>
@@ -248,11 +248,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                                 <?php endif; ?>
                                             </div>
                                         </div>
-                                        <div class="card-footer">
-                                            <button class="btn btn-primary w-100 add-to-cart" data-product-id="<?php echo $row['id_sanpham']; ?>">
-                                                <i class="bi bi-cart-plus me-2"></i> Thêm vào giỏ
-                                            </button>
-                                        </div>
+                                        
                                     </div>
                                 </div>
                         <?php
