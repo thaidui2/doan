@@ -270,7 +270,7 @@ if ($product_id > 0 && $order_id > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đánh giá sản phẩm - Bug Shop</title>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
-    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/index.css">
     <style>
@@ -304,6 +304,17 @@ if ($product_id > 0 && $order_id > 0) {
             width: 80px;
             height: 80px;
             object-fit: cover;
+            display: block; /* Thêm thuộc tính này để ổn định vị trí */
+            margin: 0 auto; /* Căn giữa ảnh nếu cần */
+            position: absolute;
+            top: 140px;
+            left: 40px;
+        }
+        
+        .flex-shrink-0 {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Căn giữa nội dung bên trong */
         }
         
         .preview-container {

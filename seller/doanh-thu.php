@@ -182,7 +182,14 @@ $period_query->execute();
 $period_result = $period_query->get_result();
 
 while ($row = $period_result->fetch_assoc()) {
-    $chart_labels[] = $period === 'daily' ? date('d/m', strtotime($row['date'])) : $row['date'];
+    // Xử lý khóa date theo từng loại period
+    if ($period === 'weekly') {
+        $chart_labels[] = $row['date_label'];
+    } else if ($period === 'daily') {
+        $chart_labels[] = date('d/m', strtotime($row['date']));
+    } else {
+        $chart_labels[] = $row['date'];
+    }
     $chart_data[] = $row['revenue'];
 }
 

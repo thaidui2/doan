@@ -55,7 +55,7 @@ while ($item = $items_result->fetch_assoc()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi tiết đơn hàng #<?php echo $order_id; ?> - Bug Shop</title>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
-    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         .product-img {
@@ -375,7 +375,7 @@ while ($item = $items_result->fetch_assoc()) {
                     <?php endif; ?>
                     
                     <?php if($order['trangthai'] == 4): ?>
-                        <a href="danhgia.php?order_id=<?php echo $order_id; ?>" class="btn btn-success">
+                        <a href="danhgia.php?product_id=<?php echo $item['id_sanpham']; ?>&order_id=<?php echo $order_id; ?>"  class="btn btn-success">
                             <i class="bi bi-star"></i> Đánh giá sản phẩm
                         </a>
                     <?php endif; ?>

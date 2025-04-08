@@ -406,7 +406,7 @@ if ($user_id) {
     
     <?php include('includes/footer.php'); ?>
     
-    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    
     <script src="js/address-selector.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {

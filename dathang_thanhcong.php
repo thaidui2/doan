@@ -297,6 +297,6 @@ if (isset($_SESSION['last_order_id'])) {
     </div>
     
     <?php include('includes/footer.php'); ?>
-    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    
 </body>
 </html>

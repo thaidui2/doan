@@ -22,6 +22,55 @@ if ($result->num_rows === 0) {
     exit();
 }
 
+/**
+ * Cập nhật số lượng sản phẩm sau khi đơn hàng hoàn thành
+ * 
+ * @param int $order_id ID đơn hàng đã hoàn thành
+ */
+function updateProductQuantity($order_id) {
+    global $conn;
+    
+    // Lấy tất cả sản phẩm trong đơn hàng
+    $order_items_query = $conn->prepare("
+        SELECT id_sanpham, id_kichthuoc, id_mausac, soluong 
+        FROM donhang_chitiet 
+        WHERE id_donhang = ?
+    ");
+    $order_items_query->bind_param("i", $order_id);
+    $order_items_query->execute();
+    $result = $order_items_query->get_result();
+    
+    while($item = $result->fetch_assoc()) {
+        // Giảm số lượng trong bảng chi tiết sản phẩm (biến thể)
+        if($item['id_kichthuoc'] && $item['id_mausac']) {
+            $update_variant = $conn->prepare("
+                UPDATE sanpham_chitiet 
+                SET soluong = GREATEST(0, soluong - ?) 
+                WHERE id_sanpham = ? AND id_kichthuoc = ? AND id_mausac = ?
+            ");
+            $update_variant->bind_param("iiii", $item['soluong'], $item['id_sanpham'], 
+                                              $item['id_kichthuoc'], $item['id_mausac']);
+            $update_variant->execute();
+        }
+        
+        // Cập nhật tổng số lượng trong bảng sản phẩm
+        $update_total = $conn->prepare("
+            UPDATE sanpham SET soluong = (
+                SELECT COALESCE(SUM(soluong), 0) 
+                FROM sanpham_chitiet 
+                WHERE id_sanpham = ?
+            ) WHERE id_sanpham = ?
+        ");
+        $update_total->bind_param("ii", $item['id_sanpham'], $item['id_sanpham']);
+        $update_total->execute();
+    }
+    
+    // Ghi log
+    $log_file = fopen("../logs/inventory_update.txt", "a");
+    fwrite($log_file, date('Y-m-d H:i:s') . " - Cập nhật tồn kho cho đơn hàng #$order_id\n");
+    fclose($log_file);
+}
+
 // Xử lý cập nhật trạng thái đơn hàng
 if (isset($_POST['action']) && $_POST['action'] === 'update_status') {
     $order_id = (int)$_POST['order_id'];
@@ -112,6 +161,11 @@ if (isset($_POST['action']) && $_POST['action'] === 'update_status') {
         
         $log_stmt->bind_param("iss", $order_id, $seller_name, $change_description);
         $log_stmt->execute();
+        
+        // Gọi hàm cập nhật số lượng sản phẩm khi trạng thái đơn hàng là "Đã giao"
+        if ($new_status == 4) {
+            updateProductQuantity($order_id);
+        }
         
         // Commit transaction
         $conn->commit();

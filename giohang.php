@@ -459,7 +459,7 @@ while ($item = $cart_items_result->fetch_assoc()) {
     
     <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
     
-    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    
     <script src="js/giohang.js"></script>
 </body>
 </html>
