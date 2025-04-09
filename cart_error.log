@@ -1,0 +1,2 @@
+2025-04-09 15:29:04 - Request received - Data: {"session_id":"scbi36qs4aouj86uvf4qsnkqdg","action":"clear_cart","item_id":"no_item","user_session":"not_exists"}
+2025-04-09 15:29:04 - Clear cart successful - Data: {"cart_id":14,"affected_rows":3}

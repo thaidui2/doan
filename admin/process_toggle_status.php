@@ -1,99 +1,52 @@
 <?php
-// Start the session
 session_start();
+include('../config/config.php');
 
-// Check admin login
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+// Kiểm tra quyền truy cập
+if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
     exit();
 }
 
-// Include database connection
-include('../config/config.php');
+// Debug - ghi log
+file_put_contents('toggle_debug.log', 'POST data: ' . print_r($_POST, true), FILE_APPEND);
 
-// Check if form is submitted
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: customers.php');
-    exit();
-}
-
-// Get form data
+// Lấy dữ liệu từ form
 $customer_id = isset($_POST['customer_id']) ? (int)$_POST['customer_id'] : 0;
-$new_status = isset($_POST['new_status']) ? (int)$_POST['new_status'] : -1;
+$new_status = isset($_POST['new_status']) ? (int)$_POST['new_status'] : null;
 $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
 
-// Validate data
-if ($customer_id <= 0 || ($new_status !== 0 && $new_status !== 1)) {
-    $_SESSION['error_message'] = 'Dữ liệu không hợp lệ!';
-    header("Location: customers.php");
-    exit();
-}
-
-// If locking account, require a reason
-if ($new_status === 0 && empty($reason)) {
-    $_SESSION['error_message'] = 'Vui lòng nhập lý do khóa tài khoản!';
-    header("Location: customer-detail.php?id=$customer_id");
-    exit();
-}
-
-// Check if customer exists
-$check_stmt = $conn->prepare("SELECT id_user FROM users WHERE id_user = ? AND loai_user = 0");
-$check_stmt->bind_param("i", $customer_id);
-$check_stmt->execute();
-$check_result = $check_stmt->get_result();
-
-if ($check_result->num_rows === 0) {
-    $_SESSION['error_message'] = 'Không tìm thấy khách hàng!';
+// Kiểm tra dữ liệu đầu vào
+if ($customer_id <= 0 || $new_status === null) {
+    $_SESSION['error_message'] = 'Dữ liệu không hợp lệ';
     header('Location: customers.php');
     exit();
 }
 
-// Update the status
-$update_stmt = $conn->prepare("UPDATE users SET trang_thai = ? WHERE id_user = ?");
-$update_stmt->bind_param("ii", $new_status, $customer_id);
-
-if ($update_stmt->execute()) {
-    // Log the action
-    $admin_id = $_SESSION['admin_id'];
-    $admin_name = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
-    
-    // Check if the log table exists
-    $table_check = $conn->query("SHOW TABLES LIKE 'user_logs'");
-    
-    if ($table_check->num_rows === 0) {
-        // Create table if it doesn't exist
-        $create_table = "CREATE TABLE user_logs (
-            id INT(11) NOT NULL AUTO_INCREMENT,
-            user_id INT(11) NOT NULL,
-            admin_id INT(11) NOT NULL,
-            action VARCHAR(255) NOT NULL,
-            details TEXT DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY user_id (user_id),
-            KEY admin_id (admin_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-        
-        $conn->query($create_table);
-    }
-    
-    // Add log entry
-    $log_stmt = $conn->prepare("INSERT INTO user_logs (user_id, admin_id, action, details) VALUES (?, ?, ?, ?)");
-    $action = $new_status ? 'Mở khóa tài khoản' : 'Khóa tài khoản';
-    $details = $new_status ? 
-        "Tài khoản được mở khóa bởi $admin_name" : 
-        "Tài khoản bị khóa bởi $admin_name. Lý do: $reason";
-    
-    $log_stmt->bind_param("iiss", $customer_id, $admin_id, $action, $details);
-    $log_stmt->execute();
-    
-    $_SESSION['success_message'] = $new_status ? 
-        'Mở khóa tài khoản thành công!' : 
-        'Khóa tài khoản thành công!';
+// Nếu khoá tài khoản, lưu lý do. Nếu mở khoá, xoá lý do cũ
+if ($new_status == 0) {
+    // Khoá tài khoản, lưu lý do
+    $stmt = $conn->prepare("UPDATE users SET trang_thai = ?, ly_do_khoa = ? WHERE id_user = ?");
+    $stmt->bind_param("isi", $new_status, $reason, $customer_id);
+    file_put_contents('toggle_debug.log', "\nKhóa tài khoản với lý do: $reason", FILE_APPEND);
 } else {
-    $_SESSION['error_message'] = 'Lỗi khi cập nhật trạng thái tài khoản: ' . $conn->error;
+    // Mở khoá tài khoản, xoá lý do
+    $stmt = $conn->prepare("UPDATE users SET trang_thai = ?, ly_do_khoa = NULL WHERE id_user = ?");
+    $stmt->bind_param("ii", $new_status, $customer_id);
+    file_put_contents('toggle_debug.log', "\nMở khóa tài khoản", FILE_APPEND);
 }
 
-header("Location: customer-detail.php?id=$customer_id");
+$result = $stmt->execute();
+file_put_contents('toggle_debug.log', "\nKết quả thực thi: " . ($result ? "Thành công" : "Lỗi: " . $conn->error), FILE_APPEND);
+
+if ($result) {
+    // Ghi log hành động
+    $_SESSION['success_message'] = ($new_status == 1) ? "Đã mở khóa tài khoản thành công!" : "Đã khóa tài khoản thành công!";
+} else {
+    $_SESSION['error_message'] = "Lỗi: " . $conn->error;
+}
+
+// Chuyển hướng trở lại trang chi tiết khách hàng
+header('Location: customer-detail.php?id=' . $customer_id);
 exit();
 ?>

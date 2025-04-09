@@ -19,7 +19,7 @@
         $matkhau = isset($_POST['matkhau']) ? trim($_POST['matkhau']) : "";
         
         // Kiểm tra tài khoản tồn tại
-        $stmt = $conn->prepare("SELECT id_user, matkhau, tenuser FROM users WHERE taikhoan = ?");
+        $stmt = $conn->prepare("SELECT id_user, matkhau, tenuser, trang_thai FROM users WHERE taikhoan = ?");
         $stmt->bind_param("s", $taikhoan);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -29,6 +29,16 @@
             
             // Kiểm tra mật khẩu bằng password_verify
             if(password_verify($matkhau, $user['matkhau'])) {
+                // Kiểm tra trạng thái tài khoản
+                if ($user['trang_thai'] == 0) {
+                    // Tài khoản bị khóa
+                    $_SESSION['login_error'] = 'Tài khoản của bạn đã bị khóa.';
+                    $_SESSION['account_locked'] = true;
+                    $_SESSION['locked_user_id'] = $user['id_user'];
+                    header('Location: tai-khoan-bi-khoa.php');
+                    exit;
+                }
+                
                 // Đăng nhập thành công - sử dụng namespace 'user'
                 $_SESSION['user'] = [
                     'logged_in' => true,

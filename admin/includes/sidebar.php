@@ -6,12 +6,7 @@ include_once('includes/permissions.php');
 ?>
 <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
     <div class="sidebar-sticky pt-3">
-        <div class="px-3 mb-4">
-            <a class="navbar-brand text-white w-100 mx-0 d-flex align-items-center" href="index.php">
-                <i class="bi bi-bug-fill me-2"></i>
-                <strong>Bug Shop Admin</strong>
-            </a>
-        </div>
+        
         
         <ul class="nav flex-column">
             <li class="nav-item">

@@ -18,7 +18,7 @@ if ($customer_id <= 0) {
 }
 
 // Get customer details
-$stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ? AND loai_user = 0");
+$stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ?");
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -151,6 +151,13 @@ $order_statuses = [
                                 <span class="badge bg-primary">Người bán</span>
                             <?php endif; ?>
                         </p>
+
+                        <?php if ($customer['trang_thai'] == 0 && !empty($customer['ly_do_khoa'])): ?>
+                        <div class="alert alert-danger mt-2">
+                            <strong>Lý do khóa tài khoản:</strong> 
+                            <p class="mb-0 mt-1"><?php echo nl2br(htmlspecialchars($customer['ly_do_khoa'])); ?></p>
+                        </div>
+                        <?php endif; ?>
 
                         <?php if ($customer['loai_user'] == 1): ?>
                         <hr>

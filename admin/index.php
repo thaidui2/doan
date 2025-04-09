@@ -13,13 +13,37 @@ $stats = [
     'orders' => 0,
     'revenue' => 0,
     'products' => 0,
-    'customers' => 0
+    'customers' => 0,
+    'orders_change' => 0,
+    'revenue_change' => 0,
+    'low_stock_count' => 0,
+    'new_customers' => 0
 ];
+
+// Lấy thời gian hiện tại và thời gian tháng trước
+$current_month_start = date('Y-m-01 00:00:00');
+$current_month_end = date('Y-m-t 23:59:59');
+$last_month_start = date('Y-m-01 00:00:00', strtotime('-1 month'));
+$last_month_end = date('Y-m-t 23:59:59', strtotime('-1 month'));
+$week_ago = date('Y-m-d H:i:s', strtotime('-7 days'));
 
 // Total orders
 $orders_query = $conn->query("SELECT COUNT(*) as total FROM donhang");
 if ($orders_query) {
     $stats['orders'] = $orders_query->fetch_assoc()['total'];
+}
+
+// Orders this month vs last month
+$orders_this_month = $conn->query("SELECT COUNT(*) as count FROM donhang WHERE ngaytao BETWEEN '$current_month_start' AND '$current_month_end'");
+$orders_last_month = $conn->query("SELECT COUNT(*) as count FROM donhang WHERE ngaytao BETWEEN '$last_month_start' AND '$last_month_end'");
+
+$this_month_orders = $orders_this_month->fetch_assoc()['count'];
+$last_month_orders = $orders_last_month->fetch_assoc()['count'];
+
+if ($last_month_orders > 0) {
+    $stats['orders_change'] = round(($this_month_orders - $last_month_orders) / $last_month_orders * 100);
+} else {
+    $stats['orders_change'] = $this_month_orders > 0 ? 100 : 0;
 }
 
 // Total revenue from completed orders
@@ -29,16 +53,49 @@ if ($revenue_query) {
     $stats['revenue'] = $result['total'] ?? 0;
 }
 
+// Revenue this month vs last month
+$revenue_this_month = $conn->query("SELECT SUM(tongtien) as total FROM donhang WHERE trangthai = 4 AND ngaytao BETWEEN '$current_month_start' AND '$current_month_end'");
+$revenue_last_month = $conn->query("SELECT SUM(tongtien) as total FROM donhang WHERE trangthai = 4 AND ngaytao BETWEEN '$last_month_start' AND '$last_month_end'");
+
+$this_month_revenue = $revenue_this_month->fetch_assoc()['total'] ?? 0;
+$last_month_revenue = $revenue_last_month->fetch_assoc()['total'] ?? 0;
+
+if ($last_month_revenue > 0) {
+    $stats['revenue_change'] = round(($this_month_revenue - $last_month_revenue) / $last_month_revenue * 100);
+} else {
+    $stats['revenue_change'] = $this_month_revenue > 0 ? 100 : 0;
+}
+
 // Total products
 $products_query = $conn->query("SELECT COUNT(*) as total FROM sanpham");
 if ($products_query) {
     $stats['products'] = $products_query->fetch_assoc()['total'];
 }
 
+// Count products with low stock
+$low_stock_query = $conn->query("
+    SELECT COUNT(*) as count 
+    FROM sanpham_chitiet 
+    WHERE soluong > 0 AND soluong <= 5
+");
+if ($low_stock_query) {
+    $stats['low_stock_count'] = $low_stock_query->fetch_assoc()['count'];
+}
+
 // Total customers
 $customers_query = $conn->query("SELECT COUNT(*) as total FROM users WHERE loai_user = 0");
 if ($customers_query) {
     $stats['customers'] = $customers_query->fetch_assoc()['total'];
+}
+
+// Count new customers in the last week
+$new_customers_query = $conn->query("
+    SELECT COUNT(*) as count 
+    FROM users 
+    WHERE loai_user = 0 AND ngay_tao >= '$week_ago'
+");
+if ($new_customers_query) {
+    $stats['new_customers'] = $new_customers_query->fetch_assoc()['count'];
 }
 
 // Recent orders for dashboard
@@ -56,22 +113,7 @@ $recent_orders_query = $conn->query("
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Dashboard</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle"></i> <?php echo htmlspecialchars($_SESSION['admin_username']); ?>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                    <li><a class="dropdown-item" href="profile.php">Hồ sơ</a></li>
-                    <li><a class="dropdown-item" href="settings.php">Cài đặt tài khoản</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="logout.php">Đăng xuất</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
+    
 
     <!-- Dashboard Stats -->
     <div class="row">
@@ -82,8 +124,9 @@ $recent_orders_query = $conn->query("
                         <div class="col">
                             <div class="text-xs text-uppercase mb-1 text-muted">Đơn hàng</div>
                             <div class="h5 mb-0 font-weight-bold"><?php echo number_format($stats['orders']); ?></div>
-                            <div class="mt-2 small text-success">
-                                <i class="bi bi-arrow-up"></i> 12% so với tháng trước
+                            <div class="mt-2 small <?php echo $stats['orders_change'] >= 0 ? 'text-success' : 'text-danger'; ?>">
+                                <i class="bi bi-arrow-<?php echo $stats['orders_change'] >= 0 ? 'up' : 'down'; ?>"></i>
+                                <?php echo abs($stats['orders_change']); ?>% so với tháng trước
                             </div>
                         </div>
                         <div class="col-auto">
@@ -101,8 +144,9 @@ $recent_orders_query = $conn->query("
                         <div class="col">
                             <div class="text-xs text-uppercase mb-1 text-muted">Doanh thu</div>
                             <div class="h5 mb-0 font-weight-bold"><?php echo number_format($stats['revenue']); ?>₫</div>
-                            <div class="mt-2 small text-success">
-                                <i class="bi bi-arrow-up"></i> 8% so với tháng trước
+                            <div class="mt-2 small <?php echo $stats['revenue_change'] >= 0 ? 'text-success' : 'text-danger'; ?>">
+                                <i class="bi bi-arrow-<?php echo $stats['revenue_change'] >= 0 ? 'up' : 'down'; ?>"></i>
+                                <?php echo abs($stats['revenue_change']); ?>% so với tháng trước
                             </div>
                         </div>
                         <div class="col-auto">
@@ -121,7 +165,8 @@ $recent_orders_query = $conn->query("
                             <div class="text-xs text-uppercase mb-1 text-muted">Sản phẩm</div>
                             <div class="h5 mb-0 font-weight-bold"><?php echo number_format($stats['products']); ?></div>
                             <div class="mt-2 small text-info">
-                                <i class="bi bi-info-circle"></i> 5 sắp hết hàng
+                                <i class="bi bi-info-circle"></i> 
+                                <?php echo $stats['low_stock_count']; ?> sản phẩm sắp hết hàng
                             </div>
                         </div>
                         <div class="col-auto">
@@ -140,7 +185,8 @@ $recent_orders_query = $conn->query("
                             <div class="text-xs text-uppercase mb-1 text-muted">Khách hàng</div>
                             <div class="h5 mb-0 font-weight-bold"><?php echo number_format($stats['customers']); ?></div>
                             <div class="mt-2 small text-success">
-                                <i class="bi bi-person-plus"></i> 18 mới trong tuần
+                                <i class="bi bi-person-plus"></i> 
+                                <?php echo $stats['new_customers']; ?> mới trong tuần
                             </div>
                         </div>
                         <div class="col-auto">

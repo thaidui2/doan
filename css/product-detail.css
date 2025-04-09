@@ -67,14 +67,111 @@
 }
 
 /* Zoom effect */
-.zoom-lens {
-  position: absolute;
-  border: 1px solid #d4d4d4;
-  width: 100px;
-  height: 100px;
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  display: none;
+
+/* Cải thiện chức năng zoom */
+#image-zoom-container {
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+  max-width: 100%;
+  transition: all 0.3s ease;
+}
+
+.main-product-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+#image-zoom-container:hover .zoom-controls {
+  opacity: 1;
+}
+
+#image-zoom-container:hover .zoom-indicator {
+  opacity: 1;
+}
+
+/* Style cho chế độ xem toàn màn hình */
+.fullscreen-mode #image-zoom-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+}
+
+.fullscreen-mode #main-product-image {
+  max-height: 90vh;
+  width: auto;
+  margin: 0 auto;
+}
+
+.fullscreen-mode .main-product-image {
+  max-height: 90vh;
+  max-width: 90vw;
+  object-fit: contain;
+}
+
+.fullscreen-mode .zoom-result {
+  display: none !important;
+}
+
+.fullscreen-close:hover {
+  opacity: 1;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .zoom-result {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 200px;
+    height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .zoom-result,
+  .zoom-lens {
+    display: none !important;
+  }
+
+  .zoom-indicator {
+    display: none;
+  }
+
+  .zoom-controls {
+    opacity: 0.7;
+  }
+
+  #image-zoom-container {
+    cursor: default;
+  }
 }
 
 /* Color selection */
@@ -341,4 +438,79 @@
   .color-name {
     font-size: 0.75rem;
   }
+}
+
+/* Additional styles for product thumbnails */
+.product-thumbnails {
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.thumbnails-container {
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #ddd #f5f5f5;
+}
+
+.thumbnail-wrapper {
+  flex: 0 0 auto;
+  width: 70px;
+  height: 70px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: 2px solid transparent;
+}
+
+.thumbnail-wrapper:hover {
+  border-color: #adb5bd;
+  transform: translateY(-2px);
+}
+
+.thumbnail-wrapper.active {
+  border-color: #0d6efd;
+}
+
+.thumbnail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumbnail-overlay {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+
+.thumbnail-wrapper:hover .thumbnail-overlay {
+  opacity: 1;
+}
+
+.image-number {
+  font-size: 0.65rem;
+  opacity: 0.8;
+}
+
+.more-images {
+  display: flex;
+  align-items: center;
+  height: 70px;
+}
+
+.product-gallery-item {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.product-gallery-item:hover img {
+  transform: scale(1.03);
+  transition: transform 0.3s ease;
 }

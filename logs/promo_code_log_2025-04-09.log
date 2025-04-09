@@ -16,3 +16,13 @@
 2025-04-09 12:01:32 | Success - Code: test1 | Discount: 50000
 2025-04-09 12:01:59 | Request - Code: test1 | Total: 250000 | User: 6
 2025-04-09 12:01:59 | Success - Code: test1 | Discount: 50000
+2025-04-09 14:58:37 | Request - Code: test1 | Total: 500000 | User: 7
+2025-04-09 14:58:37 | Error: Mã giảm giá này không áp dụng cho sản phẩm nào trong giỏ hàng của bạn
+2025-04-09 14:58:43 | Request - Code: 32324 | Total: 500000 | User: 7
+2025-04-09 14:58:43 | Error: Mã giảm giá không hợp lệ hoặc đã hết hạn
+2025-04-09 17:06:42 | Request - Code: testadmin1 | Total: 500000 | User: 7
+2025-04-09 17:06:42 | Success - Code: testadmin1 | Discount: 250000
+2025-04-09 17:24:16 | Request - Code: test1 | Total: 500000 | User: guest
+2025-04-09 17:24:16 | Error: Mã giảm giá này không áp dụng cho sản phẩm nào trong giỏ hàng của bạn
+2025-04-09 17:24:30 | Request - Code: testadmin1 | Total: 500000 | User: guest
+2025-04-09 17:24:30 | Success - Code: testadmin1 | Discount: 250000

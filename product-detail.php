@@ -266,12 +266,10 @@ if (!empty($product['hinhanh_phu'])) {
             <div class="col-md-6 mb-4">
                 <div class="card shadow-sm">
                     <div class="card-body p-3">
-                        <div class="main-image-container mb-3" id="image-zoom-container">
-                            <img src="<?php echo !empty($images) ? 'uploads/products/' . $images[0] : 'images/no-image.png'; ?>" 
-                                 id="main-product-image" class="product-main-image" 
+                        <div class="main-image-container position-relative" id="image-container">
+                            <img src="uploads/products/<?php echo !empty($product['hinhanh']) ? $product['hinhanh'] : 'no-image.png'; ?>" 
+                                 id="main-product-image" class="img-fluid" 
                                  alt="<?php echo htmlspecialchars($product['tensanpham']); ?>">
-                            <div class="zoom-lens" id="zoom-lens"></div>
-                            <div class="zoom-result" id="zoom-result"></div>
                         </div>
                         
                         <!-- Thumbnail Gallery -->
@@ -300,15 +298,62 @@ if (!empty($product['hinhanh_phu'])) {
                                          title="Ảnh mặc định">
                                 </div>
                                 
-                                <!-- Hiển thị ảnh phụ -->
-                                <?php for($i=1; $i < count($images); $i++): ?>
-                                    <div class="thumbnail-wrapper" data-type="additional">
-                                        <img src="uploads/products/<?php echo $images[$i]; ?>" 
-                                             class="thumbnail-image" 
-                                             alt="Product Image <?php echo $i+1; ?>" 
-                                             title="Hình ảnh <?php echo $i+1; ?>">
+                                <!-- Hiển thị ảnh phụ với cải tiến -->
+                                <?php if(count($images) > 1): ?>
+                                    <div class="product-thumbnails">
+                                        <div class="thumbnail-header mb-2">
+                                            <h6 class="mb-0"><small>Hình ảnh khác (<?php echo count($images) - 1; ?>)</small></h6>
+                                        </div>
+                                        
+                                        <div class="thumbnails-container d-flex flex-wrap gap-2">
+                                            <?php for($i=1; $i < count($images); $i++): ?>
+                                                <div class="thumbnail-wrapper position-relative" data-type="additional" data-index="<?php echo $i; ?>">
+                                                    <img src="uploads/products/<?php echo $images[$i]; ?>" 
+                                                         class="thumbnail-image img-thumbnail" 
+                                                         alt="Product Image <?php echo $i+1; ?>" 
+                                                         title="Hình ảnh <?php echo $i+1; ?> - Click để xem">
+                                                    <div class="thumbnail-overlay">
+                                                        <span class="image-number badge rounded-pill bg-dark"><?php echo $i+1; ?>/<?php echo count($images); ?></span>
+                                                    </div>
+                                                </div>
+                                            <?php endfor; ?>
+                                            
+                                            <?php if(count($images) > 5): ?>
+                                                <button class="btn btn-outline-secondary btn-sm more-images" type="button" data-bs-toggle="modal" data-bs-target="#allImagesModal">
+                                                    <i class="bi bi-images"></i> Xem tất cả
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                <?php endfor; ?>
+                                    
+                                    <?php if(count($images) > 5): ?>
+                                    <!-- Modal hiển thị tất cả hình ảnh -->
+                                    <div class="modal fade" id="allImagesModal" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Tất cả hình ảnh sản phẩm</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row g-2">
+                                                        <?php foreach($images as $index => $img): ?>
+                                                            <div class="col-6 col-md-4">
+                                                                <div class="product-gallery-item">
+                                                                    <img src="uploads/products/<?php echo $img; ?>" 
+                                                                         class="img-fluid rounded w-100 gallery-image" 
+                                                                         data-index="<?php echo $index; ?>"
+                                                                         alt="<?php echo htmlspecialchars($product['tensanpham']); ?>">
+                                                                </div>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -397,10 +442,18 @@ if (!empty($product['hinhanh_phu'])) {
                         <!-- Size Selection -->
                         <?php if ($sizes_result->num_rows > 0): ?>
                         <div class="mb-4">
-                            <h5 class="mb-2">Kích thước:</h5>
-                            <div id="size-options" class="d-flex flex-wrap">
-                                <?php while ($size = $sizes_result->fetch_assoc()): ?>
-                                <button type="button" class="btn btn-outline-dark size-btn" data-size-id="<?php echo $size['id_kichthuoc']; ?>"><?php echo $size['tenkichthuoc']; ?></button>
+                            <h5 class="mb-2">Kích thước: <span class="selected-size-value text-muted">Chưa chọn</span></h5>
+                            <div id="size-options" class="d-flex flex-wrap gap-2">
+                                <?php 
+                                $sizes_result->data_seek(0);
+                                while ($size = $sizes_result->fetch_assoc()): 
+                                ?>
+                                    <button type="button" 
+                                            class="btn btn-outline-dark size-btn" 
+                                            data-size-id="<?php echo $size['id_kichthuoc']; ?>"
+                                            data-size-name="<?php echo htmlspecialchars($size['tenkichthuoc']); ?>">
+                                        <?php echo htmlspecialchars($size['tenkichthuoc']); ?>
+                                    </button>
                                 <?php endwhile; ?>
                             </div>
                         </div>
@@ -659,454 +712,379 @@ if (!empty($product['hinhanh_phu'])) {
     
     
     <script>
+    // Image zoom functionality
     document.addEventListener('DOMContentLoaded', function() {
-    // Lấy dữ liệu từ JSON được nhúng trong trang
-    const availableSizesByColor = JSON.parse(document.getElementById('available-sizes-data').textContent);
-    const colorImagesData = JSON.parse(document.getElementById('color-images-data').textContent);
-    const variantStockData = JSON.parse(document.getElementById('variant-stock-data').textContent);
-    const variantStockInfo = document.getElementById('variant-stock-info');
-    const variantStockCount = document.getElementById('variant-stock-count');
-    
-    // Debug color images data
-    console.log('Color Images Data:', colorImagesData);
-    console.log('Available Sizes By Color:', availableSizesByColor);
-    
-    // Xử lý chuyển đổi hình ảnh chính khi click vào thumbnail
-    const thumbnailWrappers = document.querySelectorAll('.thumbnail-wrapper');
-    const mainImage = document.getElementById('main-product-image');
-    
-    // Lưu trữ URL ảnh mặc định để có thể quay lại
-    const defaultImageUrl = mainImage.src;
-
-    thumbnailWrappers.forEach(wrapper => {
-        wrapper.addEventListener('click', function() {
-            // Cập nhật trạng thái active
-            thumbnailWrappers.forEach(w => w.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Lấy hình ảnh bên trong wrapper
-            const thumbnailImg = this.querySelector('.thumbnail-image');
-            
-            // Cập nhật hình ảnh chính
-            mainImage.src = thumbnailImg.src;
-            
-            // Nếu đây là hình ảnh màu, cập nhật lựa chọn màu
-            if (this.dataset.type === 'color') {
-                const colorId = this.dataset.colorId;
-                if (colorId) {
-                    const colorOption = document.querySelector(`.color-option[data-color-id="${colorId}"]`);
-                    if (colorOption && !colorOption.classList.contains('active')) {
-                        // Kích hoạt sự kiện click để cập nhật UI mà không gọi lại
-                        // để tránh vòng lặp vô hạn
-                        selectColorWithoutImageUpdate(colorOption);
-                    }
-                }
-            } else {
-                // Nếu chọn ảnh mặc định hoặc ảnh phụ, bỏ chọn màu hiện tại
-                const activeColor = document.querySelector('.color-option.active');
-                if (activeColor) {
-                    activeColor.classList.remove('active');
-                    document.querySelector('.selected-color-value').textContent = 'Chưa chọn';
-                    resetSizeSelection();
-                }
-            }
-        });
-    });
-    
-    // Chọn màu mà không cập nhật hình ảnh (để tránh vòng lặp)
-    function selectColorWithoutImageUpdate(colorOption) {
-        if (colorOption.dataset.disabled === 'true') {
-            return; // Màu không khả dụng
-        }
+        // Lấy các phần tử DOM
+        const zoomContainer = document.getElementById('image-zoom-container');
+        const mainImage = document.getElementById('main-product-image');
+        const zoomLens = document.getElementById('zoom-lens');
+        const zoomResult = document.getElementById('zoom-result');
         
-        // Bỏ chọn màu hiện tại
-        document.querySelectorAll('.color-option.active').forEach(option => {
-            option.classList.remove('active');
-        });
-        
-        // Đánh dấu màu được chọn
-        colorOption.classList.add('active');
-        
-        // Cập nhật thông tin màu đã chọn
-        const colorName = colorOption.dataset.colorName;
-        document.querySelector('.selected-color-value').textContent = colorName;
-        
-        // Cập nhật các kích thước có sẵn cho màu này
-        updateAvailableSizes(colorOption.dataset.colorId);
-        
-        // Cập nhật thông tin tồn kho
-        updateStockInfo();
-    }
-    
-    // Xử lý chọn màu
-    const colorOptions = document.querySelectorAll('.color-option');
-    colorOptions.forEach(option => {
-        if (option.dataset.disabled === 'true') {
-            option.classList.add('disabled');
-            option.title = 'Màu này hiện không có sẵn';
-        } else {
-            option.addEventListener('click', function() {
-                if (this.classList.contains('disabled')) return;
-                
-                // Các xử lý hiện tại
-                
-                // Bỏ chọn màu hiện tại
-                colorOptions.forEach(opt => opt.classList.remove('active'));
-                
-                // Đánh dấu màu được chọn
-                this.classList.add('active');
-                
-                // Cập nhật thông tin màu đã chọn
-                const colorName = this.dataset.colorName;
-                document.querySelector('.selected-color-value').textContent = colorName;
-                
-                // Cập nhật các kích thước có sẵn cho màu này
-                const colorId = this.dataset.colorId;
-                updateAvailableSizes(colorId);
-                
-                // Cập nhật hình ảnh tương ứng với màu
-                updateImageForColor(colorId);
-                
-                // Cập nhật thông tin tồn kho
-                updateStockInfo();
-            });
-        }
-    });
-    
-    // Cập nhật hình ảnh khi chọn màu
-    function updateImageForColor(colorId) {
-        console.log('Updating image for color ID:', colorId);
-        console.log('Available color images:', colorImagesData);
-        
-        // Kiểm tra xem màu này có hình ảnh không
-        if (colorImagesData[colorId]) {
-            console.log('Found image for color:', colorImagesData[colorId]);
-            // Tìm thumbnail tương ứng với màu này
-            const colorThumbnail = document.querySelector(`.thumbnail-wrapper[data-color-id="${colorId}"]`);
-            
-            if (colorThumbnail) {
-                // Cập nhật trạng thái active cho thumbnail
-                thumbnailWrappers.forEach(w => w.classList.remove('active'));
-                colorThumbnail.classList.add('active');
-                
-                // Cập nhật hình ảnh chính
-                mainImage.src = colorThumbnail.querySelector('img').src;
-                
-                // Thêm hiệu ứng fade-in
-                mainImage.style.opacity = 0;
-                setTimeout(() => {
-                    mainImage.style.opacity = 1;
-                }, 50);
-            }
-        } else {
-            console.log('No image found for this color');
-        }
-    }
-    
-    // Cập nhật các kích thước có sẵn dựa trên màu đã chọn
-    function updateAvailableSizes(colorId) {
-        const sizeButtons = document.querySelectorAll('.size-btn');
-        if (!sizeButtons.length) return;
-        
-        // Reset selection
-        resetSizeSelection();
-        
-        // Nếu không có thông tin về kích thước cho màu này
-        if (!availableSizesByColor[colorId]) {
-            sizeButtons.forEach(btn => {
-                btn.disabled = true;
-                btn.classList.add('disabled');
-                btn.title = 'Kích thước này không có sẵn cho màu đã chọn';
-            });
+        if (!zoomContainer || !mainImage || !zoomLens || !zoomResult) {
+            console.warn('Các phần tử zoom không tồn tại trong trang');
             return;
         }
         
-        // Bật/tắt nút kích thước dựa trên màu đã chọn
-        sizeButtons.forEach(btn => {
-            const sizeId = parseInt(btn.dataset.sizeId);
-            if (availableSizesByColor[colorId].includes(sizeId)) {
-                btn.disabled = false;
-                btn.classList.remove('disabled');
-                btn.title = '';
-            } else {
-                btn.disabled = true;
-                btn.classList.add('disabled');
-                btn.title = 'Kích thước này không có sẵn cho màu đã chọn';
+        // Biến lưu trạng thái zoom
+        let zoomActive = false;
+        let zoomScale = 2; // Mức độ zoom mặc định
+        let isFullScreen = false;
+        
+        // Tạo nút đóng fullscreen
+        const closeButton = document.createElement('div');
+        closeButton.className = 'fullscreen-close d-none';
+        closeButton.innerHTML = '<i class="bi bi-x"></i>';
+        document.body.appendChild(closeButton);
+        
+        // Lấy các nút điều khiển zoom
+        const zoomInBtn = zoomContainer.querySelector('.zoom-in-btn');
+        const zoomOutBtn = zoomContainer.querySelector('.zoom-out-btn');
+        const fullScreenBtn = zoomContainer.querySelector('.fullscreen-btn');
+        const zoomIndicator = zoomContainer.querySelector('.zoom-indicator');
+        
+        // Hiện thông tin zoom level
+        function updateZoomIndicator() {
+            if (zoomIndicator) {
+                const zoomLevelText = document.getElementById('zoom-level');
+                if (zoomLevelText) {
+                    zoomLevelText.textContent = `Zoom ${zoomScale}x`;
+                }
+                zoomIndicator.classList.remove('d-none');
+                
+                // Tự động ẩn sau 2 giây
+                setTimeout(() => {
+                    if (!zoomActive && !isFullScreen) {
+                        zoomIndicator.classList.add('d-none');
+                    }
+                }, 2000);
+            }
+        }
+        
+        // Xử lý sự kiện mouseover
+        mainImage.addEventListener('mouseover', function() {
+            // Chỉ áp dụng cho màn hình lớn và khi không ở chế độ toàn màn hình
+            if (window.innerWidth < 768 || isFullScreen) return;
+            
+            zoomLens.classList.remove('d-none');
+            zoomResult.classList.remove('d-none');
+            zoomIndicator.classList.remove('d-none');
+            zoomActive = true;
+            
+            // Thiết lập ban đầu cho zoom result
+            zoomResult.style.backgroundImage = `url(${mainImage.src})`;
+        });
+        
+        // Xử lý sự kiện mouseout
+        mainImage.addEventListener('mouseout', function() {
+            if (isFullScreen) return;
+            
+            zoomLens.classList.add('d-none');
+            zoomResult.classList.add('d-none');
+            
+            // Ẩn thông tin zoom sau một khoảng thời gian
+            setTimeout(() => {
+                if (!zoomActive) {
+                    zoomIndicator.classList.add('d-none');
+                }
+            }, 1000);
+            
+            zoomActive = false;
+        });
+        
+        // Xử lý sự kiện mousemove
+        mainImage.addEventListener('mousemove', function(e) {
+            if (!zoomActive) return;
+            
+            // Lấy kích thước và vị trí của ảnh
+            const rect = mainImage.getBoundingClientRect();
+            
+            // Tính toán vị trí chuột tương đối so với ảnh
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+            
+            // Giới hạn vị trí của lens để không vượt ra ngoài ảnh
+            const lensHalfWidth = zoomLens.offsetWidth / 2;
+            const lensHalfHeight = zoomLens.offsetHeight / 2;
+            
+            // Đảm bảo lens không vượt ra ngoài ảnh
+            if (x < lensHalfWidth) x = lensHalfWidth;
+            if (x > rect.width - lensHalfWidth) x = rect.width - lensHalfWidth;
+            if (y < lensHalfHeight) y = lensHalfHeight;
+            if (y > rect.height - lensHalfHeight) y = rect.height - lensHalfHeight;
+            
+            // Di chuyển lens theo chuột
+            zoomLens.style.left = `${x - lensHalfWidth}px`;
+            zoomLens.style.top = `${y - lensHalfHeight}px`;
+            
+            // Tính toán tỷ lệ zoom
+            const cx = rect.width / zoomLens.offsetWidth * zoomScale;
+            const cy = rect.height / zoomLens.offsetHeight * zoomScale;
+            
+            // Tính toán vị trí background trong kết quả zoom
+            const backgroundPositionX = -((x * cx) / zoomScale - zoomResult.offsetWidth / 2);
+            const backgroundPositionY = -((y * cy) / zoomScale - zoomResult.offsetHeight / 2);
+            
+            // Cập nhật kết quả zoom
+            zoomResult.style.backgroundImage = `url(${mainImage.src})`;
+            zoomResult.style.backgroundSize = `${rect.width * cx / zoomScale}px ${rect.height * cy / zoomScale}px`;
+            zoomResult.style.backgroundPosition = `${backgroundPositionX}px ${backgroundPositionY}px`;
+        });
+        
+        // Xử lý nút zoom in
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', function() {
+                if (zoomScale < 4) {
+                    zoomScale += 0.5;
+                    updateZoomIndicator();
+                }
+            });
+        }
+        
+        // Xử lý nút zoom out
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', function() {
+                if (zoomScale > 1) {
+                    zoomScale -= 0.5;
+                    updateZoomIndicator();
+                }
+            });
+        }
+        
+        // Xử lý nút fullscreen
+        if (fullScreenBtn) {
+            fullScreenBtn.addEventListener('click', function() {
+                toggleFullScreen();
+            });
+        }
+        
+        // Xử lý đóng fullscreen
+        closeButton.addEventListener('click', function() {
+            if (isFullScreen) {
+                toggleFullScreen();
             }
         });
-    }
-    
-    // Reset lựa chọn kích thước
-    function resetSizeSelection() {
-        const sizeButtons = document.querySelectorAll('.size-btn');
-        sizeButtons.forEach(btn => {
-            btn.classList.remove('active', 'disabled');
-            btn.disabled = false;
-        });
-    }
-    
-    // Cập nhật hiển thị số lượng tồn kho khi chọn kích thước và màu
-    function updateStockInfo() {
-        const selectedSize = document.querySelector('.size-btn.active');
-        const selectedColor = document.querySelector('.color-option.active');
-        const stockStatusMessage = document.getElementById('stock-status-message');
         
-        if (selectedSize && selectedColor) {
-            const sizeId = parseInt(selectedSize.dataset.sizeId);
-            const colorId = parseInt(selectedColor.dataset.colorId);
-            
-            if (variantStockData[sizeId] && variantStockData[sizeId][colorId] !== undefined) {
-                const stock = variantStockData[sizeId][colorId];
-                variantStockCount.textContent = stock;
-                variantStockInfo.classList.remove('d-none');
-                
-                // Thêm trạng thái tồn kho
-                variantStockInfo.classList.remove('stock-high', 'stock-medium', 'stock-low');
-                
-                if (stock > 10) {
-                    variantStockInfo.classList.add('stock-high');
-                    stockStatusMessage.textContent = ' (Còn nhiều)';
-                } else if (stock > 5) {
-                    variantStockInfo.classList.add('stock-medium');
-                    stockStatusMessage.textContent = ' (Còn ít)';
-                } else {
-                    variantStockInfo.classList.add('stock-low');
-                    stockStatusMessage.textContent = ' (Sắp hết hàng)';
-                }
-                
-                // Cập nhật giá trị max cho input số lượng
-                const quantityInput = document.getElementById('quantity');
-                if (quantityInput) {
-                    quantityInput.setAttribute('max', stock);
-                    if (parseInt(quantityInput.value) > stock) {
-                        quantityInput.value = stock;
-                    }
-                }
-            } else {
-                variantStockInfo.classList.add('d-none');
+        // Xử lý phím ESC để thoát fullscreen
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isFullScreen) {
+                toggleFullScreen();
             }
-        } else {
-            variantStockInfo.classList.add('d-none');
-        }
-    }
-    
-    // Xử lý chọn kích thước
-    const sizeButtons = document.querySelectorAll('.size-btn');
-    sizeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.disabled) return;
-            
-            // Bỏ chọn kích thước hiện tại
-            sizeButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Đánh dấu kích thước được chọn
-            this.classList.add('active');
-            
-            // Cập nhật thông tin tồn kho
-            updateStockInfo();
         });
-    });
-    
-    // Xử lý nút tăng/giảm số lượng
-    const quantityInput = document.getElementById('quantity');
-    const decreaseBtn = document.getElementById('decreaseBtn');
-    const increaseBtn = document.getElementById('increaseBtn');
-    const maxQuantity = parseInt(quantityInput.getAttribute('max')) || 100;
-    
-    decreaseBtn.addEventListener('click', function() {
-        const currentValue = parseInt(quantityInput.value);
-        if (currentValue > 1) {
-            quantityInput.value = currentValue - 1;
-        }
-    });
-    
-    increaseBtn.addEventListener('click', function() {
-        const currentValue = parseInt(quantityInput.value);
-        if (currentValue < maxQuantity) {
-            quantityInput.value = currentValue + 1;
-        }
-    });
-    
-    // Xử lý nút "Thêm vào giỏ" và "Mua ngay"
-    function validateSelection() {
-        const sizeOptions = document.getElementById('size-options');
-        const colorOptions = document.querySelector('.color-selector');
-        let sizeId = null;
-        let colorId = null;
         
-        // Lấy kích thước được chọn nếu có
-        const activeSize = document.querySelector('.size-btn.active');
-        if (activeSize) {
-            sizeId = activeSize.dataset.sizeId;
-        }
-        
-        // Lấy màu được chọn nếu có
-        const activeColor = document.querySelector('.color-option.active');
-        if (activeColor) {
-            colorId = activeColor.dataset.colorId;
-        }
-        
-        // Kiểm tra đã chọn đủ thông tin chưa
-        if (sizeOptions && sizeOptions.children.length > 0 && !activeSize) {
-            showToast('Vui lòng chọn kích thước!', 'warning');
-            return null;
-        }
-        
-        if (colorOptions && colorOptions.children.length > 0 && !activeColor) {
-            showToast('Vui lòng chọn màu sắc!', 'warning');
-            return null;
-        }
-        
-        // Chuyển đổi thành số nguyên nếu có giá trị
-        return {
-            productId: <?php echo $product_id; ?>,
-            quantity: parseInt(quantityInput.value),
-            sizeId: sizeId ? parseInt(sizeId) : null,
-            colorId: colorId ? parseInt(colorId) : null
-        };
-    }
-    
-    // Hiển thị thông báo toast
-    function showToast(message, type = 'success') {
-        const toastContainer = document.getElementById('toastContainer');
-        if (!toastContainer) {
-            const container = document.createElement('div');
-            container.id = 'toastContainer';
-            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            document.body.appendChild(container);
-        }
-        
-        const toastId = 'toast' + Date.now();
-        const toast = `
-            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('toastContainer').insertAdjacentHTML('beforeend', toast);
-        const toastElement = new bootstrap.Toast(document.getElementById(toastId), {
-            delay: 3000
-        });
-        toastElement.show();
-    }
-    
-    // Xử lý nút "Thêm vào giỏ"
-    const addToCartBtn = document.getElementById('addToCartBtn');
-    if (addToCartBtn) {
-        addToCartBtn.addEventListener('click', function() {
-            const selection = validateSelection();
-            if (!selection) return;
+        // Hàm bật/tắt chế độ toàn màn hình
+        function toggleFullScreen() {
+            isFullScreen = !isFullScreen;
             
-            fetch('ajax/them_vao_gio.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(selection)
-            })
-            .then(response => {
-                console.log("Response status:", response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log("Response data:", data);
-                if (data.success) {
-                    showToast('Đã thêm sản phẩm vào giỏ hàng!');
-                    // Cập nhật số lượng trong giỏ hàng
-                    if (data.cartCount) {
-                        const cartCount = document.querySelector('.cart-count');
-                        if (cartCount) {
-                            cartCount.textContent = data.cartCount;
-                            // Thêm animation nhấp nháy
-                            cartCount.classList.add('cart-count-updated');
-                            setTimeout(() => {
-                                cartCount.classList.remove('cart-count-updated');
-                            }, 1000);
-                        }
-                    }
-                } else {
-                    showToast(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng.', 'danger');
+            if (isFullScreen) {
+                document.body.style.overflow = 'hidden';
+                document.body.classList.add('fullscreen-mode');
+                zoomContainer.classList.add('position-fixed', 'top-0', 'start-0', 'w-100', 'h-100', 'd-flex', 'align-items-center', 'justify-content-center', 'bg-dark');
+                closeButton.classList.remove('d-none');
+                zoomLens.classList.add('d-none');
+                zoomResult.classList.add('d-none');
+            } else {
+                document.body.style.overflow = '';
+                document.body.classList.remove('fullscreen-mode');
+                zoomContainer.classList.remove('position-fixed', 'top-0', 'start-0', 'w-100', 'h-100', 'd-flex', 'align-items-center', 'justify-content-center', 'bg-dark');
+                closeButton.classList.add('d-none');
+            }
+        }
+        
+        // Zoom với bánh xe chuột
+        mainImage.addEventListener('wheel', function(e) {
+            if (zoomActive || isFullScreen) {
+                e.preventDefault();
+                
+                // Zoom in khi cuộn lên, zoom out khi cuộn xuống
+                if (e.deltaY < 0 && zoomScale < 4) {
+                    zoomScale += 0.25;
+                } else if (e.deltaY > 0 && zoomScale > 1) {
+                    zoomScale -= 0.25;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại sau.', 'danger');
+                
+                // Giới hạn mức zoom
+                zoomScale = Math.min(Math.max(zoomScale, 1), 4);
+                updateZoomIndicator();
+            }
+        }, { passive: false });
+        
+        // Khởi tạo hiển thị mức độ zoom
+        updateZoomIndicator();
+    });
+    </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Xử lý chuyển đổi hình ảnh khi click vào ảnh nhỏ
+    const thumbnails = document.querySelectorAll('.thumbnail-image');
+    const mainImage = document.getElementById('main-product-image');
+    
+    if (thumbnails.length > 0 && mainImage) {
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                // Đổi ảnh chính
+                mainImage.src = this.src;
+                
+                // Đánh dấu thumbnail đang active
+                thumbnails.forEach(thumb => {
+                    thumb.parentElement.classList.remove('active');
+                });
+                this.parentElement.classList.add('active');
             });
         });
     }
     
-    // Xử lý nút "Mua ngay"
+    // Xử lý chuyển ảnh theo màu sắc
+    const colorOptions = document.querySelectorAll('.color-option');
+    if (colorOptions.length > 0) {
+        colorOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                if (this.dataset.disabled === 'true') return;
+                
+                // Đánh dấu màu đang chọn
+                colorOptions.forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Hiển thị tên màu đã chọn
+                const selectedColorValue = document.querySelector('.selected-color-value');
+                if (selectedColorValue) {
+                    selectedColorValue.textContent = this.dataset.colorName || 'Chưa chọn';
+                    if (this.dataset.colorCode) {
+                        selectedColorValue.innerHTML += ` <span class="color-preview" style="background-color: ${this.dataset.colorCode}"></span>`;
+                    }
+                }
+                
+                // Cập nhật thông tin tồn kho nếu cả size và màu đã được chọn
+                updateStockInfo();
+            });
+        });
+    }
+    
+    // Xử lý nút kích thước
+    const sizeButtons = document.querySelectorAll('.size-btn');
+    if (sizeButtons.length > 0) {
+        sizeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Đánh dấu kích thước đang chọn
+                sizeButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Hiển thị tên kích thước đã chọn
+                const selectedSizeValue = document.querySelector('.selected-size-value');
+                if (selectedSizeValue) {
+                    selectedSizeValue.textContent = this.dataset.sizeName || 'Chưa chọn';
+                }
+                
+                // Cập nhật thông tin tồn kho nếu cả size và màu đã được chọn
+                updateStockInfo();
+            });
+        });
+    }
+
+    // Hàm cập nhật thông tin tồn kho
+    function updateStockInfo() {
+        const selectedSize = document.querySelector('.size-btn.active');
+        const selectedColor = document.querySelector('.color-option.active');
+        const stockInfo = document.getElementById('variant-stock-info');
+        
+        if (selectedSize && selectedColor && stockInfo) {
+            const sizeId = selectedSize.dataset.sizeId;
+            const colorId = selectedColor.dataset.colorId;
+            
+            // Lấy dữ liệu tồn kho từ dataset
+            const variantStockData = JSON.parse(document.getElementById('variant-stock-data').textContent);
+            
+            if (variantStockData[sizeId] && variantStockData[sizeId][colorId] !== undefined) {
+                const stock = variantStockData[sizeId][colorId];
+                stockInfo.classList.remove('d-none', 'stock-high', 'stock-medium', 'stock-low');
+                
+                if (stock > 10) {
+                    stockInfo.classList.add('stock-high');
+                    stockInfo.innerHTML = `<i class="bi bi-check-circle-fill text-success me-2"></i> Còn hàng (${stock} sản phẩm)`;
+                } else if (stock > 5) {
+                    stockInfo.classList.add('stock-medium');
+                    stockInfo.innerHTML = `<i class="bi bi-info-circle-fill text-warning me-2"></i> Còn ${stock} sản phẩm`;
+                } else if (stock > 0) {
+                    stockInfo.classList.add('stock-low');
+                    stockInfo.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Chỉ còn ${stock} sản phẩm`;
+                } else {
+                    stockInfo.classList.add('stock-low');
+                    stockInfo.innerHTML = `<i class="bi bi-x-circle-fill text-danger me-2"></i> Hết hàng`;
+                }
+                
+                // Cập nhật số lượng tối đa có thể mua
+                const quantityInput = document.getElementById('quantity');
+                if (quantityInput) {
+                    quantityInput.max = stock;
+                    if (parseInt(quantityInput.value) > stock) {
+                        quantityInput.value = stock > 0 ? stock : 1;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Xử lý nút tăng/giảm số lượng
+    const decreaseBtn = document.getElementById('decreaseBtn');
+    const increaseBtn = document.getElementById('increaseBtn');
+    const quantityInput = document.getElementById('quantity');
+    
+    if (decreaseBtn && increaseBtn && quantityInput) {
+        decreaseBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantityInput.value);
+            if (currentValue > 1) {
+                quantityInput.value = currentValue - 1;
+            }
+        });
+        
+        increaseBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantityInput.value);
+            const maxValue = parseInt(quantityInput.max);
+            if (currentValue < maxValue) {
+                quantityInput.value = currentValue + 1;
+            }
+        });
+    }
+    
+    // Thêm vào cuối script để đảm bảo chức năng Mua ngay vẫn hoạt động
     const buyNowBtn = document.getElementById('buyNowBtn');
+    
     if (buyNowBtn) {
         buyNowBtn.addEventListener('click', function() {
+            // Kiểm tra các lựa chọn mà không cần kiểm tra đăng nhập
             const selection = validateSelection();
             if (!selection) return;
             
-            // Chuyển đến trang checkout
-            window.location.href = `checkout.php?buy_now=1&product=${selection.productId}&qty=${selection.quantity}${selection.sizeId ? '&size='+selection.sizeId : ''}${selection.colorId ? '&color='+selection.colorId : ''}`;
+            // Tạo form ẩn để submit dữ liệu
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'ajax/mua_ngay.php';
+            
+            // Thêm các trường dữ liệu vào form
+            for (const key in selection) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = selection[key];
+                form.appendChild(input);
+            }
+            
+            // Thêm form vào body và submit
+            document.body.appendChild(form);
+            form.submit();
         });
     }
-    
-    // Thêm container cho toast
-    if (!document.getElementById('toastContainer')) {
-        const toastContainer = document.createElement('div');
-        toastContainer.id = 'toastContainer';
-        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-        document.body.appendChild(toastContainer);
-    }
-    
-    // Image zoom functionality
-    const zoomContainer = document.getElementById('image-zoom-container');
-    const zoomLens = document.getElementById('zoom-lens');
-    
-    if (zoomContainer && zoomLens && mainImage) {
-        let zoomActive = false;
-        
-        mainImage.addEventListener('mouseover', function() {
-            if (window.innerWidth < 768) return; // Disable on mobile
-            zoomLens.style.display = 'block';
-            zoomActive = true;
-        });
-        
-        mainImage.addEventListener('mouseout', function() {
-            zoomLens.style.display = 'none';
-            zoomActive = false;
-        });
-        
-        mainImage.addEventListener('mousemove', function(e) {
-            if (!zoomActive) return;
-            
-            // Tính toán vị trí của lens
-            const rect = mainImage.getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            let y = e.clientY - rect.top;
-            
-            // Đảm bảo lens không đi ra khỏi hình ảnh
-            let lensWidth = zoomLens.offsetWidth / 2;
-            let lensHeight = zoomLens.offsetHeight / 2;
-            
-            if (x < lensWidth) x = lensWidth;
-            if (x > rect.width - lensWidth) x = rect.width - lensWidth;
-            if (y < lensHeight) y = lensHeight;
-            if (y > rect.height - lensHeight) y = rect.height - lensHeight;
-            
-            // Di chuyển lens
-            zoomLens.style.left = (x - lensWidth) + 'px';
-            zoomLens.style.top = (y - lensHeight) + 'px';
-            
-            // Cập nhật background của lens để tạo hiệu ứng zoom
-            const cx = rect.width / zoomLens.offsetWidth;
-            const cy = rect.height / zoomLens.offsetHeight;
-            
-            zoomLens.style.backgroundImage = `url(${mainImage.src})`;
-            zoomLens.style.backgroundSize = (rect.width * cx) + 'px ' + (rect.height * cy) + 'px';
-            zoomLens.style.backgroundPosition = `-${(x * cx - lensWidth)} -${(y * cy - lensHeight)}px`;
-        });
+
+    // Hàm kiểm tra lựa chọn
+    function validateSelection() {
+        // Code kiểm tra size, màu sắc, số lượng...
+        // Điền theo logic hiện tại của bạn
+        return {
+            productId: <?php echo $product_id; ?>,
+            quantity: document.getElementById('quantity').value,
+            sizeId: document.querySelector('.size-btn.active')?.dataset.sizeId,
+            colorId: document.querySelector('.color-option.active')?.dataset.colorId
+        };
     }
 });
 </script>

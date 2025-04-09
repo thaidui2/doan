@@ -96,21 +96,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->begin_transaction();
             
             // Thêm mã giảm giá
-            $stmt = $conn->prepare("
-                INSERT INTO khuyen_mai (
-                    ma_code, mo_ta, loai_giam_gia, gia_tri, gia_tri_giam_toi_da, 
-                    gia_tri_don_toi_thieu, so_luong, so_luong_da_dung, ngay_bat_dau, 
-                    ngay_ket_thuc, trang_thai, ap_dung_sanpham, ap_dung_loai, ngay_tao
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW())
-            ");
+            $stmt = $conn->prepare("INSERT INTO khuyen_mai (
+                ma_code, mo_ta, loai_giam_gia, gia_tri, 
+                gia_tri_don_toi_thieu, gia_tri_giam_toi_da, 
+                so_luong, ngay_bat_dau, ngay_ket_thuc, 
+                id_nguoiban, ap_dung_sanpham, ap_dung_loai, 
+                trang_thai
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
-            $stmt->bind_param(
-                "ssiiddsssiiii",
-                $ma_code, $mo_ta, $loai_giam_gia, $gia_tri, $gia_tri_giam_toi_da,
-                $gia_tri_don_toi_thieu, $so_luong, $ngay_bat_dau, $ngay_ket_thuc,
-                $trang_thai, $ap_dung_sanpham, $ap_dung_loai
+            // Lấy ID của admin đang đăng nhập
+            $id_nguoiban = $_SESSION['admin_id'];
+            
+            // Thực hiện bind_param
+            $stmt->bind_param("ssiiddsssiiii", 
+                $ma_code, 
+                $mo_ta, 
+                $loai_giam_gia, 
+                $gia_tri, 
+                $gia_tri_don_toi_thieu, 
+                $gia_tri_giam_toi_da, 
+                $so_luong, 
+                $ngay_bat_dau, 
+                $ngay_ket_thuc, 
+                $id_nguoiban,
+                $ap_dung_sanpham, 
+                $ap_dung_loai, 
+                $trang_thai
             );
             
+            // Thực thi câu lệnh
             $stmt->execute();
             $promo_id = $conn->insert_id;
             
@@ -156,7 +170,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->commit();
             
             // Ghi log hoạt động
-            logAdminActivity($conn, $admin_id, 'add', 'promo', $promo_id, 'Thêm mã giảm giá mới: ' . $ma_code);
+            try {
+                $admin_id = isset($_SESSION['admin_id']) ? $_SESSION['admin_id'] : 
+                            (isset($_SESSION['id_admin']) ? $_SESSION['id_admin'] : 0);
+                            
+                logAdminActivity($conn, $admin_id, 'add', 'promo', $promo_id, 'Thêm mã giảm giá mới: ' . $ma_code);
+            } catch (Exception $e) {
+                // Log lỗi nhưng không ngắt tiến trình
+                error_log('Không thể ghi log hoạt động: ' . $e->getMessage());
+            }
             
             $_SESSION['success_message'] = "Thêm mã giảm giá thành công!";
             header("Location: khuyen-mai.php");

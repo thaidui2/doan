@@ -94,75 +94,85 @@ $discount_id = isset($_POST['discount_id']) ? (int)$_POST['discount_id'] : 0;
 // Lấy thông tin giỏ hàng
 $session_id = session_id();
 $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
+$buy_now = isset($_GET['buy_now']) || isset($_POST['buy_now']);
 
-// Lấy ID giỏ hàng
-if ($user_id) {
-    $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE id_nguoidung = ?");
-    $stmt->bind_param("i", $user_id);
+// Nếu là mua ngay và có thông tin mua ngay trong session, bỏ qua kiểm tra giỏ hàng
+if ($buy_now && isset($_SESSION['buy_now_cart'])) {
+    // Sử dụng thông tin từ session buy_now_cart
+    $cart_items = [$_SESSION['buy_now_cart']];
+    $total_amount = $_SESSION['buy_now_cart']['thanh_tien'];
+    $order_items = $cart_items;
 } else {
-    $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE session_id = ? AND id_nguoidung IS NULL");
-    $stmt->bind_param("s", $session_id);
-}
-$stmt->execute();
-$result = $stmt->get_result();
+    // Xử lý giỏ hàng thông thường
+    // Lấy ID giỏ hàng
+    if ($user_id) {
+        $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE id_nguoidung = ?");
+        $stmt->bind_param("i", $user_id);
+    } else {
+        $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE session_id = ? AND id_nguoidung IS NULL");
+        $stmt->bind_param("s", $session_id);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-if ($result->num_rows === 0) {
-    // Không có giỏ hàng, chuyển hướng về trang giỏ hàng
-    header('Location: giohang.php');
-    exit();
-}
+    if ($result->num_rows === 0) {
+        // Nếu không phải mua ngay và không có giỏ hàng, chuyển hướng về trang giỏ hàng
+        header('Location: giohang.php');
+        exit();
+    }
 
-$cart = $result->fetch_assoc();
-$cart_id = $cart['id_giohang'];
+    $cart = $result->fetch_assoc();
+    $cart_id = $cart['id_giohang'];
 
-// Xác định các sản phẩm cần thanh toán
-if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && isset($_POST['selected_items'])) {
-    // Nếu thanh toán các sản phẩm đã chọn
-    $selected_items = $_POST['selected_items'];
-    $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
-    
-    $query = "
-        SELECT gct.*, sp.tensanpham, sp.hinhanh, kt.tenkichthuoc, ms.tenmau
-        FROM giohang_chitiet gct
-        JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-        LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
-        LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
-        WHERE gct.id_giohang = ? AND gct.id_chitiet IN ($placeholders)
-    ";
-    
-    $types = "i" . str_repeat("i", count($selected_items));
-    $params = array_merge([$cart_id], $selected_items);
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param($types, ...$params);
-} else {
-    // Nếu thanh toán tất cả sản phẩm trong giỏ hàng
-    $stmt = $conn->prepare("
-        SELECT gct.*, sp.tensanpham, sp.hinhanh, kt.tenkichthuoc, ms.tenmau
-        FROM giohang_chitiet gct
-        JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-        LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
-        LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
-        WHERE gct.id_giohang = ?
-    ");
-    $stmt->bind_param("i", $cart_id);
-}
+    // Xác định các sản phẩm cần thanh toán
+    if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && isset($_POST['selected_items'])) {
+        // Nếu thanh toán các sản phẩm đã chọn
+        $selected_items = $_POST['selected_items'];
+        $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
+        
+        $query = "
+            SELECT gct.*, sp.tensanpham, sp.hinhanh, kt.tenkichthuoc, ms.tenmau
+            FROM giohang_chitiet gct
+            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
+            LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
+            LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
+            WHERE gct.id_giohang = ? AND gct.id_chitiet IN ($placeholders)
+        ";
+        
+        $types = "i" . str_repeat("i", count($selected_items));
+        $params = array_merge([$cart_id], $selected_items);
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param($types, ...$params);
+    } else {
+        // Nếu thanh toán tất cả sản phẩm trong giỏ hàng
+        $stmt = $conn->prepare("
+            SELECT gct.*, sp.tensanpham, sp.hinhanh, kt.tenkichthuoc, ms.tenmau
+            FROM giohang_chitiet gct
+            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
+            LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
+            LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
+            WHERE gct.id_giohang = ?
+        ");
+        $stmt->bind_param("i", $cart_id);
+    }
 
-$stmt->execute();
-$result = $stmt->get_result();
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-// Tính tổng tiền và thu thập các sản phẩm
-$total_amount = 0;
-$order_items = [];
+    // Tính tổng tiền và thu thập các sản phẩm
+    $total_amount = 0;
+    $order_items = [];
 
-while ($item = $result->fetch_assoc()) {
-    $order_items[] = $item;
-    $total_amount += $item['thanh_tien'];
-}
+    while ($item = $result->fetch_assoc()) {
+        $order_items[] = $item;
+        $total_amount += $item['thanh_tien'];
+    }
 
-if (empty($order_items)) {
-    header('Location: giohang.php');
-    exit();
+    if (empty($order_items)) {
+        header('Location: giohang.php');
+        exit();
+    }
 }
 
 // Kiểm tra lại mã giảm giá nếu có
@@ -208,6 +218,11 @@ $conn->begin_transaction();
 try {
     // 1. Tạo đơn hàng mới
     $status = 1; // Chờ xử lý
+    
+    // Kiểm tra phương thức thanh toán cho người chưa đăng nhập
+    if (!isset($_SESSION['user']) && $payment_method == 'cod') {
+        throw new Exception("Người dùng chưa đăng nhập không thể sử dụng phương thức thanh toán COD.");
+    }
     
     // Nếu không có user_id, sử dụng câu lệnh SQL khác không chứa id_nguoidung
     if ($user_id === null) {
@@ -319,6 +334,11 @@ try {
         $delete_stmt = $conn->prepare("DELETE FROM giohang_chitiet WHERE id_giohang = ?");
         $delete_stmt->bind_param("i", $cart_id);
         $delete_stmt->execute();
+    }
+    
+    // Sau khi hoàn thành đơn hàng, xóa thông tin mua ngay nếu có
+    if ($buy_now && isset($_SESSION['buy_now_cart'])) {
+        unset($_SESSION['buy_now_cart']);
     }
     
     // 4. Commit transaction

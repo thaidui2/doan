@@ -105,6 +105,20 @@ function checkPermissionRedirect($permission_code, $redirect_url = 'index.php') 
  * Ghi log hoạt động của admin
  */
 function logAdminActivity($conn, $admin_id, $action_type, $target_type, $target_id, $details) {
+    // Kiểm tra admin_id có tồn tại không
+    if ($admin_id === null) {
+        // Lấy admin ID từ session nếu có
+        if (isset($_SESSION['admin_id'])) {
+            $admin_id = $_SESSION['admin_id'];
+        } else if (isset($_SESSION['id_admin'])) {
+            // Kiểm tra tên biến thay thế nếu có
+            $admin_id = $_SESSION['id_admin'];
+        } else {
+            // Gán giá trị mặc định nếu không có
+            $admin_id = 0; // hoặc giá trị admin ID mặc định khác
+        }
+    }
+    
     $ip_address = $_SERVER['REMOTE_ADDR'];
     $query = $conn->prepare("INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details, ip_address) 
                            VALUES (?, ?, ?, ?, ?, ?)");
@@ -117,6 +131,13 @@ function logAdminActivity($conn, $admin_id, $action_type, $target_type, $target_
  */
 function logAction($action, $description) {
     global $conn;
-    $admin_id = $_SESSION['admin_id'];
+    
+    $admin_id = null;
+    if (isset($_SESSION['admin_id'])) {
+        $admin_id = $_SESSION['admin_id'];
+    } else if (isset($_SESSION['id_admin'])) {
+        $admin_id = $_SESSION['id_admin']; 
+    }
+    
     logAdminActivity($conn, $admin_id, $action, 'promo', 0, $description);
 }

@@ -2,120 +2,168 @@
 session_start();
 include('config/config.php');
 
-// Hiển thị thông báo lỗi nếu có
-$error_message = '';
-if (isset($_SESSION['error_message'])) {
-    $error_message = $_SESSION['error_message'];
-    unset($_SESSION['error_message']);
+// Kiểm tra nếu bạn đang ở trang thanh toán
+$is_logged_in = isset($_SESSION['user']);
+$buy_now = isset($_GET['buy_now']) && $_GET['buy_now'] == '1';
+
+// Biến để kiểm soát hiển thị COD
+$allow_cod = $is_logged_in;
+
+// Kiểm tra thông tin sản phẩm (không yêu cầu đăng nhập)
+if ($buy_now && !isset($_SESSION['buy_now_cart'])) {
+    $_SESSION['error_message'] = 'Không tìm thấy thông tin sản phẩm để mua ngay';
+    header('Location: sanpham.php');
+    exit;
 }
 
-// Kiểm tra có dữ liệu POST hay không
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Nếu là checkout cho các mặt hàng đã chọn
-    if (isset($_POST['checkout_selected']) && isset($_POST['selected_items'])) {
-        $selected_items = $_POST['selected_items'];
-        // Lưu danh sách sản phẩm đã chọn vào session
-        $_SESSION['checkout_items'] = $selected_items;
-        $_SESSION['checkout_type'] = 'selected';
-    } else {
-        // Nếu là checkout toàn bộ giỏ hàng
-        $_SESSION['checkout_type'] = 'all';
-        unset($_SESSION['checkout_items']);
+// Xử lý mua ngay
+if ($buy_now) {
+    $cart_items = [];
+    $cart_item = $_SESSION['buy_now_cart'];
+    
+    // Lấy thêm thông tin kích thước và màu sắc nếu có
+    if ($cart_item['size_id']) {
+        $size_query = $conn->prepare("SELECT tenkichthuoc FROM kichthuoc WHERE id_kichthuoc = ?");
+        $size_query->bind_param("i", $cart_item['size_id']);
+        $size_query->execute();
+        $size_result = $size_query->get_result();
+        if ($size_result->num_rows > 0) {
+            $cart_item['tenkichthuoc'] = $size_result->fetch_assoc()['tenkichthuoc'];
+        }
     }
-}
-
-// Lấy thông tin giỏ hàng
-$session_id = session_id();
-$user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
-
-// Lấy ID giỏ hàng
-if ($user_id) {
-    $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE id_nguoidung = ?");
-    $stmt->bind_param("i", $user_id);
+    
+    if ($cart_item['color_id']) {
+        $color_query = $conn->prepare("SELECT tenmau, mamau FROM mausac WHERE id_mausac = ?");
+        $color_query->bind_param("i", $cart_item['color_id']);
+        $color_query->execute();
+        $color_result = $color_query->get_result();
+        if ($color_result->num_rows > 0) {
+            $color = $color_result->fetch_assoc();
+            $cart_item['tenmau'] = $color['tenmau'];
+            $cart_item['mamau'] = $color['mamau'];
+        }
+    }
+    
+    $cart_item['thanh_tien'] = $cart_item['price'] * $cart_item['quantity'];
+    $cart_items[] = $cart_item;
+    $total_amount = $cart_item['thanh_tien'];
+    $checkout_items = $cart_items;
 } else {
-    $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE session_id = ? AND id_nguoidung IS NULL");
-    $stmt->bind_param("s", $session_id);
-}
-$stmt->execute();
-$result = $stmt->get_result();
+    // Hiển thị thông báo lỗi nếu có
+    $error_message = '';
+    if (isset($_SESSION['error_message'])) {
+        $error_message = $_SESSION['error_message'];
+        unset($_SESSION['error_message']);
+    }
 
-if ($result->num_rows === 0) {
-    // Không có giỏ hàng, chuyển hướng về trang giỏ hàng
-    header('Location: giohang.php');
-    exit();
-}
+    // Kiểm tra có dữ liệu POST hay không
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        // Nếu là checkout cho các mặt hàng đã chọn
+        if (isset($_POST['checkout_selected']) && isset($_POST['selected_items'])) {
+            $selected_items = $_POST['selected_items'];
+            // Lưu danh sách sản phẩm đã chọn vào session
+            $_SESSION['checkout_items'] = $selected_items;
+            $_SESSION['checkout_type'] = 'selected';
+        } else {
+            // Nếu là checkout toàn bộ giỏ hàng
+            $_SESSION['checkout_type'] = 'all';
+            unset($_SESSION['checkout_items']);
+        }
+    }
 
-$cart = $result->fetch_assoc();
-$cart_id = $cart['id_giohang'];
+    // Lấy thông tin giỏ hàng
+    $session_id = session_id();
+    $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
-// Lấy danh sách sản phẩm cần thanh toán
-if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && !empty($_SESSION['checkout_items'])) {
-    // Nếu thanh toán các sản phẩm đã chọn
-    $selected_items = $_SESSION['checkout_items'];
-    $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
-    
-    $query = "
-        SELECT gct.*, 
-               sp.tensanpham, 
-               sp.hinhanh, 
-               kt.tenkichthuoc, 
-               ms.tenmau, 
-               ms.mamau
-        FROM giohang_chitiet gct
-        JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-        LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
-        LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
-        WHERE gct.id_giohang = ? AND gct.id_chitiet IN ($placeholders)
-    ";
-    
-    $types = "i" . str_repeat("i", count($selected_items));
-    $params = array_merge([$cart_id], $selected_items);
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param($types, ...$params);
-} else {
-    // Nếu thanh toán tất cả sản phẩm trong giỏ hàng
-    $stmt = $conn->prepare("
-        SELECT gct.*, 
-               sp.tensanpham, 
-               sp.hinhanh, 
-               kt.tenkichthuoc, 
-               ms.tenmau, 
-               ms.mamau
-        FROM giohang_chitiet gct
-        JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-        LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
-        LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
-        WHERE gct.id_giohang = ?
-    ");
-    $stmt->bind_param("i", $cart_id);
-}
+    // Lấy ID giỏ hàng
+    if ($user_id) {
+        $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE id_nguoidung = ?");
+        $stmt->bind_param("i", $user_id);
+    } else {
+        $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE session_id = ? AND id_nguoidung IS NULL");
+        $stmt->bind_param("s", $session_id);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-$stmt->execute();
-$result = $stmt->get_result();
+    if ($result->num_rows === 0) {
+        // Không có giỏ hàng, chuyển hướng về trang giỏ hàng
+        header('Location: giohang.php');
+        exit();
+    }
 
-// Tính tổng tiền các sản phẩm được chọn
-$total_amount = 0;
-$checkout_items = [];
+    $cart = $result->fetch_assoc();
+    $cart_id = $cart['id_giohang'];
 
-while ($item = $result->fetch_assoc()) {
-    $checkout_items[] = $item;
-    $total_amount += $item['thanh_tien'];
-}
+    // Lấy danh sách sản phẩm cần thanh toán
+    if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && !empty($_SESSION['checkout_items'])) {
+        // Nếu thanh toán các sản phẩm đã chọn
+        $selected_items = $_SESSION['checkout_items'];
+        $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
+        
+        $query = "
+            SELECT gct.*, 
+                   sp.tensanpham, 
+                   sp.hinhanh, 
+                   kt.tenkichthuoc, 
+                   ms.tenmau, 
+                   ms.mamau
+            FROM giohang_chitiet gct
+            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
+            LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
+            LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
+            WHERE gct.id_giohang = ? AND gct.id_chitiet IN ($placeholders)
+        ";
+        
+        $types = "i" . str_repeat("i", count($selected_items));
+        $params = array_merge([$cart_id], $selected_items);
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param($types, ...$params);
+    } else {
+        // Nếu thanh toán tất cả sản phẩm trong giỏ hàng
+        $stmt = $conn->prepare("
+            SELECT gct.*, 
+                   sp.tensanpham, 
+                   sp.hinhanh, 
+                   kt.tenkichthuoc, 
+                   ms.tenmau, 
+                   ms.mamau
+            FROM giohang_chitiet gct
+            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
+            LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
+            LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
+            WHERE gct.id_giohang = ?
+        ");
+        $stmt->bind_param("i", $cart_id);
+    }
 
-// Nếu không có sản phẩm nào để thanh toán
-if (empty($checkout_items)) {
-    header('Location: giohang.php');
-    exit();
-}
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-// Lấy thông tin người dùng nếu đã đăng nhập
-$user_info = [];
-if ($user_id) {
-    $user_stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ?");
-    $user_stmt->bind_param("i", $user_id);
-    $user_stmt->execute();
-    $user_info = $user_stmt->get_result()->fetch_assoc();
+    // Tính tổng tiền các sản phẩm được chọn
+    $total_amount = 0;
+    $checkout_items = [];
+
+    while ($item = $result->fetch_assoc()) {
+        $checkout_items[] = $item;
+        $total_amount += $item['thanh_tien'];
+    }
+
+    // Nếu không có sản phẩm nào để thanh toán
+    if (empty($checkout_items)) {
+        header('Location: giohang.php');
+        exit();
+    }
+
+    // Lấy thông tin người dùng nếu đã đăng nhập
+    $user_info = [];
+    if ($user_id) {
+        $user_stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ?");
+        $user_stmt->bind_param("i", $user_id);
+        $user_stmt->execute();
+        $user_info = $user_stmt->get_result()->fetch_assoc();
+    }
 }
 ?>
 
@@ -183,7 +231,12 @@ if ($user_id) {
                                 </div>
                             <?php endif; ?>
                             
-                            <form id="checkout-form" method="post" action="process_order.php">
+                            <form id="checkout-form" method="post" action="process_order.php<?php echo $buy_now ? '?buy_now=1' : ''; ?>">
+                                <!-- Thêm hidden field để đánh dấu là mua ngay -->
+                                <?php if ($buy_now): ?>
+                                <input type="hidden" name="buy_now" value="1">
+                                <?php endif; ?>
+                                
                                 <div class="mb-4 mt-4">
                                     <h5 class="fw-bold mb-3">
                                         <i class="bi bi-person-circle me-2 text-primary"></i>
@@ -268,16 +321,25 @@ if ($user_id) {
                                         Phương thức thanh toán
                                     </h5>
                                     <div class="row g-3">
+                                        <!-- Phương thức thanh toán COD -->
+                                        <?php if ($allow_cod): ?>
                                         <div class="col-md-4">
-                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="cod" value="cod" checked>
-                                            <label class="payment-method-label d-flex align-items-center" for="cod">
-                                                <i class="payment-method-icon bi bi-cash text-success"></i>
-                                                <div>
-                                                    <strong>Tiền mặt (COD)</strong>
-                                                    <div class="small text-muted">Thanh toán khi nhận hàng</div>
-                                                </div>
-                                            </label>
+                                            <div class="payment-method-item">
+                                                <input type="radio" class="payment-method-radio" name="payment_method" id="cod" value="cod" checked>
+                                                <label for="cod" class="payment-method-label">
+                                                    <!-- Nội dung COD -->
+                                                </label>
+                                            </div>
                                         </div>
+                                        <?php else: ?>
+                                        <div class="col-12 mb-3">
+                                            <div class="alert alert-info">
+                                                <i class="bi bi-info-circle me-2"></i> 
+                                                Để sử dụng phương thức thanh toán COD, vui lòng 
+                                                <a href="dangnhap.php?redirect=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>">đăng nhập</a>.
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
                                         <div class="col-md-4">
                                             <input type="radio" class="payment-method-radio d-none" name="payment_method" id="bank_transfer" value="bank_transfer">
                                             <label class="payment-method-label d-flex align-items-center" for="bank_transfer">
@@ -376,28 +438,33 @@ if ($user_id) {
                                         <div class="list-group-item border-0 px-0">
                                             <div class="d-flex">
                                                 <div class="position-relative me-3">
-                                                    <img src="<?php echo !empty($item['hinhanh']) ? 'uploads/products/' . $item['hinhanh'] : 'images/no-image.png'; ?>" 
-                                                         alt="<?php echo $item['tensanpham']; ?>" 
-                                                         class="product-img">
+                                                    <img src="uploads/products/<?php echo isset($item['hinhanh']) && !empty($item['hinhanh']) 
+                                                        ? $item['hinhanh'] 
+                                                        : (isset($item['image']) && !empty($item['image']) ? $item['image'] : 'no-image.png'); ?>" 
+                                                         class="img-thumbnail" width="60" 
+                                                         alt="<?php echo isset($item['tensanpham']) ? htmlspecialchars($item['tensanpham']) : 'Sản phẩm'; ?>">
                                                     <span class="product-quantity badge bg-primary position-absolute">
-                                                        <?php echo $item['soluong']; ?>
+                                                        <?php echo isset($item['soluong']) ? $item['soluong'] : ($item['quantity'] ?? 1); ?>
                                                     </span>
                                                 </div>
                                                 <div class="flex-grow-1">
-                                                    <h6 class="my-0"><?php echo $item['tensanpham']; ?></h6>
+                                                    <h6 class="mb-0">
+                                                        <?php echo htmlspecialchars($item['tensanpham'] ?? $item['name'] ?? 'Sản phẩm không xác định'); ?>
+                                                    </h6>
                                                     <small class="text-muted d-block mb-1">
-                                                        <?php
-                                                            $specs = [];
-                                                            if (!empty($item['tenkichthuoc'])) {
-                                                                $specs[] = 'Size: ' . $item['tenkichthuoc'];
-                                                            }
-                                                            if (!empty($item['tenmau'])) {
-                                                                $specs[] = 'Màu: ' . $item['tenmau'];
-                                                            }
-                                                            echo implode(' | ', $specs);
-                                                        ?>
+                                                        <?php if (isset($item['tenkichthuoc']) && !empty($item['tenkichthuoc'])): ?>
+                                                            <span>Size: <?php echo htmlspecialchars($item['tenkichthuoc']); ?></span>
+                                                        <?php endif; ?>
+                                                        <?php if (isset($item['tenmau']) && !empty($item['tenmau'])): ?>
+                                                            <span class="mx-1">|</span>
+                                                            <span>Màu: <?php echo htmlspecialchars($item['tenmau']); ?></span>
+                                                        <?php endif; ?>
                                                     </small>
-                                                    <span class="text-primary fw-bold"><?php echo number_format($item['thanh_tien'], 0, ',', '.'); ?>₫</span>
+                                                    <div class="fw-bold"><?php echo isset($item['thanh_tien']) ? number_format($item['thanh_tien'], 0, ',', '.') : 0; ?>₫</div>
+                                                    <div class="text-muted small">
+                                                        <?php echo isset($item['soluong']) ? $item['soluong'] : ($item['quantity'] ?? 1); ?> x 
+                                                        <?php echo number_format($item['gia'] ?? ($item['price'] ?? 0), 0, ',', '.'); ?>₫
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -424,6 +491,12 @@ if ($user_id) {
                                 </div>
                             </div>
                             
+                            <?php if ($buy_now): ?>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i> Bạn đang thanh toán trực tiếp cho sản phẩm đã chọn.
+                            </div>
+                            <?php endif; ?>
+                            
                             <div class="alert alert-info" role="alert">
                                 <i class="bi bi-info-circle me-2"></i>
                                 <small>Vui lòng kiểm tra kỹ thông tin trước khi đặt hàng. Đơn hàng sẽ được xử lý trong vòng 24 giờ.</small>
@@ -443,6 +516,29 @@ if ($user_id) {
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Trang thanh toán đã tải xong");
             
+            // Kiểm tra phương thức thanh toán cho người dùng chưa đăng nhập
+            const isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+            const codRadio = document.getElementById('cod');
+            
+            // Ngăn chặn người dùng chưa đăng nhập chọn COD
+            if (!isLoggedIn && codRadio) {
+                codRadio.disabled = true;
+                codRadio.parentElement.classList.add('disabled');
+                const label = document.querySelector('label[for="cod"]');
+                if (label) {
+                    label.title = "Vui lòng đăng nhập để sử dụng COD";
+                }
+            }
+            
+            // Kiểm tra khi submit form
+            document.getElementById('checkout-form').addEventListener('submit', function(e) {
+                const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+                if (!isLoggedIn && paymentMethod && paymentMethod.value === 'cod') {
+                    e.preventDefault();
+                    alert('Bạn cần đăng nhập để sử dụng phương thức thanh toán COD');
+                }
+            });
+
             // Xử lý khi submit form
             const form = document.getElementById('checkout-form');
             form.addEventListener('submit', function(e) {

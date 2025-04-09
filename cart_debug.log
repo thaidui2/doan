@@ -84,3 +84,11 @@
 2025-04-09 12:01:18 - Session info - {"session_id":"j5sqrmcq82bbgcup09qu55ddqm","user_id":6}
 2025-04-09 12:01:18 - Found existing cart - {"cart_id":6}
 2025-04-09 12:01:18 - Added new item - {"product_id":6,"quantity":1}
+2025-04-09 15:18:14 - Received data - {"productId":5,"quantity":2,"sizeId":7,"colorId":2}
+2025-04-09 15:18:14 - Session info - {"session_id":"scbi36qs4aouj86uvf4qsnkqdg","user_id":7}
+2025-04-09 15:18:14 - Found existing cart - {"cart_id":14}
+2025-04-09 15:18:14 - Added new item - {"product_id":5,"quantity":2}
+2025-04-09 15:28:58 - Received data - {"productId":4,"quantity":1,"sizeId":4,"colorId":2}
+2025-04-09 15:28:58 - Session info - {"session_id":"scbi36qs4aouj86uvf4qsnkqdg","user_id":7}
+2025-04-09 15:28:58 - Found existing cart - {"cart_id":14}
+2025-04-09 15:28:58 - Added new item - {"product_id":4,"quantity":1}

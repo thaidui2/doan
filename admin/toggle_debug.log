@@ -1,0 +1,17 @@
+POST data: Array
+(
+    [customer_id] => 8
+    [new_status] => 1
+    [reason] => 
+)
+
+Mở khóa tài khoản
+Kết quả thực thi: Thành côngPOST data: Array
+(
+    [customer_id] => 8
+    [new_status] => 0
+    [reason] => test khóa
+)
+
+Khóa tài khoản với lý do: test khóa
+Kết quả thực thi: Thành công

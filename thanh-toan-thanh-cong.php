@@ -120,7 +120,7 @@ if ($order_id > 0) {
             <div class="mt-4">
                 <a href="index.php" class="btn btn-primary me-2">Tiếp tục mua sắm</a>
                 <?php if (!empty($order_info)): ?>
-                <a href="don-hang.php?id=<?php echo $order_info['id_donhang']; ?>" class="btn btn-outline-primary">Xem chi tiết đơn hàng</a>
+                <a href="donhang.php?id=<?php echo $order_info['id_donhang']; ?>" class="btn btn-outline-primary">Xem chi tiết đơn hàng</a>
                 <?php endif; ?>
             </div>
         </div>
