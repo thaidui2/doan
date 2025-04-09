@@ -1,4 +1,5 @@
 <?php
+ob_start(); // Thêm dòng này ở đầu file
 // Thiết lập tiêu đề trang
 $page_title = "Quản Lý Mã Khuyến Mãi";
 
@@ -38,9 +39,32 @@ $page_specific_css = '
 </style>
 ';
 
+// Tạo mã khuyến mãi duy nhất
+function generateUniqueCode($conn, $base_code, $user_id) {
+    $check_code = $conn->prepare("SELECT COUNT(*) as count FROM khuyen_mai WHERE ma_code = ? AND id_nguoiban = ?");
+    $i = 0;
+    $new_code = $base_code;
+    
+    do {
+        $check_code->bind_param("si", $new_code, $user_id);
+        $check_code->execute();
+        $result = $check_code->get_result()->fetch_assoc();
+        
+        if ($result['count'] > 0) {
+            $i++;
+            $new_code = $base_code . $i;
+        } else {
+            break;
+        }
+    } while ($i < 100); // Giới hạn số lần thử
+    
+    return $new_code;
+}
+
 // Xử lý tạo mã khuyến mãi mới
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create') {
-    $ma_code = strtoupper(trim($_POST['ma_code'])); 
+    $base_code = strtoupper(trim($_POST['ma_code']));
+    $ma_code = generateUniqueCode($conn, $base_code, $user_id);
     $loai_giam_gia = (int)$_POST['loai_giam_gia']; // 1: Phần trăm, 2: Số tiền cố định
     $gia_tri = (float)$_POST['gia_tri'];
     $ngay_bat_dau = $_POST['ngay_bat_dau'];
@@ -94,6 +118,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $errors[] = "Ngày kết thúc phải sau ngày bắt đầu";
     }
     
+    // Kiểm tra mã đã tồn tại chưa
+    $check_code = $conn->prepare("
+        SELECT COUNT(*) as count FROM khuyen_mai 
+        WHERE ma_code = ? AND id_nguoiban = ?
+    ");
+    $check_code->bind_param("si", $ma_code, $user_id);
+    $check_code->execute();
+    $code_result = $check_code->get_result()->fetch_assoc();
+
+    if ($code_result['count'] > 0) {
+        $errors[] = "Mã khuyến mãi '{$ma_code}' đã tồn tại. Vui lòng chọn mã khác.";
+    }
+
     if (count($errors) === 0) {
         try {
             // Bắt đầu transaction
@@ -110,13 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)
             ");
             
-            $insert_stmt->bind_param(
-                "siissiidssiiii", 
-                $ma_code, $loai_giam_gia, $gia_tri,
-                $ngay_bat_dau, $ngay_ket_thuc, $so_luong,
-                $gia_tri_don_toi_thieu, $gia_tri_giam_toi_da, 
-                $mo_ta, $trang_thai, $user_id, $ap_dung_sanpham, $ap_dung_loai
-            );
+            $insert_stmt->bind_param('siissiidssiii', $ma_code, $loai_giam_gia, $gia_tri, $ngay_bat_dau, $ngay_ket_thuc, $so_luong, $gia_tri_don_toi_thieu, $gia_tri_giam_toi_da, $mo_ta, $trang_thai, $user_id, $ap_dung_sanpham, $ap_dung_loai);
             
             $insert_stmt->execute();
             $khuyen_mai_id = $conn->insert_id;
@@ -1373,4 +1404,5 @@ document.addEventListener("DOMContentLoaded", function() {
 
 ';
 include('includes/footer.php');
+ob_end_flush(); // Thêm dòng này
 ?>

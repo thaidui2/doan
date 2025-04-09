@@ -161,6 +161,11 @@ body {
   box-shadow: 0 0 0 1px #0d6efd;
 }
 
+.payment-method-label.payment-method-selected {
+  border-color: #2266d3;
+  background-color: #e9f0fd;
+}
+
 .payment-method-icon {
   font-size: 1.5rem;
   margin-right: 10px;
@@ -247,4 +252,15 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+.promo-code-section {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 3px solid #2266d3;
+}
+
+.discount-line {
+  font-weight: 500;
 }

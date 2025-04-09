@@ -1,0 +1,14 @@
+2025-04-09 06:40:38 | Request - Code: test1 | Total: 250000 | User: 7
+2025-04-09 06:40:38 | Success - Code: test1 | Discount: 50000
+2025-04-09 06:41:26 | Request - Code: test1 | Total: 250000 | User: 7
+2025-04-09 06:41:26 | Success - Code: test1 | Discount: 50000
+2025-04-09 06:47:14 | Request - Code: test1 | Total: 250000 | User: 7
+2025-04-09 06:47:14 | Success - Code: test1 | Discount: 50000
+2025-04-09 07:19:46 | Request - Code: test1 | Total: 500000 | User: 7
+2025-04-09 07:19:46 | Error: Mã giảm giá này không áp dụng cho sản phẩm nào trong giỏ hàng của bạn
+2025-04-09 07:20:32 | Request - Code: test1 | Total: 750000 | User: 7
+2025-04-09 07:20:32 | Success - Code: test1 | Discount: 150000
+2025-04-09 07:36:39 | Request - Code: test1 | Total: 250000 | User: 7
+2025-04-09 07:36:39 | Success - Code: test1 | Discount: 50000
+2025-04-09 07:42:07 | Request - Code: test1 | Total: 250000 | User: 7
+2025-04-09 07:42:07 | Success - Code: test1 | Discount: 50000

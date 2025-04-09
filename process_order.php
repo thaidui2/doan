@@ -86,6 +86,11 @@ $full_address = $_POST['full_address'] ?? '';
 $payment_method = $_POST['payment_method'] ?? 'cod';
 $note = $_POST['note'] ?? '';
 
+// Xử lý mã giảm giá nếu có
+$promo_code = isset($_POST['promo_code']) ? $_POST['promo_code'] : '';
+$discount_amount = isset($_POST['discount_amount']) ? (int)$_POST['discount_amount'] : 0;
+$discount_id = isset($_POST['discount_id']) ? (int)$_POST['discount_id'] : 0;
+
 // Lấy thông tin giỏ hàng
 $session_id = session_id();
 $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
@@ -160,6 +165,39 @@ if (empty($order_items)) {
     exit();
 }
 
+// Kiểm tra lại mã giảm giá nếu có
+if (!empty($promo_code) && $discount_amount > 0 && $discount_id > 0) {
+    // Kiểm tra mã giảm giá có hợp lệ không
+    $promo_check = $conn->prepare("
+        SELECT * FROM khuyen_mai 
+        WHERE id = ? AND ma_code = ? AND trang_thai = 1 
+        AND CURRENT_TIMESTAMP BETWEEN ngay_bat_dau AND ngay_ket_thuc
+        AND so_luong > so_luong_da_dung
+    ");
+    $promo_check->bind_param("is", $discount_id, $promo_code);
+    $promo_check->execute();
+    
+    if ($promo_check->get_result()->num_rows > 0) {
+        // Trừ tiền giảm giá từ tổng tiền
+        $total_amount -= $discount_amount;
+        if ($total_amount < 0) $total_amount = 0;
+        
+        // Lưu thông tin mã giảm giá để sử dụng sau khi tạo đơn hàng
+        $valid_promo = true;
+        
+        // Cập nhật số lượng đã sử dụng
+        $update_promo = $conn->prepare("
+            UPDATE khuyen_mai 
+            SET so_luong_da_dung = so_luong_da_dung + 1 
+            WHERE id = ?
+        ");
+        $update_promo->bind_param("i", $discount_id);
+        $update_promo->execute();
+        
+        // KHÔNG lưu vào lịch sử ở đây, sẽ xử lý sau khi có order_id
+    }
+}
+
 // Thêm phí vận chuyển
 $shipping_fee = 30000;
 $grand_total = $total_amount + $shipping_fee;
@@ -205,6 +243,16 @@ try {
     
     $order_stmt->execute();
     $order_id = $conn->insert_id;
+    
+    // Lưu thông tin sử dụng mã giảm giá vào lịch sử nếu có
+    if (isset($valid_promo) && $valid_promo && $user_id) {
+        $history_stmt = $conn->prepare("
+            INSERT INTO khuyen_mai_lichsu (id_khuyen_mai, id_nguoidung, id_donhang, gia_tri_giam, ngay_su_dung)
+            VALUES (?, ?, ?, ?, NOW())
+        ");
+        $history_stmt->bind_param("iiid", $discount_id, $user_id, $order_id, $discount_amount);
+        $history_stmt->execute();
+    }
     
     // 2. Thêm chi tiết đơn hàng
     foreach ($order_items as $item) {

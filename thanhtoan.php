@@ -311,6 +311,23 @@ if ($user_id) {
                                     </div>
                                 </div>
                                 
+                                <div class="promo-code-section mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-ticket-perforated me-2 text-primary"></i>
+                                        <h6 class="mb-0">Mã giảm giá</h6>
+                                    </div>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="promo-code" placeholder="Nhập mã giảm giá">
+                                        <button class="btn btn-outline-primary" type="button" id="apply-promo">Áp dụng</button>
+                                    </div>
+                                    <div id="promo-message" class="mt-2 small"></div>
+                                </div>
+                                
+                                <!-- Thông tin mã giảm giá -->
+                                <input type="hidden" name="promo_code" id="promo-code-input" value="">
+                                <input type="hidden" name="discount_amount" id="discount-amount-input" value="0">
+                                <input type="hidden" name="discount_id" id="discount-id-input" value="0">
+                                
                                 <div class="mb-4">
                                     <h5 class="fw-bold mb-3">
                                         <i class="bi bi-pencil-square me-2 text-primary"></i>
@@ -392,13 +409,17 @@ if ($user_id) {
                                         <span>Tạm tính:</span>
                                         <span><?php echo number_format($total_amount, 0, ',', '.'); ?>₫</span>
                                     </div>
+                                    <div class="total-line discount-line" id="discount-row" style="display: none;">
+                                        <span>Giảm giá:</span>
+                                        <span class="text-danger" id="discount-amount">0₫</span>
+                                    </div>
                                     <div class="total-line">
                                         <span>Phí vận chuyển:</span>
                                         <span><?php echo number_format(30000, 0, ',', '.'); ?>₫</span>
                                     </div>
                                     <div class="total-line grand-total">
                                         <span>Tổng cộng:</span>
-                                        <span class="grand-total-price"><?php echo number_format($total_amount + 30000, 0, ',', '.'); ?>₫</span>
+                                        <span class="grand-total-price" id="grand-total"><?php echo number_format($total_amount + 30000, 0, ',', '.'); ?>₫</span>
                                     </div>
                                 </div>
                             </div>
@@ -517,6 +538,109 @@ if ($user_id) {
 
             // Thay đổi từ
             const vnpayPayment = document.getElementById('vnpay');
+
+            // Xử lý mã giảm giá
+            const promoCodeInput = document.getElementById('promo-code');
+            const applyPromoButton = document.getElementById('apply-promo');
+            const promoMessageElement = document.getElementById('promo-message');
+            const discountRow = document.getElementById('discount-row');
+            const discountAmountElement = document.getElementById('discount-amount');
+            const grandTotalElement = document.getElementById('grand-total');
+            const promoCodeInputHidden = document.getElementById('promo-code-input');
+            const discountAmountInputHidden = document.getElementById('discount-amount-input');
+            const discountIdInputHidden = document.getElementById('discount-id-input');
+
+            // Tổng tiền sản phẩm không bao gồm phí vận chuyển
+            const subtotal = <?php echo $total_amount; ?>;
+            // Phí vận chuyển
+            const shippingFee = 30000;
+            // Tổng tiền hiện tại (chưa có giảm giá)
+            let currentTotal = subtotal + shippingFee;
+            // Số tiền giảm giá
+            let discountAmount = 0;
+
+            applyPromoButton.addEventListener('click', function() {
+                const code = promoCodeInput.value.trim();
+                
+                if (!code) {
+                    promoMessageElement.innerHTML = '<span class="text-danger">Vui lòng nhập mã giảm giá</span>';
+                    return;
+                }
+                
+                // Hiển thị thông báo đang xử lý
+                promoMessageElement.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-2"></i>Đang kiểm tra...</span>';
+                
+                // Lấy thông tin sản phẩm trong giỏ hàng
+                const cartItems = <?php echo json_encode($checkout_items); ?>;
+                
+                // Gửi request kiểm tra mã giảm giá
+                fetch('apply_promo_code.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        code: code,
+                        total: subtotal,
+                        cart_items: JSON.stringify(cartItems)
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Cập nhật UI khi thành công
+                        promoMessageElement.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.message}</span>`;
+                        
+                        // Hiển thị dòng giảm giá
+                        discountRow.style.display = 'flex';
+                        discountAmount = data.discount_amount;
+                        
+                        // Cập nhật số tiền giảm giá và tổng tiền
+                        discountAmountElement.textContent = `-${data.formatted_discount}₫`;
+                        grandTotalElement.textContent = `${data.formatted_total}₫`;
+                        
+                        // Cập nhật các input hidden
+                        promoCodeInputHidden.value = code;
+                        discountAmountInputHidden.value = discountAmount;
+                        discountIdInputHidden.value = data.discount_id;
+                        
+                        // Vô hiệu hóa input và nút áp dụng
+                        promoCodeInput.disabled = true;
+                        applyPromoButton.disabled = true;
+                        
+                        // Thêm nút hủy mã giảm giá
+                        const cancelButton = document.createElement('button');
+                        cancelButton.className = 'btn btn-sm btn-outline-danger ms-2';
+                        cancelButton.innerHTML = '<i class="bi bi-x-circle"></i> Hủy mã';
+                        cancelButton.onclick = function(e) {
+                            e.preventDefault();
+                            // Reset lại tất cả
+                            discountRow.style.display = 'none';
+                            grandTotalElement.textContent = `${new Intl.NumberFormat('vi-VN').format(currentTotal)}₫`;
+                            promoMessageElement.innerHTML = '';
+                            promoCodeInput.value = '';
+                            promoCodeInput.disabled = false;
+                            applyPromoButton.disabled = false;
+                            
+                            // Reset các input hidden
+                            promoCodeInputHidden.value = '';
+                            discountAmountInputHidden.value = '0';
+                            discountIdInputHidden.value = '';
+                            
+                            // Xóa nút hủy
+                            this.remove();
+                        };
+                        promoMessageElement.appendChild(cancelButton);
+                    } else {
+                        // Hiển thị thông báo lỗi
+                        promoMessageElement.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>${data.message}</span>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    promoMessageElement.innerHTML = '<span class="text-danger">Có lỗi xảy ra khi kiểm tra mã giảm giá</span>';
+                });
+            });
         });
     </script>
 </body>
