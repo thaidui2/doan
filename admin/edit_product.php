@@ -501,7 +501,7 @@ function getVariantQuantity($size_id, $color_id, $variants) {
     <div class="container-fluid">
         <div class="row">
             <?php
-            include_once('includes/admin_helpers.php');
+            
             include('includes/sidebar.php');
             ?>
 

@@ -68,6 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cap_bac = (int)$_POST['cap_bac'];
     $trang_thai = isset($_POST['trang_thai']) ? 1 : 0;
     
+    // Thêm đoạn này sau các lệnh lấy dữ liệu từ form (sau dòng $trang_thai = isset($_POST['trang_thai']) ? 1 : 0;)
+    $selected_roles = isset($_POST['roles']) ? $_POST['roles'] : [];
+    
     // Basic validation
     $errors = [];
     

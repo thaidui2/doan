@@ -9,7 +9,7 @@ include('includes/header.php');
 include('../config/config.php');
 
 // Check if user has permission to view roles
-checkPermissionRedirect('role_view');
+// checkPermissionRedirect('role_view');
 
 // Get role ID
 $role_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -64,7 +64,7 @@ while ($permission = $permissions_result->fetch_assoc()) {
 
 // Get admins with this role
 $stmt = $conn->prepare("
-    SELECT a.id_admin, a.taikhoan, a.ten_admin
+    SELECT a.id_admin, a.taikhoan, a.ten_admin, a.email, a.cap_bac
     FROM admin a 
     JOIN admin_roles ar ON a.id_admin = ar.id_admin 
     WHERE ar.id_role = ?
@@ -217,8 +217,8 @@ $admins_result = $stmt->get_result();
                                             <?php while ($admin = $admins_result->fetch_assoc()): ?>
                                                 <tr>
                                                     <td><?php echo $admin['id_admin']; ?></td>
-                                                    <td><?php echo htmlspecialchars($admin['ho_ten']); ?></td>
-                                                    <td><?php echo htmlspecialchars($admin['ten_dang_nhap']); ?></td>
+                                                    <td><?php echo htmlspecialchars($admin['ten_admin']); ?></td>
+                                                    <td><?php echo htmlspecialchars($admin['taikhoan']); ?></td>
                                                     <td><?php echo htmlspecialchars($admin['email'] ?? 'N/A'); ?></td>
                                                     <td>
                                                         <?php if ($admin['cap_bac'] == 3): ?>

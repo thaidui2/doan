@@ -1,14 +1,13 @@
 <?php
 /**
- * Hệ thống quản lý quyền hạn
+ * Hệ thống quản lý quyền hạn (đã đơn giản hóa - chỉ Admin và Quản lý)
  */
 
-// Chỉ định nghĩa hàm nếu chúng chưa tồn tại
-
+// Chỉ định nghĩa hàm nếu chưa tồn tại
 if (!function_exists('hasPermission')) {
     function hasPermission($permission_code) {
-        // Super admins luôn có tất cả các quyền
-        if (isset($_SESSION['admin_level']) && $_SESSION['admin_level'] == 3) {
+        // Admins có tất cả các quyền
+        if (isset($_SESSION['admin_level']) && $_SESSION['admin_level'] >= 2) {
             return true;
         }
         
@@ -67,35 +66,33 @@ if (!function_exists('getAdminPermissions')) {
         // Phân quyền dựa vào cấp bậc
         $permissions = [];
         
-        // Quyền cơ bản (Cấp 1 - Quản lý)
-        if ($cap_bac >= 1) {
-            $basic_permissions = [
-                'product_view', 'category_view', 'order_view', 
-                'customer_view', 'report_view'
-            ];
-            $permissions = array_merge($permissions, $basic_permissions);
-        }
-        
-        // Quyền mở rộng (Cấp 2 - Admin cấp cao)
+        // Admin cấp cao (cấp 2 trở lên) - có tất cả quyền
         if ($cap_bac >= 2) {
-            $advanced_permissions = [
-                'product_add', 'product_edit', 'product_delete',
-                'category_add', 'category_edit', 'category_delete',
-                'order_update_status', 'order_cancel',
-                'customer_edit', 'customer_toggle_status',
-                'admin_view', 'admin_add', 'admin_edit'
+            // Tất cả các quyền
+            $admin_permissions = [
+                'product_view', 'product_add', 'product_edit', 'product_delete',
+                'category_view', 'category_add', 'category_edit', 'category_delete',
+                'order_view', 'order_update_status', 'order_cancel', 'order_delete',
+                'customer_view', 'customer_add', 'customer_edit', 'customer_delete', 'customer_toggle_status',
+                'admin_view', 'admin_add', 'admin_edit', 'admin_delete',
+                'role_view', 'role_add', 'role_edit', 'role_delete', 'permission_assign',
+                'promo_view', 'promo_add', 'promo_edit', 'promo_delete',
+                'report_view', 'report_export',
+                'setting_manage', 'log_view'
             ];
-            $permissions = array_merge($permissions, $advanced_permissions);
+            $permissions = array_merge($permissions, $admin_permissions);
         }
-        
-        // Tất cả quyền (Cấp 3 - Super Admin)
-        if ($cap_bac >= 3) {
-            $super_permissions = [
-                'admin_delete', 'setting_manage', 'log_view',
-                'role_view', 'role_add', 'role_edit', 'role_delete',
-                'permission_assign'
+        // Quản lý (cấp 1) - quyền giới hạn
+        else if ($cap_bac == 1) {
+            $manager_permissions = [
+                'product_view', 'product_add', 'product_edit',
+                'category_view',
+                'order_view', 'order_update_status',
+                'customer_view',
+                'promo_view',
+                'report_view'
             ];
-            $permissions = array_merge($permissions, $super_permissions);
+            $permissions = array_merge($permissions, $manager_permissions);
         }
         
         // Lưu vào session
@@ -127,46 +124,7 @@ if (!function_exists('getAdminRoles')) {
             return $_SESSION['admin_roles'];
         }
         
-        // Kiểm tra xem bảng admin_roles đã tồn tại chưa
-        $table_check = $conn->query("SHOW TABLES LIKE 'admin_roles'");
-        
-        // Nếu bảng admin_roles không tồn tại, cấp quyền dựa trên cấp bậc
-        if ($table_check->num_rows == 0) {
-            $query = "SELECT cap_bac FROM admin WHERE id_admin = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("i", $admin_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
-                return [];
-            }
-            
-            $admin = $result->fetch_assoc();
-            $roles = [];
-            
-            // Gán vai trò dựa vào cấp bậc
-            switch ($admin['cap_bac']) {
-                case 3: // Super Admin
-                    $roles[] = ['id_role' => 0, 'ten_role' => 'Super Admin'];
-                    break;
-                case 2: // Admin cấp cao
-                    $roles[] = ['id_role' => 1, 'ten_role' => 'Admin'];
-                    break;
-                case 1: // Quản lý
-                    $roles[] = ['id_role' => 2, 'ten_role' => 'Quản lý'];
-                    break;
-                default:
-                    $roles[] = ['id_role' => 3, 'ten_role' => 'Nhân viên'];
-            }
-            
-            // Cache vào session
-            $_SESSION['admin_roles'] = $roles;
-            
-            return $roles;
-        }
-        
-        // Nếu bảng tồn tại, lấy vai trò từ database
+        // Lấy vai trò từ database trước
         $query = "
             SELECT r.* 
             FROM roles r
@@ -181,6 +139,26 @@ if (!function_exists('getAdminRoles')) {
         $roles = [];
         while ($row = $result->fetch_assoc()) {
             $roles[] = $row;
+        }
+        
+        // Nếu không có vai trò từ bảng admin_roles, lấy từ cấp bậc
+        if (empty($roles)) {
+            $query = "SELECT cap_bac FROM admin WHERE id_admin = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $admin_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $admin = $result->fetch_assoc();
+                
+                // Chỉ phân loại thành 2 cấp: Admin và Quản lý
+                if ($admin['cap_bac'] >= 2) {
+                    $roles[] = ['id_role' => 1, 'ten_role' => 'Admin'];
+                } else {
+                    $roles[] = ['id_role' => 2, 'ten_role' => 'Quản lý'];
+                }
+            }
         }
         
         // Cache vào session

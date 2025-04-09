@@ -70,44 +70,24 @@ function paginationLinks($current_page, $total_pages, $url_params = '') {
  * @return bool True nếu có quyền, False nếu không
  */
 function hasPermission($permission_code) {
-    // Super Admin luôn có tất cả quyền
-    if (isset($_SESSION['admin_level']) && $_SESSION['admin_level'] == 3) {
+    // Kiểm tra ID admin đặc biệt (từ admin_helpers.php)
+    if (isset($_SESSION['admin_id']) && $_SESSION['admin_id'] == 6) {
         return true;
     }
     
-    // Nếu không có cấp bậc, không có quyền
-    if (!isset($_SESSION['admin_level'])) {
-        return false;
-    }
-    
-    // Phân quyền dựa vào cấp bậc
-    $admin_level = $_SESSION['admin_level'];
-    
-    // Quyền cơ bản (level 1)
-    $basic_permissions = [
-        'product_view', 'category_view', 'order_view', 
-        'customer_view', 'report_view'
-    ];
-    
-    // Quyền mở rộng (level 2)
-    $advanced_permissions = [
-        'product_add', 'product_edit', 'product_delete',
-        'category_add', 'category_edit', 'category_delete',
-        'order_update_status', 'order_cancel',
-        'customer_edit', 'customer_toggle_status',
-        'admin_view', 'admin_add', 'admin_edit'
-    ];
-    
-    // Phân quyền theo cấp bậc
-    if ($admin_level >= 1 && in_array($permission_code, $basic_permissions)) {
+    // Kiểm tra cấp bậc admin (từ permissions.php và admin_helpers.php)
+    if (isset($_SESSION['admin_level']) && $_SESSION['admin_level'] >= 2) {
         return true;
     }
     
-    if ($admin_level >= 2 && in_array($permission_code, $advanced_permissions)) {
-        return true;
+    // Kiểm tra quyền từ session (từ admin_helpers.php)
+    if (isset($_SESSION['admin_permissions']) && is_array($_SESSION['admin_permissions'])) {
+        return in_array($permission_code, $_SESSION['admin_permissions']);
     }
     
-    return false;
+    // Kiểm tra quyền từ database (từ permissions.php)
+    $permissions = getAdminPermissions();
+    return in_array($permission_code, $permissions);
 }
 
 /**
@@ -119,4 +99,24 @@ function checkPermissionRedirect($permission_code, $redirect_url = 'index.php') 
         header("Location: $redirect_url");
         exit();
     }
+}
+
+/**
+ * Ghi log hoạt động của admin
+ */
+function logAdminActivity($conn, $admin_id, $action_type, $target_type, $target_id, $details) {
+    $ip_address = $_SERVER['REMOTE_ADDR'];
+    $query = $conn->prepare("INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details, ip_address) 
+                           VALUES (?, ?, ?, ?, ?, ?)");
+    $query->bind_param("ississ", $admin_id, $action_type, $target_type, $target_id, $details, $ip_address);
+    return $query->execute();
+}
+
+/**
+ * Log a specific action
+ */
+function logAction($action, $description) {
+    global $conn;
+    $admin_id = $_SESSION['admin_id'];
+    logAdminActivity($conn, $admin_id, $action, 'promo', 0, $description);
 }

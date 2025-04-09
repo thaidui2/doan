@@ -8,7 +8,9 @@ if (session_status() == PHP_SESSION_NONE) {
 include_once('../config/config.php');
 
 // Include helper functions first
-include_once('includes/functions.php');
+include_once('includes/functions.php');       // Đầu tiên
+include_once('includes/admin_helpers.php');   // Thứ hai
+include_once('includes/permissions.php');  
 
 // Kiểm tra đăng nhập
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {

@@ -16,7 +16,11 @@ $sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'id_user';
 $sort_order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
 
 // Build query
-$query = "SELECT * FROM users"; // Get all users initially
+$query = "SELECT u.*, 
+            CASE WHEN u.loai_user = 1 THEN
+                (SELECT COUNT(s.id_sanpham) FROM sanpham s WHERE s.id_nguoiban = u.id_user)
+            ELSE 0 END AS so_san_pham
+          FROM users u";
 
 // Add search conditions
 $where_conditions = [];
@@ -54,7 +58,10 @@ $per_page = 10;
 $offset = ($current_page - 1) * $per_page;
 
 // Get total count for pagination
-$count_query = str_replace("SELECT *", "SELECT COUNT(*) as total", $query);
+$count_query = str_replace("SELECT u.*, 
+            CASE WHEN u.loai_user = 1 THEN
+                (SELECT COUNT(s.id_sanpham) FROM sanpham s WHERE s.id_nguoiban = u.id_user)
+            ELSE 0 END AS so_san_pham", "SELECT COUNT(*) as total", $query);
 $count_result = $conn->query($count_query);
 $total_rows = $count_result->fetch_assoc()['total'];
 $total_pages = ceil($total_rows / $per_page);
@@ -68,6 +75,52 @@ $result = $conn->query($query);
 
 <!-- Include sidebar -->
 <?php include('includes/sidebar.php'); ?>
+
+<!-- Thêm vào phần head của trang -->
+<style>
+    .seller-details {
+        transition: all 0.3s ease;
+        margin: 0 1rem;
+    }
+    
+    .table .seller-details-row {
+        background-color: rgba(0, 0, 0, 0.02) !important;
+    }
+    
+    .table tr.seller-details-row:hover {
+        background-color: rgba(0, 0, 0, 0.02) !important;
+    }
+    
+    /* Card styling */
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Seller badge styling */
+    .badge.bg-primary {
+        background-color: #0d6efd !important;
+    }
+    
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+        display: inline-block;
+    }
+    
+    .toggle-seller-details {
+        transition: all 0.2s ease;
+    }
+    
+    .toggle-seller-details:hover {
+        transform: translateY(-1px);
+    }
+</style>
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
@@ -98,6 +151,28 @@ $result = $conn->query($query);
         unset($_SESSION['error_message']);
     }
     ?>
+
+    <!-- Navigation tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link <?php echo !isset($_GET['user_type']) || $_GET['user_type'] == -1 ? 'active' : ''; ?>" href="customers.php">
+                <i class="bi bi-people"></i> Tất cả người dùng
+                <span class="badge bg-secondary ms-1"><?php echo $conn->query("SELECT COUNT(*) as count FROM users")->fetch_assoc()['count']; ?></span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?php echo isset($_GET['user_type']) && $_GET['user_type'] == 0 ? 'active' : ''; ?>" href="customers.php?user_type=0">
+                <i class="bi bi-person"></i> Người mua
+                <span class="badge bg-secondary ms-1"><?php echo $conn->query("SELECT COUNT(*) as count FROM users WHERE loai_user = 0")->fetch_assoc()['count']; ?></span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?php echo isset($_GET['user_type']) && $_GET['user_type'] == 1 ? 'active' : ''; ?>" href="customers.php?user_type=1">
+                <i class="bi bi-shop"></i> Người bán
+                <span class="badge bg-secondary ms-1"><?php echo $conn->query("SELECT COUNT(*) as count FROM users WHERE loai_user = 1")->fetch_assoc()['count']; ?></span>
+            </a>
+        </li>
+    </ul>
 
     <!-- Search and filter form -->
     <div class="card mb-4">
@@ -151,6 +226,68 @@ $result = $conn->query($query);
         </div>
     </div>
 
+    <!-- Thêm vào ngay sau nút tìm kiếm và trước bảng -->
+    <?php if ($user_type_filter === 1): // Chỉ hiển thị ở trang người bán ?>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 text-primary mb-3">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <?php
+                    $total_sellers = $conn->query("SELECT COUNT(*) as count FROM users WHERE loai_user = 1")->fetch_assoc()['count'];
+                    ?>
+                    <h3 class="card-title h4"><?php echo number_format($total_sellers); ?></h3>
+                    <p class="card-text text-muted">Tổng số người bán</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 text-success mb-3">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <?php
+                    $total_products = $conn->query("SELECT COUNT(*) as count FROM sanpham WHERE id_nguoiban IS NOT NULL")->fetch_assoc()['count'];
+                    ?>
+                    <h3 class="card-title h4"><?php echo number_format($total_products); ?></h3>
+                    <p class="card-text text-muted">Tổng số sản phẩm</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 text-warning mb-3">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <?php
+                    $avg_products = $conn->query("SELECT AVG(product_count) as avg FROM (SELECT COUNT(id_sanpham) as product_count FROM sanpham WHERE id_nguoiban IS NOT NULL GROUP BY id_nguoiban) as counts")->fetch_assoc()['avg'];
+                    ?>
+                    <h3 class="card-title h4"><?php echo number_format($avg_products, 1); ?></h3>
+                    <p class="card-text text-muted">Sản phẩm trung bình/người bán</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 text-danger mb-3">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <?php
+                    $new_sellers = $conn->query("SELECT COUNT(*) as count FROM users WHERE loai_user = 1 AND ngay_tro_thanh_nguoi_ban >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetch_assoc()['count'];
+                    ?>
+                    <h3 class="card-title h4"><?php echo number_format($new_sellers); ?></h3>
+                    <p class="card-text text-muted">Người bán mới (30 ngày)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Users table -->
     <div class="card">
         <div class="card-header bg-white">
@@ -199,12 +336,20 @@ $result = $conn->query($query);
                                         <?php else: ?>
                                             <span class="badge bg-primary">Người bán</span>
                                             <?php if (!empty($customer['ten_shop'])): ?>
-                                                <div class="small mt-1"><?php echo htmlspecialchars($customer['ten_shop']); ?></div>
+                                                <div class="small mt-1"><strong>Shop:</strong> <?php echo htmlspecialchars($customer['ten_shop']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if (isset($customer['so_san_pham'])): ?>
+                                                <div class="small text-muted"><?php echo $customer['so_san_pham']; ?> sản phẩm</div>
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
+                                            <?php if ($customer['loai_user'] == 1): ?>
+                                            <button type="button" class="btn btn-outline-info toggle-seller-details" data-id="<?php echo $customer['id_user']; ?>">
+                                                <i class="bi bi-shop"></i> Chi tiết shop
+                                            </button>
+                                            <?php endif; ?>
                                             <a href="customer-detail.php?id=<?php echo $customer['id_user']; ?>" class="btn btn-outline-primary">
                                                 <i class="bi bi-eye"></i> Xem
                                             </a>
@@ -384,219 +529,40 @@ $result = $conn->query($query);
 $page_specific_js = '
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Toggle user status (active/inactive)
-        const toggleStatusLinks = document.querySelectorAll(".toggle-status");
-        toggleStatusLinks.forEach(link => {
-            link.addEventListener("click", function(e) {
-                e.preventDefault();
-                const userId = this.getAttribute("data-id");
-                const currentStatus = parseInt(this.getAttribute("data-status"));
-                const username = this.getAttribute("data-username");
-                const newStatus = currentStatus === 1 ? 0 : 1;
-                const actionText = newStatus === 1 ? "mở khóa" : "khóa";
-                
-                // Set modal content
-                document.getElementById("modalTitle").textContent = currentStatus === 1 ? "Khóa tài khoản" : "Mở khóa tài khoản";
-                document.getElementById("modalBody").innerHTML = `Bạn có chắc chắn muốn <strong>${actionText}</strong> tài khoản <strong>${username}</strong>?`;
-                
-                // Set confirm action
-                document.getElementById("confirmAction").className = `btn ${newStatus === 1 ? "btn-success" : "btn-danger"}`;
-                document.getElementById("confirmAction").textContent = currentStatus === 1 ? "Khóa" : "Mở khóa";
-                
-                // Show modal
-                const modal = new bootstrap.Modal(document.getElementById("confirmationModal"));
-                modal.show();
-                
-                // Set up action for confirm button
-                document.getElementById("confirmAction").onclick = function() {
-                    updateUserStatus(userId, newStatus);
-                    modal.hide();
-                };
-            });
-        });
+        // Code khác...
         
-        // Delete user
-        const deleteLinks = document.querySelectorAll(".delete-customer");
-        deleteLinks.forEach(link => {
-            link.addEventListener("click", function(e) {
-                e.preventDefault();
-                const userId = this.getAttribute("data-id");
-                const username = this.getAttribute("data-username");
+        // Xử lý nút hiển thị chi tiết người bán
+        document.querySelectorAll(\'.toggle-seller-details\').forEach(button => {
+            button.addEventListener(\'click\', function() {
+                const sellerId = this.getAttribute(\'data-id\');
+                const detailsRow = document.getElementById(`seller-details-${sellerId}`);
                 
-                // Set modal content
-                document.getElementById("modalTitle").textContent = "Xóa tài khoản";
-                document.getElementById("modalBody").innerHTML = `Bạn có chắc chắn muốn xóa tài khoản <strong>${username}</strong>? <br><br><span class="text-danger">Lưu ý: Hành động này không thể hoàn tác và sẽ xóa tất cả dữ liệu liên quan đến tài khoản này.</span>`;
-                
-                // Set confirm action
-                document.getElementById("confirmAction").className = "btn btn-danger";
-                document.getElementById("confirmAction").textContent = "Xóa";
-                
-                // Show modal
-                const modal = new bootstrap.Modal(document.getElementById("confirmationModal"));
-                modal.show();
-                
-                // Set up action for confirm button
-                document.getElementById("confirmAction").onclick = function() {
-                    deleteUser(userId);
-                    modal.hide();
-                };
-            });
-        });
-        
-        // Xử lý thay đổi loại người dùng (user/seller)
-        const changeTypeLinks = document.querySelectorAll(".change-user-type");
-        changeTypeLinks.forEach(link => {
-            link.addEventListener("click", function(e) {
-                e.preventDefault();
-                const userId = this.getAttribute("data-id");
-                const currentType = parseInt(this.getAttribute("data-type"));
-                const username = this.getAttribute("data-username");
-                
-                // Thiết lập modal theo loại thay đổi
-                document.getElementById("changeTypeTitle").textContent = 
-                    currentType === 0 ? "Chuyển thành người bán" : "Chuyển thành người mua";
-                
-                if (currentType === 0) {
-                    // Chuyển từ người mua -> người bán
-                    document.getElementById("toSellerInfo").classList.remove("d-none");
-                    document.getElementById("toBuyerInfo").classList.add("d-none");
-                    document.getElementById("changeTypeBody").querySelector("p").innerHTML = 
-                        `Bạn đang chuyển <strong>${username}</strong> thành người bán hàng.`;
-                } else {
-                    // Chuyển từ người bán -> người mua
-                    document.getElementById("toBuyerInfo").classList.remove("d-none");
-                    document.getElementById("toSellerInfo").classList.add("d-none");
-                    document.getElementById("changeTypeBody").querySelector("p").innerHTML = 
-                        `Bạn đang chuyển <strong>${username}</strong> thành người mua thông thường.`;
-                }
-                
-                // Hiện modal
-                const modal = new bootstrap.Modal(document.getElementById("changeUserTypeModal"));
-                modal.show();
-                
-                // Thiết lập hành động cho nút xác nhận
-                document.getElementById("confirmChangeType").onclick = function() {
-                    // Chuẩn bị dữ liệu gửi đi
-                    const newType = currentType === 0 ? 1 : 0;
-                    let formData = new FormData();
-                    formData.append("user_id", userId);
-                    formData.append("new_type", newType);
-                    
-                    // Thêm thông tin shop nếu chuyển thành người bán
-                    if (newType === 1) {
-                        formData.append("shop_name", document.getElementById("shop_name").value);
-                        formData.append("shop_description", document.getElementById("shop_description").value);
-                    }
-                    
-                    // Gửi yêu cầu AJAX
-                    fetch("ajax/change_user_type.php", {
-                        method: "POST",
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showToast(data.message, "success");
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1000);
-                        } else {
-                            showToast("Lỗi: " + data.message, "danger");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error:", error);
-                        showToast("Đã xảy ra lỗi khi thay đổi loại người dùng", "danger");
+                if (detailsRow.style.display === \'none\' || detailsRow.style.display === \'\') {
+                    // Đóng tất cả các hàng chi tiết đang mở
+                    document.querySelectorAll(\'.seller-details-row\').forEach(row => {
+                        row.style.display = \'none\';
                     });
                     
-                    modal.hide();
-                };
+                    // Đặt lại các nút về trạng thái ban đầu
+                    document.querySelectorAll(\'.toggle-seller-details\').forEach(btn => {
+                        btn.classList.remove(\'btn-info\');
+                        btn.classList.add(\'btn-outline-info\');
+                        btn.innerHTML = \'<i class="bi bi-shop"></i> Chi tiết shop\';
+                    });
+                    
+                    // Hiển thị hàng được chọn
+                    detailsRow.style.display = \'table-row\';
+                    this.classList.remove(\'btn-outline-info\');
+                    this.classList.add(\'btn-info\');
+                    this.innerHTML = \'<i class="bi bi-dash-circle"></i> Đóng\';
+                } else {
+                    detailsRow.style.display = \'none\';
+                    this.classList.remove(\'btn-info\');
+                    this.classList.add(\'btn-outline-info\');
+                    this.innerHTML = \'<i class="bi bi-shop"></i> Chi tiết shop\';
+                }
             });
         });
-        
-        // Function to update user status
-        function updateUserStatus(userId, newStatus) {
-            fetch("ajax/update-customer-status.php", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `id=${userId}&status=${newStatus}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast("Cập nhật trạng thái thành công!", "success");
-                    // Reload page after 1 second
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    showToast(`Lỗi: ${data.message}`, "danger");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                showToast("Đã xảy ra lỗi khi cập nhật trạng thái!", "danger");
-            });
-        }
-        
-        // Function to delete user
-        function deleteUser(userId) {
-            fetch("ajax/delete-customer.php", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `id=${userId}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast("Xóa tài khoản thành công!", "success");
-                    // Reload page after 1 second
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    showToast(`Lỗi: ${data.message}`, "danger");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                showToast("Đã xảy ra lỗi khi xóa tài khoản!", "danger");
-            });
-        }
-        
-        // Function to show toast notification
-        function showToast(message, type = "info") {
-            const toastContainer = document.querySelector(".toast-container");
-            const toastId = `toast-${Date.now()}`;
-            
-            const toastHtml = `
-                <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                </div>
-            `;
-            
-            toastContainer.insertAdjacentHTML("beforeend", toastHtml);
-            
-            const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement, {
-                autohide: true,
-                delay: 3000
-            });
-            toast.show();
-            
-            toastElement.addEventListener("hidden.bs.toast", function() {
-                toastElement.remove();
-            });
-        }
     });
 </script>
 ';

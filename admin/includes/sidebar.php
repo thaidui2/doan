@@ -1,3 +1,9 @@
+<?php
+// Thứ tự include quan trọng để tránh lỗi khai báo hàm trùng lặp
+include_once('includes/functions.php');       // Chứa hàm hasPermission() chính thức
+include_once('includes/admin_helpers.php');   // Sẽ kiểm tra và bỏ qua nếu hàm đã tồn tại
+include_once('includes/permissions.php'); 
+?>
 <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
     <div class="sidebar-sticky pt-3">
         <div class="px-3 mb-4">
@@ -38,6 +44,15 @@
                 <a class="nav-link <?php echo isActiveMenu('categories.php') ? 'active' : ''; ?>" href="categories.php">
                     <i class="bi bi-tags"></i>
                     Quản lý danh mục
+                </a>
+            </li>
+            <?php endif; ?>
+            
+            <?php if (hasPermission('promo_view')): ?>
+            <li class="nav-item">
+                <a class="nav-link <?php echo isActiveMenu(['khuyen-mai.php', 'them-khuyen-mai.php', 'chinh-sua-khuyen-mai.php']) ? 'active' : ''; ?>" href="khuyen-mai.php">
+                    <i class="bi bi-ticket-perforated"></i>
+                    Quản lý khuyến mãi
                 </a>
             </li>
             <?php endif; ?>
