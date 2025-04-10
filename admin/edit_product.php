@@ -503,6 +503,7 @@ function getVariantQuantity($size_id, $color_id, $variants) {
             <?php
             
             include('includes/sidebar.php');
+            include('includes/header.php');
             ?>
 
             <!-- Main content -->

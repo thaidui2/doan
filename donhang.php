@@ -46,7 +46,11 @@ while ($row = $result->fetch_assoc()) {
     </style>
 </head>
 <body>
-    <?php include('includes/header.php'); ?>
+<?php 
+    require_once('includes/head.php');
+    require_once('includes/header.php');
+    
+    ?>
     
     <div class="container py-5">
         <h1 class="mb-4">Đơn hàng của tôi</h1>

@@ -35,7 +35,9 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
     
 
 <body>
-    <?php require_once('includes/header.php');
+    <?php 
+    require_once('includes/head.php');
+    require_once('includes/header.php');
     
     ?>
     
@@ -218,14 +220,10 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                             <div class="overlay-effect"></div>
                                         </a>
                                         <div class="product-action">
-                                            <button class="btn btn-light btn-sm rounded-circle" title="Yêu thích">
+                                            <button class="btn btn-light btn-sm rounded-circle wishlist-button" 
+                                                    data-product-id="<?php echo $row['id_sanpham']; ?>" 
+                                                    title="Thêm vào yêu thích">
                                                 <i class="bi bi-heart"></i>
-                                            </button>
-                                            <button class="btn btn-light btn-sm rounded-circle quick-view" data-id="<?php echo $row['id_sanpham']; ?>" title="Xem nhanh">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-light btn-sm rounded-circle add-to-cart" data-product-id="<?php echo $row['id_sanpham']; ?>" title="Thêm vào giỏ hàng">
-                                                <i class="bi bi-cart-plus"></i>
                                             </button>
                                         </div>
                                         <div class="card-body">
@@ -247,8 +245,8 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                                 <small class="text-decoration-line-through text-muted ms-2"><?php echo number_format($row['giagoc'], 0, ',', '.'); ?>₫</small>
                                                 <?php endif; ?>
                                             </div>
-                                        </div>
                                         
+                                        </div>
                                     </div>
                                 </div>
                         <?php
@@ -356,5 +354,3 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
     </main>
     
     <?php include('includes/footer.php'); ?>
-</body>
-</html>

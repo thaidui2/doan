@@ -29,7 +29,11 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
 </head>
 
 <body>
-    <?php require_once('includes/header.php'); ?>
+<?php 
+    require_once('includes/head.php');
+    require_once('includes/header.php');
+    
+    ?>
     
     <main>
         <!-- Banner Khuyến Mãi -->

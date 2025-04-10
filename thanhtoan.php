@@ -182,7 +182,11 @@ if ($buy_now) {
     </style>
 </head>
 <body>
-    <?php include('includes/header.php'); ?>
+<?php 
+    require_once('includes/head.php');
+    require_once('includes/header.php');
+    
+    ?>
     
     <div class="container-fluid py-5 bg-light">
         <div class="checkout-container py-3">

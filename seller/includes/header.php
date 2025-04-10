@@ -82,6 +82,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             background-color: #fff;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
+        .text-muted{
+            color:#fff !important;
+        }
     </style>
 </head>
 <body>

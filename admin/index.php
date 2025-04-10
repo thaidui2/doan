@@ -262,5 +262,5 @@ $recent_orders_query = $conn->query("
         </div>
     </div>
 </main>
-
+<script src="js/wishlist.js" defer></script>
 <?php include('includes/footer.php'); ?>

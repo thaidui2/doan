@@ -18,15 +18,40 @@ if(!empty($search)) {
     $param_types .= "ss";
 }
 
-$category = isset($_GET['category']) ? (int)$_GET['category'] : 0;
+// Lọc theo danh mục sản phẩm
+$category_id = null;
+if (isset($_GET['loai'])) {
+    $category_id = (int)$_GET['loai'];
+}
+// Nếu có tham số category, cũng xử lý như loai (để tương thích ngược)
+elseif (isset($_GET['category'])) {
+    $category_id = (int)$_GET['category'];
+}
+// Nếu có tham số id_loai, cũng xử lý tương tự
+elseif (isset($_GET['id_loai'])) {
+    $category_id = (int)$_GET['id_loai'];
+}
+
+// Nếu có category_id, thêm điều kiện vào câu truy vấn
+if ($category_id) {
+    // Thêm điều kiện WHERE vào câu SQL của bạn
+    $sql_conditions[] = "sp.id_loai = ?";
+    $param_types .= "i";
+    $params[] = $category_id;
+    
+    // Lấy tên danh mục để hiển thị
+    $cat_name_stmt = $conn->prepare("SELECT tenloai FROM loaisanpham WHERE id_loai = ?");
+    $cat_name_stmt->bind_param("i", $category_id);
+    $cat_name_stmt->execute();
+    $cat_result = $cat_name_stmt->get_result();
+    if ($cat_result->num_rows > 0) {
+        $category_info = $cat_result->fetch_assoc();
+        $page_title = "Sản phẩm " . $category_info['tenloai'];
+    }
+}
+
 $brand = isset($_GET['brand']) ? (int)$_GET['brand'] : 0;
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
-
-if($category > 0) {
-    $sql_conditions[] = "sp.id_loai = ?";
-    $params[] = $category;
-    $param_types .= "i";
-}
 
 if($brand > 0) {
     $sql_conditions[] = "sp.id_thuonghieu = ?";
@@ -34,13 +59,16 @@ if($brand > 0) {
     $param_types .= "i";
 }
 
-// Thay thế truy vấn hiện tại bằng truy vấn sử dụng donhang_chitiet
+// Cập nhật câu truy vấn SQL để lấy thêm thông tin đánh giá
+
 $sql = "SELECT sp.*, lsp.tenloai, th.tenthuonghieu,
         (SELECT COALESCE(SUM(dhct.soluong), 0)
          FROM donhang_chitiet dhct
          JOIN donhang dh ON dhct.id_donhang = dh.id_donhang
          WHERE dhct.id_sanpham = sp.id_sanpham
-         AND dh.trangthai >= 3) AS da_ban
+         AND dh.trangthai >= 3) AS da_ban,
+        (SELECT AVG(dg.diemdanhgia) FROM danhgia dg WHERE dg.id_sanpham = sp.id_sanpham) AS diem_trung_binh,
+        (SELECT COUNT(*) FROM danhgia dg WHERE dg.id_sanpham = sp.id_sanpham) AS soluong_danhgia
         FROM sanpham sp
         LEFT JOIN loaisanpham lsp ON sp.id_loai = lsp.id_loai
         LEFT JOIN thuonghieu th ON sp.id_thuonghieu = th.id_thuonghieu";
@@ -80,7 +108,7 @@ $offset = ($page - 1) * $items_per_page;
 
 // Lấy tổng số sản phẩm để tính toán phân trang
 $count_sql = "SELECT COUNT(*) as total FROM sanpham sp";
-if($category > 0) {
+if($category_id > 0) { // Thay đổi từ $category thành $category_id
     $count_sql .= " LEFT JOIN loaisanpham lsp ON sp.id_loai = lsp.id_loai";
 }
 if($brand > 0) {
@@ -119,6 +147,31 @@ $categories = $conn->query("SELECT * FROM loaisanpham WHERE trangthai = 1 ORDER 
 
 // Lấy danh sách thương hiệu
 $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY tenthuonghieu");
+
+if (!isset($category)) {
+    $category = [];
+    
+    // Nếu có tham số loại/category, lấy thông tin danh mục
+    if (isset($_GET['loai'])) {
+        $category_id = (int)$_GET['loai'];
+        $cat_query = $conn->prepare("SELECT * FROM loaisanpham WHERE id_loai = ?");
+        $cat_query->bind_param("i", $category_id);
+        $cat_query->execute();
+        $category_result = $cat_query->get_result();
+        if ($category_result->num_rows > 0) {
+            $category = $category_result->fetch_assoc();
+        }
+    } elseif (isset($_GET['category'])) {
+        $category_id = (int)$_GET['category'];
+        $cat_query = $conn->prepare("SELECT * FROM loaisanpham WHERE id_loai = ?");
+        $cat_query->bind_param("i", $category_id);
+        $cat_query->execute();
+        $category_result = $cat_query->get_result();
+        if ($category_result->num_rows > 0) {
+            $category = $category_result->fetch_assoc();
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -134,7 +187,11 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
     
 </head>
 <body>
-    <?php include('includes/header.php'); ?>
+<?php 
+    require_once('includes/head.php');
+    require_once('includes/header.php');
+    
+    ?>
     
     <!-- Thay đổi phần container chính -->
     <div class="container mt-4">
@@ -230,7 +287,7 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
                                 <label class="form-label">Danh mục</label>
                                 <div class="scrollable-list">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="category" id="cat-all" value="0" <?php echo $category == 0 ? 'checked' : ''; ?>>
+                                        <input class="form-check-input" type="radio" name="category" id="cat-all" value="0" <?php echo $category_id == 0 ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="cat-all">Tất cả danh mục</label>
                                     </div>
                                     
@@ -240,7 +297,7 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
                                     while($cat = $categories->fetch_assoc()): 
                                     ?>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="category" id="cat-<?php echo $cat['id_loai']; ?>" value="<?php echo $cat['id_loai']; ?>" <?php echo $category == $cat['id_loai'] ? 'checked' : ''; ?>>
+                                        <input class="form-check-input" type="radio" name="category" id="cat-<?php echo $cat['id_loai']; ?>" value="<?php echo $cat['id_loai']; ?>" <?php echo $category_id == $cat['id_loai'] ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="cat-<?php echo $cat['id_loai']; ?>">
                                             <?php echo htmlspecialchars($cat['tenloai']); ?>
                                         </label>
@@ -312,103 +369,87 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
                     
                     <div class="row g-3 grid-view" id="products-container">
                         <?php while($product = $products->fetch_assoc()): ?>
-                        <div class="col-6 col-md-4">
-                            <div class="card h-100 product-card">
-                                <!-- Discount Badge -->
-                                <?php if(!empty($product['giagoc']) && $product['giagoc'] > $product['gia']): ?>
-                                    <?php $discount = round(($product['giagoc'] - $product['gia']) / $product['giagoc'] * 100); ?>
-                                    <span class="badge-discount">-<?php echo $discount; ?>%</span>
-                                <?php endif; ?>
-                                
-                                <!-- Hot selling badge -->
-                                <?php if(!empty($product['da_ban']) && $product['da_ban'] >= 50): ?>
-                                    <span class="hot-selling">
-                                        <i class="bi bi-fire"></i> Bán chạy
-                                    </span>
-                                <?php endif; ?>
-                                
-                                <!-- Wishlist button -->
-                                
-                                
-                                <!-- Product image -->
-                                <a href="product-detail.php?id=<?php echo $product['id_sanpham']; ?>">
-                                    <?php if(!empty($product['hinhanh'])): ?>
-                                        <img src="uploads/products/<?php echo $product['hinhanh']; ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['tensanpham']); ?>">
-                                    <?php else: ?>
-                                        <img src="images/no-image.png" class="card-img-top" alt="No Image">
-                                    <?php endif; ?>
-                                </a>
-                                
-                                <!-- Product details -->
-                                <div class="card-body">
-                                    <!-- Thương hiệu nếu có -->
-                                    <?php if(!empty($product['tenthuonghieu'])): ?>
-                                        <div class="text-muted small mb-1"><?php echo htmlspecialchars($product['tenthuonghieu']); ?></div>
-                                    <?php endif; ?>
-                                    
-                                    <!-- Tên sản phẩm -->
-                                    <h6 class="card-title">
-                                        <a href="product-detail.php?id=<?php echo $product['id_sanpham']; ?>" class="text-decoration-none text-dark">
-                                            <?php echo htmlspecialchars($product['tensanpham']); ?>
-                                        </a>
-                                    </h6>
-                                    
-                                    <!-- Loại sản phẩm -->
-                                    <div class="text-muted small mb-2"><?php echo htmlspecialchars($product['tenloai'] ?? ''); ?></div>
-                                    
-                                    <!-- Mô tả ngắn (chỉ hiển thị trong list view) -->
-                                    <p class="product-description text-muted small mb-2">
-                                        <?php echo !empty($product['mota']) ? 
-                                            htmlspecialchars(substr($product['mota'], 0, 150)) . '...' : 
-                                            'Không có mô tả'; ?>
-                                    </p>
-                                    
-                                    <!-- Rating stars -->
-                                    <div class="rating mb-2">
-                                        <?php
-                                        $rating = isset($product['diemdanhgia_tb']) ? floatval($product['diemdanhgia_tb']) : 0;
-                                        $review_count = isset($product['soluong_danhgia']) ? intval($product['soluong_danhgia']) : 0;
-                                        
-                                        for ($i = 1; $i <= 5; $i++) {
-                                            if ($i <= $rating) {
-                                                echo '<i class="bi bi-star-fill"></i>';
-                                            } elseif ($i - $rating < 1 && $i - $rating > 0) {
-                                                echo '<i class="bi bi-star-half"></i>';
-                                            } else {
-                                                echo '<i class="bi bi-star"></i>';
-                                            }
-                                        }
-                                        
-                                        if ($review_count > 0) {
-                                            echo '<span class="review-count">(' . $review_count . ')</span>';
-                                        }
-                                        ?>
-                                    </div>
-                                    
-                                    <!-- Giá sản phẩm -->
-                                    <div class="price-section">
-                                        <div class="price-wrapper">
-                                            <span class="price-sale"><?php echo number_format($product['gia'], 0, ',', '.'); ?>₫</span>
-                                            <?php if(!empty($product['giagoc']) && $product['giagoc'] > $product['gia']): ?>
-                                                <span class="price-original"><?php echo number_format($product['giagoc'], 0, ',', '.'); ?>₫</span>
-                                            <?php endif; ?>
-                                        </div>
-                                        
-                                        <!-- Số lượng đã bán -->
-                                        <span class="badge bg-light text-dark small product-sold">
-                                            <?php if(!empty($product['da_ban']) && $product['da_ban'] > 0): ?>
-                                                Đã bán: <?php echo number_format($product['da_ban']); ?>
-                                            <?php else: ?>
-                                                Mới
-                                            <?php endif; ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Quick action overlay -->
-                                
-                            </div>
-                        </div>
+    <?php
+    // Tính phần trăm giảm giá
+    $discount_percent = 0;
+    if ($product['giagoc'] > 0 && $product['giagoc'] > $product['gia']) {
+        $discount_percent = round(100 - ($product['gia'] / $product['giagoc'] * 100));
+    }
+    
+    // Xử lý đường dẫn hình ảnh
+    if (!empty($product['hinhanh']) && file_exists('uploads/products/' . $product['hinhanh'])) {
+        $img_path = 'uploads/products/' . $product['hinhanh'];
+    } else {
+        // Kiểm tra hình ảnh từ bảng mausac_hinhanh
+        $img_stmt = $conn->prepare("SELECT hinhanh FROM mausac_hinhanh WHERE id_sanpham = ? LIMIT 1");
+        $img_stmt->bind_param("i", $product['id_sanpham']);
+        $img_stmt->execute();
+        $img_result = $img_stmt->get_result();
+        
+        if ($img_result->num_rows > 0) {
+            $img_row = $img_result->fetch_assoc();
+            if (file_exists('uploads/colors/' . $img_row['hinhanh'])) {
+                $img_path = 'uploads/colors/' . $img_row['hinhanh'];
+            } else {
+                $img_path = 'images/no-image.jpg';
+            }
+        } else {
+            $img_path = 'images/no-image.jpg';
+        }
+    }
+    ?>
+    <div class="col-6 col-md-4">
+    <div class="card product-card h-100">
+        <div class="product-badge-container">
+            <?php if ($discount_percent > 0): ?>
+            <div class="product-badge bg-danger text-white">
+                <i class="bi bi-tags-fill me-1"></i>-<?php echo $discount_percent; ?>%
+            </div>
+            <?php endif; ?>
+            <?php if ($product['da_ban'] > 10): ?>
+            <div class="product-badge bg-primary text-white">
+                <i class="bi bi-star-fill me-1"></i>HOT
+            </div>
+            <?php endif; ?>
+        </div>
+        <a href="product-detail.php?id=<?php echo $product['id_sanpham']; ?>" class="product-img-container">
+            <img src="<?php echo $img_path; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($product['tensanpham']); ?>" 
+                 onerror="this.onerror=null; this.src='images/no-image.jpg';">
+            <div class="overlay-effect"></div>
+        </a>
+        <div class="product-action">
+            <button class="btn btn-light btn-sm rounded-circle wishlist-button" 
+                    data-product-id="<?php echo $product['id_sanpham']; ?>" 
+                    title="Thêm vào yêu thích">
+                <i class="bi bi-heart"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="product-category"><?php echo htmlspecialchars($product['tenloai']); ?></div>
+            <h5 class="card-title product-title">
+                <a href="product-detail.php?id=<?php echo $product['id_sanpham']; ?>" class="text-decoration-none text-dark">
+                    <?php echo htmlspecialchars($product['tensanpham']); ?>
+                </a>
+            </h5>
+            <div class="rating">
+                <?php 
+                // Lấy điểm rating nếu có
+                $rating = isset($product['diem_trung_binh']) ? round($product['diem_trung_binh']) : 0;
+                for ($i = 1; $i <= 5; $i++): 
+                ?>
+                    <i class="bi bi-star<?php echo ($i <= $rating) ? '-fill' : ''; ?> text-warning"></i>
+                <?php endfor; ?>
+                <span class="ms-1 text-muted small">(<?php echo $product['soluong_danhgia'] ?? 0; ?>)</span>
+            </div>
+            <div class="price-wrapper">
+                <span class="text-danger fw-bold"><?php echo number_format($product['gia'], 0, ',', '.'); ?>₫</span>
+                <?php if ($product['giagoc'] > 0 && $product['giagoc'] > $product['gia']): ?>
+                <small class="text-decoration-line-through text-muted ms-2"><?php echo number_format($product['giagoc'], 0, ',', '.'); ?>₫</small>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
                         <?php endwhile; ?>
                     </div>
                     
@@ -417,7 +458,7 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
                     <nav class="mt-4" aria-label="Page navigation">
                         <ul class="pagination justify-content-center">
                             <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
-                                <a class="page-link" href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?>" aria-label="Previous">
+                                <a class="page-link" href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category_id; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?>" aria-label="Previous">
                                     <i class="bi bi-chevron-left"></i>
                                 </a>
                             </li>
@@ -436,7 +477,7 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
                             
                             // Hiển thị "..." và trang đầu tiên nếu cần
                             if ($start_page > 1) {
-                                echo '<li class="page-item"><a class="page-link" href="?page=1&search=' . urlencode($search) . '&category=' . $category . '&brand=' . $brand . '&sort=' . $sort . '">1</a></li>';
+                                echo '<li class="page-item"><a class="page-link" href="?page=1&search=' . urlencode($search) . '&category=' . $category_id . '&brand=' . $brand . '&sort=' . $sort . '">1</a></li>';
                                 if ($start_page > 2) {
                                     echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
                                 }
@@ -444,7 +485,7 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
                             
                             // Hiển thị các trang giữa
                             for ($i = $start_page; $i <= $end_page; $i++) {
-                                echo '<li class="page-item ' . ($i == $page ? 'active' : '') . '"><a class="page-link" href="?page=' . $i . '&search=' . urlencode($search) . '&category=' . $category . '&brand=' . $brand . '&sort=' . $sort . '">' . $i . '</a></li>';
+                                echo '<li class="page-item ' . ($i == $page ? 'active' : '') . '"><a class="page-link" href="?page=' . $i . '&search=' . urlencode($search) . '&category=' . $category_id . '&brand=' . $brand . '&sort=' . $sort . '">' . $i . '</a></li>';
                             }
                             
                             // Hiển thị "..." và trang cuối cùng nếu cần
@@ -452,12 +493,12 @@ $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY te
                                 if ($end_page < $total_pages - 1) {
                                     echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
                                 }
-                                echo '<li class="page-item"><a class="page-link" href="?page=' . $total_pages . '&search=' . urlencode($search) . '&category=' . $category . '&brand=' . $brand . '&sort=' . $sort . '">' . $total_pages . '</a></li>';
+                                echo '<li class="page-item"><a class="page-link" href="?page=' . $total_pages . '&search=' . urlencode($search) . '&category=' . $category_id . '&brand=' . $brand . '&sort=' . $sort . '">' . $total_pages . '</a></li>';
                             }
                             ?>
                             
                             <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
-                                <a class="page-link" href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?>" aria-label="Next">
+                                <a class="page-link" href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category_id; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?>" aria-label="Next">
                                     <i class="bi bi-chevron-right"></i>
                                 </a>
                             </li>

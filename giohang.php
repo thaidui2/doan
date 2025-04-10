@@ -289,7 +289,11 @@ while ($item = $cart_items_result->fetch_assoc()) {
     </style>
 </head>
 <body>
-    <?php include('includes/header.php'); ?>
+<?php 
+    require_once('includes/head.php');
+    require_once('includes/header.php');
+    
+    ?>
     
     <div class="container mt-5 mb-5">
         <h2 class="mb-4">Giỏ hàng của bạn</h2>

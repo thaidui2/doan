@@ -122,7 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <!-- Include header -->
-    <?php include('includes/header.php'); ?>
+    <?php 
+    require_once('includes/head.php');
+    require_once('includes/header.php');
+    
+    ?>
 <!-- Hero Banner -->
 <div class="contact-hero">
     <div class="container">

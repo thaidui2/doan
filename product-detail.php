@@ -512,6 +512,9 @@ if (!empty($product['hinhanh_phu'])) {
                                 Mua ngay
                             </button>
                         </div>
+                        
+                        <!-- Thêm vào phần thông tin sản phẩm -->
+                        
                     </div>
                 </div>
             </div>

@@ -424,3 +424,60 @@ body::-webkit-scrollbar {
   flex: 1;
   font-size: 14px;
 }
+
+/* Tùy chỉnh nút yêu thích */
+.wishlist-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  border: 1px solid #dee2e6;
+  z-index: 10;
+}
+
+.wishlist-button:hover {
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+}
+
+.wishlist-button.active {
+  background-color: #fff0f3;
+  border-color: #ff6b88;
+}
+
+.wishlist-button.active i {
+  color: #ff3e66;
+}
+
+/* Thêm vào cuối file */
+.wishlist-button.loading {
+  position: relative;
+}
+
+.wishlist-button.loading i {
+  opacity: 0;
+}
+
+.wishlist-button.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: calc(50% - 8px);
+  left: calc(50% - 8px);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #007bff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

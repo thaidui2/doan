@@ -11,6 +11,13 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/index.css">
     
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Wishlist JavaScript -->
+    <script src="<?php echo isset($path_prefix) ? $path_prefix : ''; ?>js/wishlist.js" defer></script>
 </head>
 <body></body>
