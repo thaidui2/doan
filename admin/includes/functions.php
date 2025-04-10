@@ -70,24 +70,47 @@ function paginationLinks($current_page, $total_pages, $url_params = '') {
  * @return bool True nếu có quyền, False nếu không
  */
 function hasPermission($permission_code) {
-    // Kiểm tra ID admin đặc biệt (từ admin_helpers.php)
-    if (isset($_SESSION['admin_id']) && $_SESSION['admin_id'] == 6) {
-        return true;
+    global $conn;
+    
+    // Debug: Log để kiểm tra
+    error_log("Đang kiểm tra quyền: " . $permission_code);
+    
+    if (!isset($_SESSION['admin_id'])) {
+        return false;
     }
     
-    // Kiểm tra cấp bậc admin (từ permissions.php và admin_helpers.php)
-    if (isset($_SESSION['admin_level']) && $_SESSION['admin_level'] >= 2) {
-        return true;
+    // Super Admin luôn có tất cả quyền
+    $admin_id = $_SESSION['admin_id'];
+    $check_admin = $conn->prepare("SELECT cap_bac FROM admin WHERE id_admin = ?");
+    $check_admin->bind_param("i", $admin_id);
+    $check_admin->execute();
+    $admin_result = $check_admin->get_result();
+    
+    if ($admin_result->num_rows > 0) {
+        $admin_data = $admin_result->fetch_assoc();
+        if ($admin_data['cap_bac'] == 2) { // Cấp 2 là Super Admin
+            return true;
+        }
     }
     
-    // Kiểm tra quyền từ session (từ admin_helpers.php)
-    if (isset($_SESSION['admin_permissions']) && is_array($_SESSION['admin_permissions'])) {
-        return in_array($permission_code, $_SESSION['admin_permissions']);
-    }
+    // Kiểm tra quyền cụ thể từ database
+    $query = "
+        SELECT p.ma_permission 
+        FROM permissions p
+        JOIN role_permissions rp ON p.id_permission = rp.id_permission
+        JOIN admin_roles ar ON rp.id_role = ar.id_role
+        WHERE ar.id_admin = ? AND p.ma_permission = ?
+    ";
     
-    // Kiểm tra quyền từ database (từ permissions.php)
-    $permissions = getAdminPermissions();
-    return in_array($permission_code, $permissions);
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("is", $admin_id, $permission_code);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    // Debug: Log để kiểm tra kết quả
+    error_log("Kết quả kiểm tra quyền " . $permission_code . ": " . ($result->num_rows > 0 ? "Có quyền" : "Không có quyền"));
+    
+    return $result->num_rows > 0;
 }
 
 /**

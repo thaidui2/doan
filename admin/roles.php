@@ -165,6 +165,14 @@ if (isset($_POST['reset_level']) && $_SESSION['admin_level'] >= 2) {
                             <i class="bi bi-check-circle-fill text-success"></i>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Quản lý khuyến mãi</span>
+                            <?php if (hasPermission('promo_view')): ?>
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            <?php else: ?>
+                                <i class="bi bi-x-circle-fill text-danger"></i>
+                            <?php endif; ?>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Quản lý admin khác</span>
                             <i class="bi bi-x-circle-fill text-danger"></i>
                         </li>
@@ -192,10 +200,16 @@ if (isset($_POST['reset_level']) && $_SESSION['admin_level'] >= 2) {
                         <?php endif; ?>
                     </ul>
                 </div>
-                <div class="card-footer bg-white">
+                <div class="card-footer bg-white d-flex justify-content-between">
                     <a href="?level=<?php echo $level; ?>" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-people-fill"></i> Xem danh sách thành viên
                     </a>
+                    
+                    <?php if ($level == 1): // Chỉ hiển thị cho cấp bậc Quản lý ?>
+                    <a href="add_promo_permissions.php" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-ticket-perforated me-1"></i> Cấp quyền khuyến mãi
+                    </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

@@ -1,4 +1,11 @@
 <?php
+// Thêm đoạn này vào đầu file, trước mọi output
+ob_start();
+
+// Thêm dòng này để debug
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Thiết lập tiêu đề trang
 $page_title = 'Quản lý khuyến mãi';
 
@@ -7,6 +14,45 @@ include('includes/header.php');
 
 // Include database connection
 include('../config/config.php');
+
+// Debug: Hiển thị thông tin vai trò và quyền của admin đang đăng nhập
+$admin_id = $_SESSION['admin_id'];
+$roles_query = $conn->prepare("
+    SELECT r.* FROM roles r 
+    JOIN admin_roles ar ON r.id_role = ar.id_role 
+    WHERE ar.id_admin = ?
+");
+$roles_query->bind_param("i", $admin_id);
+$roles_query->execute();
+$roles_result = $roles_query->get_result();
+$admin_roles = [];
+while ($role = $roles_result->fetch_assoc()) {
+    $admin_roles[] = $role;
+}
+
+$permissions_query = $conn->prepare("
+    SELECT p.* FROM permissions p
+    JOIN role_permissions rp ON p.id_permission = rp.id_permission
+    JOIN admin_roles ar ON rp.id_role = ar.id_role
+    WHERE ar.id_admin = ? AND p.nhom_permission = 'promos'
+");
+$permissions_query->bind_param("i", $admin_id);
+$permissions_query->execute();
+$permissions_result = $permissions_query->get_result();
+$admin_permissions = [];
+while ($perm = $permissions_result->fetch_assoc()) {
+    $admin_permissions[] = $perm;
+}
+
+// Lưu debug info vào session để hiển thị
+$_SESSION['debug_info'] = [
+    'roles' => $admin_roles,
+    'permissions' => $admin_permissions,
+    'can_add' => hasPermission('promo_add'),
+    'can_edit' => hasPermission('promo_edit'),
+    'can_delete' => hasPermission('promo_delete'),
+    'can_view' => hasPermission('promo_view')
+];
 
 // Xử lý phân trang
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -63,7 +109,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'toggle_status' && isset($_GET
     // Kiểm tra quyền
     if (!hasPermission('promo_edit')) {
         $_SESSION['error_message'] = "Bạn không có quyền thực hiện hành động này!";
-        header('Location: khuyen-mai.php');
+        echo '<script>window.location.href = "khuyen-mai.php";</script>';
         exit();
     }
     
@@ -74,30 +120,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'toggle_status' && isset($_GET
     $result = $status_query->get_result();
     
     if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $current_status = $row['trang_thai'];
+        $promo = $result->fetch_assoc();
+        $new_status = $promo['trang_thai'] == 1 ? 0 : 1;
         
-        // Đảo ngược trạng thái
-        $new_status = $current_status ? 0 : 1;
-        
-        // Cập nhật trạng thái mới
-        $update_query = $conn->prepare("UPDATE khuyen_mai SET trang_thai = ? WHERE id = ?");
+        // Cập nhật trạng thái
+        $update_query = $conn->prepare("UPDATE khuyen_mai SET trang_thai = ?, ngay_capnhat = NOW() WHERE id = ?");
         $update_query->bind_param("ii", $new_status, $promo_id);
         
         if ($update_query->execute()) {
-            // Ghi log hoạt động
-            $action = $new_status ? 'Kích hoạt' : 'Vô hiệu hóa';
-            logAdminActivity($conn, $_SESSION['admin_id'], 'toggle_status', 'promo', $promo_id, $action . ' mã giảm giá #' . $promo_id);
-            
-            $_SESSION['success_message'] = "Đã " . ($new_status ? "kích hoạt" : "vô hiệu hóa") . " mã giảm giá thành công!";
+            $_SESSION['success_message'] = "Đã " . ($new_status == 1 ? "kích hoạt" : "vô hiệu hóa") . " mã giảm giá thành công!";
         } else {
-            $_SESSION['error_message'] = "Có lỗi xảy ra: " . $conn->error;
+            $_SESSION['error_message'] = "Có lỗi xảy ra khi cập nhật trạng thái!";
         }
     } else {
         $_SESSION['error_message'] = "Không tìm thấy mã giảm giá!";
     }
     
-    header('Location: khuyen-mai.php');
+    // Thay hàm header() bằng JavaScript redirect
+    echo '<script>window.location.href = "khuyen-mai.php";</script>';
     exit();
 }
 
@@ -469,4 +509,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 <?php
 // Include footer
 include('includes/footer.php');
+
+// Thêm dòng này ở cuối file, sau tất cả các output
+ob_end_flush();
 ?>

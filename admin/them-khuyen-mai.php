@@ -1,4 +1,7 @@
 <?php
+// Thêm đoạn code này ở đầu file, trước mọi output (kể cả whitespace)
+ob_start();
+
 // Thiết lập tiêu đề trang
 $page_title = "Thêm Mã Giảm Giá Mới";
 
@@ -212,15 +215,27 @@ $products = [];
 while ($product = $products_query->fetch_assoc()) {
     $products[] = $product;
 }
+
+// Thêm sidebar vào đây
+include('includes/sidebar.php');
 ?>
 
-<div class="container-fluid">
-    <h1 class="h3 mb-2 text-gray-800">Thêm Mã Giảm Giá Mới</h1>
+<!-- Main content -->
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Thêm Mã Giảm Giá Mới</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="khuyen-mai.php" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+    
     <p class="mb-4">Tạo mã giảm giá mới cho khách hàng</p>
     
     <?php if (!empty($errors)): ?>
     <div class="alert alert-danger">
-        <strong><i class="fas fa-exclamation-circle"></i> Có lỗi xảy ra:</strong>
+        <strong><i class="bi bi-exclamation-circle me-2"></i> Có lỗi xảy ra:</strong>
         <ul class="mb-0 mt-2">
             <?php foreach ($errors as $error): ?>
             <li><?php echo $error; ?></li>
@@ -451,3 +466,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php include('includes/footer.php'); ?>
+
+<?php
+// Đặt dòng này ở cuối file
+ob_end_flush();
+?>
