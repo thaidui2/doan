@@ -514,3 +514,26 @@
   transform: scale(1.03);
   transition: transform 0.3s ease;
 }
+/* Thêm vào phần <style> trong <head> */
+.shop-info-container {
+  padding: 15px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.shop-info {
+  display: flex;
+  align-items: center;
+}
+
+.shop-avatar img {
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+
+.default-avatar {
+  font-size: 1.5rem;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+}

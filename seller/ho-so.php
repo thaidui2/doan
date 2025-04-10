@@ -1,4 +1,7 @@
 <?php
+// Thêm dòng này vào đầu file, trước bất kỳ đầu ra nào
+ob_start();
+
 // Thiết lập tiêu đề trang
 $page_title = "Hồ Sơ Shop";
 
@@ -97,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_shop'])) {
                 $seller = $seller_info->get_result()->fetch_assoc();
                 
                 // Redirect để tránh gửi lại form khi refresh
-                header("Location: ho-so.php");
+                echo "<script>window.location.href='ho-so.php';</script>";
                 exit();
             } else {
                 $errors[] = "Có lỗi xảy ra khi cập nhật thông tin shop: " . $conn->error;

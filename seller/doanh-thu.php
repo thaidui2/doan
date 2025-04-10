@@ -745,10 +745,20 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // Xuất Excel
-    document.querySelector(".export-excel").addEventListener("click", function() {
-        window.location.href = "export/export-revenue.php?start_date=' . $start_date . '&end_date=' . $end_date . '&category=' . $category . '";
-    });
+    // Xuất Excel với console log để debug
+    const exportBtn = document.querySelector(".export-excel");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            // Lấy giá trị trực tiếp từ form
+            const startDate = document.getElementById("start_date").value;
+            const endDate = document.getElementById("end_date").value;
+            const categoryValue = document.getElementById("category").value;
+            
+            console.log("Đang xuất Excel...");
+            window.location.href = `export/export-revenue.php?start_date=${startDate}&end_date=${endDate}&category=${categoryValue}`;
+        });
+    }
 });
 </script>
 ';

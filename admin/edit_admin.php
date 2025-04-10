@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // Set page title
 $page_title = 'Chỉnh sửa nhân viên';
 
@@ -61,7 +62,7 @@ while ($role = $admin_roles_result->fetch_assoc()) {
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $taikhoan = trim($_POST['taikhoan']);  // Không phải ten_dang_nhap
+    $taikhoan = $admin['taikhoan'];  // Lấy từ dữ liệu admin đã được truy vấn
     $ten_admin = trim($_POST['ten_admin']); // Không phải ho_ten
     $matkhau = $_POST['matkhau'];           // Không phải mat_khau
     $email = trim($_POST['email']);
@@ -151,16 +152,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Build and execute update query
             $update_query = "UPDATE admin SET ten_admin = ?, email = ?, cap_bac = ?, trang_thai = ? WHERE id_admin = ?";
-            $update_stmt = $conn->prepare($update_query);
-            $update_stmt->bind_param($query_types, ...$query_params);
+$update_stmt = $conn->prepare($update_query);
+$update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $admin_id);
             $update_stmt->execute();
-            
-            // Insert new admin
-            $insert_stmt = $conn->prepare("
-                INSERT INTO admin (taikhoan, matkhau, ten_admin, email, cap_bac, trang_thai) 
-                VALUES (?, ?, ?, ?, ?, ?)
-            ");
-            $insert_stmt->bind_param("ssssis", $taikhoan, $hashed_password, $ten_admin, $email, $cap_bac, $trang_thai);
             
             // Update roles
             
@@ -210,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $action = 'edit';
             $target_type = 'admin'; // Đặt chuỗi vào biến
-            $username_display = isset($admin['taikhoan']) ? $admin['taikhoan'] : 'Unknown';
+            $username_display = $admin['taikhoan'] ?? 'Unknown';
             $details = "Chỉnh sửa thông tin admin #$admin_id ($username_display) bởi $admin_name";
             $ip = $_SERVER['REMOTE_ADDR'];
             
@@ -232,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             $_SESSION['success_message'] = 'Cập nhật thông tin nhân viên thành công!';
-            header("Location: view_admin.php?id=$admin_id");
+            echo "<script>window.location.href='view_admin.php?id=$admin_id';</script>";
             exit();
             
         } catch (Exception $e) {
