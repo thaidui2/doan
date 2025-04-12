@@ -401,4 +401,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Đặt hàm getSelectedAddressData() trong window để có thể truy cập từ bên ngoài
   window.getSelectedAddressData = getSelectedAddressData;
+
+  // Thêm vào cuối file
+  function populateAddressData(provinceId, districtId, wardId) {
+    if (provinceId) {
+      document.getElementById("province").value = provinceId;
+      // Trigger change event để load districts
+      const event = new Event("change");
+      document.getElementById("province").dispatchEvent(event);
+
+      // Set timeout để đợi districts load xong
+      setTimeout(() => {
+        if (districtId) {
+          document.getElementById("district").value = districtId;
+          document.getElementById("district").dispatchEvent(event);
+
+          // Set timeout để đợi wards load xong
+          setTimeout(() => {
+            if (wardId) {
+              document.getElementById("ward").value = wardId;
+              document.getElementById("ward").dispatchEvent(event);
+            }
+          }, 500);
+        }
+      }, 500);
+    }
+  }
+
+  // Expose to global scope
+  window.populateAddressData = populateAddressData;
 });

@@ -33,7 +33,7 @@ $result = $stmt->execute();
 
 if ($result) {
     // Thêm vào lịch sử đơn hàng nếu có bảng lịch sử
-    // Ví dụ: insertOrderHistory($conn, $order_id, $status, $_SESSION['admin_id'], '');
+    
     
     echo json_encode(['success' => true, 'message' => 'Cập nhật trạng thái thành công.']);
 } else {

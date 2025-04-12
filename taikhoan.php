@@ -485,7 +485,7 @@ $page_title = "Tài khoản của tôi";
                                                         </div>
                                                     </div>
                                                     <div class="card-footer bg-white">
-                                                        <a href="order-detail.php?id=<?php echo $order['id_donhang']; ?>" class="btn btn-outline-primary btn-sm w-100">
+                                                        <a href=don-hang-chi-tiet.php?id=<?php echo $order['id_donhang']; ?>" class="btn btn-outline-primary btn-sm w-100">
                                                             Xem chi tiết
                                                         </a>
                                                     </div>

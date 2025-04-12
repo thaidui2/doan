@@ -305,9 +305,7 @@ while ($category = $categories_query->fetch_assoc()) {
                             <a href="chinh-sua-san-pham.php?id=<?php echo $product['id_sanpham']; ?>" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-outline-danger delete-product" data-id="<?php echo $product['id_sanpham']; ?>">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            
                         </div>
                     </td>
                 </tr>

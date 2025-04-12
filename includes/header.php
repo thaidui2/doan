@@ -504,4 +504,15 @@ $current_page = basename($_SERVER['PHP_SELF']);
         min-width: 300px;
     }
 }
+
+/* Thêm vào phần <head> của trang */
+@keyframes cartUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.5); background-color: #dc3545; }
+    100% { transform: scale(1); }
+}
+
+.cart-update-animation {
+    animation: cartUpdate 0.5s ease-in-out;
+}
 </style>

@@ -1156,16 +1156,128 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Hàm kiểm tra lựa chọn
     function validateSelection() {
-        // Code kiểm tra size, màu sắc, số lượng...
-        // Điền theo logic hiện tại của bạn
+        const selectedSize = document.querySelector('.size-btn.active');
+        const selectedColor = document.querySelector('.color-option.active');
+        const quantity = document.getElementById('quantity').value;
+        
+        // Kiểm tra đã chọn size chưa
+        if (!selectedSize) {
+            showToast('Vui lòng chọn kích thước', 'warning');
+            return null;
+        }
+        
+        // Kiểm tra đã chọn màu chưa
+        if (!selectedColor) {
+            showToast('Vui lòng chọn màu sắc', 'warning');
+            return null;
+        }
+        
+        // Kiểm tra số lượng hợp lệ
+        if (!quantity || parseInt(quantity) < 1) {
+            showToast('Vui lòng chọn số lượng hợp lệ', 'warning');
+            return null;
+        }
+        
+        // Trả về đối tượng với các thông tin đã chọn
         return {
             productId: <?php echo $product_id; ?>,
-            quantity: document.getElementById('quantity').value,
-            sizeId: document.querySelector('.size-btn.active')?.dataset.sizeId,
-            colorId: document.querySelector('.color-option.active')?.dataset.colorId
+            quantity: quantity,
+            sizeId: selectedSize.dataset.sizeId,
+            colorId: selectedColor.dataset.colorId
         };
     }
+
+    // Thêm đoạn sau trong phần <script> hiện có
+    const addToCartBtn = document.getElementById('addToCartBtn');
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', function() {
+            console.log('Add to cart button clicked');
+            const selection = validateSelection();
+            if (!selection) {
+                return; // Hàm validateSelection đã hiển thị thông báo lỗi
+            }
+            
+            // Hiển thị spinner hoặc thông báo đang xử lý
+            addToCartBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+            addToCartBtn.disabled = true;
+            
+            // Gửi dữ liệu tới server
+            fetch('ajax/them_vao_gio.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(selection)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response:', data);
+                
+                // Khôi phục nút
+                addToCartBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
+                addToCartBtn.disabled = false;
+                
+                if (data.success) {
+                    // Cập nhật số lượng trong giỏ hàng hiển thị trên header
+                    const cartCountElement = document.getElementById('cartCount');
+                    if (cartCountElement && data.cartCount) {
+                        cartCountElement.textContent = data.cartCount;
+                        // Hiệu ứng nhấp nháy
+                        cartCountElement.classList.add('cart-update-animation');
+                        setTimeout(() => {
+                            cartCountElement.classList.remove('cart-update-animation');
+                        }, 1000);
+                    }
+                    
+                    // Hiển thị thông báo thành công
+                    showToast(data.message, 'success');
+                } else {
+                    // Hiển thị thông báo lỗi
+                    showToast(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addToCartBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
+                addToCartBtn.disabled = false;
+                showToast('Lỗi kết nối đến máy chủ', 'danger');
+            });
+        });
+    }
 });
+
+// Kiểm tra nếu chưa có hàm showToast
+if (typeof showToast !== 'function') {
+    function showToast(message, type = 'info') {
+        // Kiểm tra nếu chưa có container
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '1050';
+            document.body.appendChild(toastContainer);
+        }
+        
+        const toastId = 'toast-' + Date.now();
+        const toastHTML = `
+            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}">
+                <div class="toast-header">
+                    <strong class="me-auto">Thông báo</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body ${type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info'} text-white">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
+        toast.show();
+    }
+}
 </script>
 
 <!-- Thêm container cho hiển thị toast message -->

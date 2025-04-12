@@ -87,10 +87,6 @@ $result = $conn->query($query);
         background-color: rgba(0, 0, 0, 0.02) !important;
     }
     
-    .table tr.seller-details-row:hover {
-        background-color: rgba(0, 0, 0, 0.02) !important;
-    }
-    
     /* Card styling */
     .card {
         transition: all 0.3s ease;
@@ -399,6 +395,51 @@ $result = $conn->query($query);
                                         </div>
                                     </td>
                                 </tr>
+                                <?php if ($customer['loai_user'] == 1): ?>
+                                <tr id="seller-details-<?php echo $customer['id_user']; ?>" class="seller-details-row" style="display: none;">
+                                    <td colspan="8" class="seller-details">
+                                        <div class="card border-0 shadow-sm mb-0">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Thông tin cửa hàng</h5>
+                                                <?php
+                                                // Lấy thông tin chi tiết cửa hàng
+                                                $shop_query = $conn->prepare("SELECT * FROM thongtin_shop WHERE id_nguoiban = ?");
+                                                $shop_query->bind_param("i", $customer['id_user']);
+                                                $shop_query->execute();
+                                                $shop_info = $shop_query->get_result()->fetch_assoc();
+                                                ?>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p><strong>Tên shop:</strong> <?php echo isset($shop_info['ten_shop']) ? htmlspecialchars($shop_info['ten_shop']) : 'Chưa cập nhật'; ?></p>
+                                                        <p><strong>Ngày trở thành người bán:</strong> <?php echo isset($customer['ngay_tro_thanh_nguoi_ban']) ? date('d/m/Y', strtotime($customer['ngay_tro_thanh_nguoi_ban'])) : 'Chưa cập nhật'; ?></p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p><strong>Tổng sản phẩm:</strong> <?php echo $customer['so_san_pham']; ?></p>
+                                                        <p><strong>Trạng thái shop:</strong> 
+                                                            <?php if (isset($shop_info['trang_thai']) && $shop_info['trang_thai'] == 1): ?>
+                                                                <span class="badge bg-success">Hoạt động</span>
+                                                            <?php else: ?>
+                                                                <span class="badge bg-secondary">Chưa hoạt động</span>
+                                                            <?php endif; ?>
+                                                        </p>
+                                                    </div>
+                                                    <div class="col-12 mt-2">
+                                                        <p><strong>Mô tả:</strong> <?php echo isset($shop_info['mo_ta']) ? htmlspecialchars($shop_info['mo_ta']) : 'Chưa cập nhật'; ?></p>
+                                                    </div>
+                                                    <div class="col-12 mt-2">
+                                                        <a href="seller_products.php?seller_id=<?php echo $customer['id_user']; ?>" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-box-seam"></i> Xem tất cả sản phẩm
+                                                        </a>
+                                                        <a href="edit_shop.php?id=<?php echo $customer['id_user']; ?>" class="btn btn-sm btn-outline-dark">
+                                                            <i class="bi bi-pencil"></i> Chỉnh sửa thông tin shop
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endif; ?>
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
@@ -525,45 +566,91 @@ $result = $conn->query($query);
 </div>
 
 <?php 
-// JavaScript for the page
+// Thay thế đoạn JavaScript ở cuối file (dòng ~656+)
 $page_specific_js = '
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Code khác...
-        
-        // Xử lý nút hiển thị chi tiết người bán
-        document.querySelectorAll(\'.toggle-seller-details\').forEach(button => {
-            button.addEventListener(\'click\', function() {
-                const sellerId = this.getAttribute(\'data-id\');
-                const detailsRow = document.getElementById(`seller-details-${sellerId}`);
-                
-                if (detailsRow.style.display === \'none\' || detailsRow.style.display === \'\') {
-                    // Đóng tất cả các hàng chi tiết đang mở
-                    document.querySelectorAll(\'.seller-details-row\').forEach(row => {
-                        row.style.display = \'none\';
-                    });
-                    
-                    // Đặt lại các nút về trạng thái ban đầu
-                    document.querySelectorAll(\'.toggle-seller-details\').forEach(btn => {
-                        btn.classList.remove(\'btn-info\');
-                        btn.classList.add(\'btn-outline-info\');
-                        btn.innerHTML = \'<i class="bi bi-shop"></i> Chi tiết shop\';
-                    });
-                    
-                    // Hiển thị hàng được chọn
-                    detailsRow.style.display = \'table-row\';
-                    this.classList.remove(\'btn-outline-info\');
-                    this.classList.add(\'btn-info\');
-                    this.innerHTML = \'<i class="bi bi-dash-circle"></i> Đóng\';
-                } else {
-                    detailsRow.style.display = \'none\';
-                    this.classList.remove(\'btn-info\');
-                    this.classList.add(\'btn-outline-info\');
-                    this.innerHTML = \'<i class="bi bi-shop"></i> Chi tiết shop\';
+// Hàm tự triển khai dropdown khi bootstrap không hoạt động
+function setupCustomDropdowns() {
+    document.querySelectorAll(".dropdown-toggle").forEach(function(dropdownToggle) {
+        dropdownToggle.addEventListener("click", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Đóng tất cả các dropdown đang mở
+            document.querySelectorAll(".dropdown-menu.show").forEach(function(openMenu) {
+                if (openMenu !== this.nextElementSibling) {
+                    openMenu.classList.remove("show");
                 }
             });
+            
+            // Mở/đóng dropdown hiện tại
+            const dropdownMenu = this.nextElementSibling;
+            dropdownMenu.classList.toggle("show");
+            
+            // Thêm CSS cần thiết cho dropdown menu
+            if (dropdownMenu.classList.contains("show")) {
+                dropdownMenu.style.position = "absolute";
+                dropdownMenu.style.inset = "0px 0px auto auto";
+                dropdownMenu.style.margin = "0px";
+                dropdownMenu.style.transform = "translate3d(-1px, 41px, 0px)";
+            }
         });
     });
+    
+    // Đóng dropdown khi click ra ngoài
+    document.addEventListener("click", function(e) {
+        if (!e.target.matches(".dropdown-toggle") && !e.target.closest(".dropdown-menu")) {
+            document.querySelectorAll(".dropdown-menu.show").forEach(function(menu) {
+                menu.classList.remove("show");
+            });
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Thử khởi tạo dropdown bằng Bootstrap
+    if (typeof bootstrap !== "undefined" && typeof bootstrap.Dropdown !== "undefined") {
+        try {
+            var dropdownElementList = [].slice.call(document.querySelectorAll(".dropdown-toggle"));
+            var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl);
+            });
+            console.log("Bootstrap Dropdown đã được khởi tạo");
+        } catch (error) {
+            console.error("Lỗi khi khởi tạo Bootstrap Dropdown:", error);
+            // Nếu bootstrap gặp lỗi, dùng phương pháp thay thế
+            setupCustomDropdowns();
+        }
+    } else {
+        console.warn("Bootstrap không được tìm thấy, sử dụng dropdown tùy chỉnh");
+        setupCustomDropdowns();
+    }
+    
+    // Code xử lý các nút và chức năng khác giữ nguyên
+    document.querySelectorAll(".toggle-seller-details").forEach(button => {
+        button.addEventListener("click", function() {
+            const sellerId = this.getAttribute("data-id");
+            const detailsRow = document.getElementById(`seller-details-${sellerId}`);
+            
+            if (detailsRow) {
+                if (detailsRow.style.display === "none" || detailsRow.style.display === "") {
+                    detailsRow.style.display = "table-row";
+                    this.innerHTML = \'<i class="bi bi-dash-circle"></i> Ẩn chi tiết\';
+                    this.classList.replace("btn-outline-info", "btn-info");
+                } else {
+                    detailsRow.style.display = "none";
+                    this.innerHTML = \'<i class="bi bi-shop"></i> Chi tiết shop\';
+                    this.classList.replace("btn-info", "btn-outline-info");
+                }
+            }
+        });
+    });
+    
+    // Phần còn lại giữ nguyên
+    document.querySelectorAll(".toggle-status").forEach(link => { /* Code hiện tại */ });
+    document.querySelectorAll(".change-user-type").forEach(link => { /* Code hiện tại */ });
+    document.querySelectorAll(".delete-customer").forEach(link => { /* Code hiện tại */ });
+});
 </script>
 ';
 

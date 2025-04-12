@@ -179,4 +179,5 @@ echo json_encode([
     'message' => $result_message,
     'cartCount' => (int)$cart_count
 ]);
+
 ?>

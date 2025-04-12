@@ -92,3 +92,11 @@
 2025-04-09 15:28:58 - Session info - {"session_id":"scbi36qs4aouj86uvf4qsnkqdg","user_id":7}
 2025-04-09 15:28:58 - Found existing cart - {"cart_id":14}
 2025-04-09 15:28:58 - Added new item - {"product_id":4,"quantity":1}
+2025-04-12 18:45:15 - Received data - {"productId":6,"quantity":"1","sizeId":"2","colorId":"7"}
+2025-04-12 18:45:15 - Session info - {"session_id":"rfapdnlino5balg2jibtvej59v","user_id":5}
+2025-04-12 18:45:15 - Found existing cart - {"cart_id":2}
+2025-04-12 18:45:15 - Added new item - {"product_id":6,"quantity":1}
+2025-04-12 19:13:00 - Received data - {"productId":6,"quantity":"1","sizeId":"1","colorId":"7"}
+2025-04-12 19:13:00 - Session info - {"session_id":"rfapdnlino5balg2jibtvej59v","user_id":5}
+2025-04-12 19:13:00 - Found existing cart - {"cart_id":2}
+2025-04-12 19:13:00 - Added new item - {"product_id":6,"quantity":1}

@@ -54,9 +54,9 @@ while ($item = $items_result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi tiết đơn hàng #<?php echo $order_id; ?> - Bug Shop</title>
-    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
     
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+
     <style>
         .product-img {
             width: 60px;
@@ -108,7 +108,9 @@ while ($item = $items_result->fetch_assoc()) {
     </style>
 </head>
 <body>
-    <?php include('includes/header.php'); ?>
+    <?php 
+    include('includes/head.php');
+    include('includes/header.php'); ?>
     
     <div class="container py-5">
         <h1 class="mb-4">Chi tiết đơn hàng #<?php echo $order_id; ?></h1>

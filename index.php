@@ -26,10 +26,10 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Bug Shop</title>
-        <link rel="stylesheet" href="node_modules\bootstrap\dist\css\bootstrap.css">
+        
         
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">  
-        <link rel="stylesheet" href="css/index.css">
+        
     </head>
     
     
@@ -40,7 +40,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
     require_once('includes/header.php');
     
     ?>
-    
+    <link rel="stylesheet" href="css/index.css">
     <main>
         <!-- Hero Banner -->
         <section class="hero-banner">
@@ -352,5 +352,5 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
         <!-- Newsletter -->
         
     </main>
-    
+    <script src="/assets/js/bootstrap.bundle.min.js"></script>
     <?php include('includes/footer.php'); ?>

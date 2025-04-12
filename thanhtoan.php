@@ -2,12 +2,65 @@
 session_start();
 include('config/config.php');
 
-// Kiểm tra nếu bạn đang ở trang thanh toán
-$is_logged_in = isset($_SESSION['user']);
-$buy_now = isset($_GET['buy_now']) && $_GET['buy_now'] == '1';
+// Debug thông tin session
+error_log("SESSION DATA: " . print_r($_SESSION, true));
+
+// Kiểm tra đăng nhập ngay từ đầu
+$is_logged_in = isset($_SESSION['user']); // Đơn giản hóa điều kiện
+$user_id = $is_logged_in ? $_SESSION['user']['id'] : null;
+$userLoggedIn = $is_logged_in;
+
+// Thêm dòng debug để kiểm tra session
+echo "<!-- Session debug: " . json_encode($_SESSION) . " -->";
+
+// Lấy thông tin user ngay từ đầu nếu đã đăng nhập
+$user_info = [];
+if ($user_id) {
+    // Sửa query để chỉ kiểm tra một trường id phù hợp với cấu trúc DB
+    $user_stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ?");
+    $user_stmt->bind_param("i", $user_id);
+    $user_stmt->execute();
+    $result = $user_stmt->get_result();
+    if ($result->num_rows > 0) {
+        $user_info = $result->fetch_assoc();
+        // Debug thông tin user
+        error_log("User info found: " . print_r($user_info, true));
+    } else {
+        // Nếu không tìm thấy dùng id_user, thử lại với id
+        $user_stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+        $user_stmt->bind_param("i", $user_id);
+        $user_stmt->execute();
+        $result = $user_stmt->get_result();
+        if ($result->num_rows > 0) {
+            $user_info = $result->fetch_assoc();
+            error_log("User info found with 'id' field: " . print_r($user_info, true));
+        } else {
+            error_log("No user found with ID: $user_id");
+        }
+    }
+    
+    // Thêm đoạn debug này
+    echo "<!-- Debug info: ";
+    echo "User ID: " . $user_id . ", ";
+    echo "Found in DB: " . ($result->num_rows > 0 ? "Yes" : "No") . ", ";
+    echo "User info: " . json_encode($user_info);
+    echo " -->";
+}
+
+// Kiểm tra SQL query
+echo "<!-- SQL Debug: SELECT * FROM users WHERE id_user = '$user_id' OR id = '$user_id' -->";
 
 // Biến để kiểm soát hiển thị COD
-$allow_cod = $is_logged_in;
+$allow_cod = !empty($user_info); // Chỉ cho phép COD khi có thông tin user
+
+// Thêm đoạn này ở đầu file để debug
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Debug payment method
+    error_log("Selected payment method: " . ($_POST['payment_method'] ?? 'not set'));
+}
+
+// Kiểm tra nếu bạn đang ở trang thanh toán
+$buy_now = isset($_GET['buy_now']) && $_GET['buy_now'] == '1';
 
 // Kiểm tra thông tin sản phẩm (không yêu cầu đăng nhập)
 if ($buy_now && !isset($_SESSION['buy_now_cart'])) {
@@ -155,14 +208,16 @@ if ($buy_now) {
         header('Location: giohang.php');
         exit();
     }
+}
 
-    // Lấy thông tin người dùng nếu đã đăng nhập
-    $user_info = [];
-    if ($user_id) {
-        $user_stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ?");
-        $user_stmt->bind_param("i", $user_id);
-        $user_stmt->execute();
-        $user_info = $user_stmt->get_result()->fetch_assoc();
+// Khi xử lý form
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
+    $_SESSION['payment_method'] = $_POST['payment_method'];
+    
+    // Xử lý thanh toán dựa trên phương thức được chọn
+    if ($_POST['payment_method'] === 'cod') {
+        // Xử lý đơn hàng COD
+        // Đảm bảo đoạn code này hoạt động đúng
     }
 }
 ?>
@@ -235,6 +290,8 @@ if ($buy_now) {
                                 </div>
                             <?php endif; ?>
                             
+                            
+
                             <form id="checkout-form" method="post" action="process_order.php<?php echo $buy_now ? '?buy_now=1' : ''; ?>">
                                 <!-- Thêm hidden field để đánh dấu là mua ngay -->
                                 <?php if ($buy_now): ?>
@@ -250,7 +307,8 @@ if ($buy_now) {
                                         <div class="col-md-6">
                                             <label for="fullname" class="form-label">Họ và tên <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="fullname" name="fullname" required
-                                                   value="<?php echo isset($user_info['tenuser']) ? $user_info['tenuser'] : ''; ?>">
+                                                   value="<?php echo isset($user_info['tenuser']) ? htmlspecialchars($user_info['tenuser']) : 
+                                                         (isset($user_info['username']) ? htmlspecialchars($user_info['username']) : ''); ?>">
                                             <div class="form-text">Tên người nhận hàng</div>
                                         </div>
                                         <div class="col-md-6">
@@ -258,7 +316,9 @@ if ($buy_now) {
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="bi bi-telephone"></i></span>
                                                 <input type="tel" class="form-control" id="phone" name="phone" required
-                                                       value="<?php echo isset($user_info['sdt']) ? $user_info['sdt'] : ''; ?>"
+                                                       value="<?php echo isset($user_info['sodienthoai']) ? htmlspecialchars($user_info['sodienthoai']) : 
+                                                             (isset($user_info['sdt']) ? htmlspecialchars($user_info['sdt']) : 
+                                                             (isset($user_info['phone']) ? htmlspecialchars($user_info['phone']) : '')); ?>"
                                                        pattern="[0-9]{10}" title="Vui lòng nhập số điện thoại hợp lệ (10 số)">
                                             </div>
                                             <div class="form-text">Số điện thoại nhận hàng</div>
@@ -268,7 +328,7 @@ if ($buy_now) {
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                                                 <input type="email" class="form-control" id="email" name="email" required
-                                                       value="<?php echo isset($user_info['email']) ? $user_info['email'] : ''; ?>">
+                                                       value="<?php echo isset($user_info['email']) ? htmlspecialchars($user_info['email']) : ''; ?>">
                                             </div>
                                             <div class="form-text">Để nhận thông báo đơn hàng</div>
                                         </div>
@@ -287,8 +347,9 @@ if ($buy_now) {
                                                 <span class="input-group-text"><i class="bi bi-house"></i></span>
                                                 <input type="text" class="form-control" id="address" name="address" required
                                                        placeholder="Số nhà, tên đường"
-                                                       value="<?php echo isset($user_info['diachi']) ? $user_info['diachi'] : ''; ?>">
-                                            </div>
+                                                       value="<?php echo isset($user_info['diachi']) ? htmlspecialchars($user_info['diachi']) : 
+                                                             (isset($user_info['address']) ? htmlspecialchars($user_info['address']) : ''); ?>">
+                                            </div> <!-- Thêm thẻ đóng này -->
                                         </div>
                                         <div class="col-md-4">
                                             <label for="province" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
@@ -326,14 +387,16 @@ if ($buy_now) {
                                     </h5>
                                     <div class="row g-3">
                                         <!-- Phương thức thanh toán COD -->
-                                        <?php if ($allow_cod): ?>
+                                        <?php if ($is_logged_in): ?>
                                         <div class="col-md-4">
-                                            <div class="payment-method-item">
-                                                <input type="radio" class="payment-method-radio" name="payment_method" id="cod" value="cod" checked>
-                                                <label for="cod" class="payment-method-label">
-                                                    <!-- Nội dung COD -->
-                                                </label>
-                                            </div>
+                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="cod" value="cod" checked>
+                                            <label class="payment-method-label d-flex align-items-center" for="cod">
+                                                <i class="payment-method-icon bi bi-cash text-success"></i>
+                                                <div>
+                                                    <strong>COD</strong>
+                                                    <div class="small text-muted">Thanh toán khi nhận hàng</div>
+                                                </div>
+                                            </label>
                                         </div>
                                         <?php else: ?>
                                         <div class="col-12 mb-3">
@@ -344,33 +407,15 @@ if ($buy_now) {
                                             </div>
                                         </div>
                                         <?php endif; ?>
+                                        
+                                        <!-- Phương thức thanh toán khác -->
                                         <div class="col-md-4">
-                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="bank_transfer" value="bank_transfer">
-                                            <label class="payment-method-label d-flex align-items-center" for="bank_transfer">
-                                                <i class="payment-method-icon bi bi-bank text-primary"></i>
-                                                <div>
-                                                    <strong>Ngân hàng</strong>
-                                                    <div class="small text-muted">Chuyển khoản ngân hàng</div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="vnpay" value="vnpay">
+                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="vnpay" value="vnpay" <?php echo !$is_logged_in ? 'checked' : ''; ?>>
                                             <label class="payment-method-label d-flex align-items-center" for="vnpay">
                                                 <i class="payment-method-icon bi bi-qr-code-scan text-danger"></i>
                                                 <div>
                                                     <strong>VNPAY</strong>
                                                     <div class="small text-muted">Thanh toán qua VNPAY</div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="radio" class="payment-method-radio d-none" name="payment_method" id="vnpay" value="vnpay">
-                                            <label class="payment-method-label d-flex align-items-center" for="vnpay">
-                                                <i class="payment-method-icon bi bi-qr-code-scan text-danger"></i>
-                                                <div>
-                                                    <strong>QR VNPAY</strong>
-                                                    <div class="small text-muted">Thanh toán qua QR VNPAY</div>
                                                 </div>
                                             </label>
                                         </div>
@@ -745,3 +790,10 @@ if ($buy_now) {
     </script>
 </body>
 </html>
+
+<!-- Debug - Thêm vào cuối file để xác định tên trường -->
+<?php
+// Hiển thị keys cho debug (thêm vào khi dev, xóa sau khi hoàn thành)
+echo "<!-- Available fields: " . implode(", ", array_keys($user_info)) . " -->";
+echo "<!-- USER INFO DEBUG: " . json_encode($user_info) . " -->";
+?>

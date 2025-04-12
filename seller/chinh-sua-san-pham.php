@@ -570,23 +570,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'add' && isset($_POST['inven
 }
 
 // JavaScript cho trang
-$page_specific_js = '
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    /* Code JavaScript đã có trước đó */
-});
-</script>
-<script>
-document.getElementById("editProductForm").addEventListener("submit", function() {
-    const inventoryInputs = document.querySelectorAll("input[name^=\'inventory\']");
-    inventoryInputs.forEach(input => {
-        if (input.value === "" || isNaN(parseInt(input.value))) {
-            input.value = 0;
-        }
-    });
-});
-</script>
-';
+echo '<script src="js/product-edit.js"></script>';
 
 // Include footer
 include('includes/footer.php');

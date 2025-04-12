@@ -146,29 +146,37 @@ body {
 
 /* Cải thiện nút radio thanh toán */
 .payment-method-label {
-  display: block;
-  padding: 15px;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: 0.25rem;
+  padding: 1rem;
   cursor: pointer;
-  margin-bottom: 10px;
+  transition: all 0.2s;
+  width: 100%;
+  height: 100%;
+  margin-bottom: 0;
 }
 
-.payment-method-radio:checked + .payment-method-label {
+.payment-method-label:hover {
+  background-color: #f8f9fa;
+}
+
+.payment-method-selected,
+input[name="payment_method"]:checked + .payment-method-label {
   border-color: #0d6efd;
-  background-color: rgba(13, 110, 253, 0.05);
-  box-shadow: 0 0 0 1px #0d6efd;
-}
-
-.payment-method-label.payment-method-selected {
-  border-color: #2266d3;
-  background-color: #e9f0fd;
+  background-color: #f0f7ff;
+  box-shadow: 0 0 0 0.1rem rgba(13, 110, 253, 0.25);
 }
 
 .payment-method-icon {
   font-size: 1.5rem;
-  margin-right: 10px;
+  margin-right: 0.75rem;
+}
+
+/* Sửa lỗi hiển thị của các nút thanh toán khi có nhiều nút */
+@media (min-width: 768px) {
+  .payment-method-col {
+    height: 100%;
+  }
 }
 
 /* Cải thiện tổng thanh toán */
