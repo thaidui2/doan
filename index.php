@@ -309,12 +309,74 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card promo-card text-white">
-                            <img src="images\istockphoto-1220376125-612x612.jpg" class="card-img" alt="New Arrival">
-                            <div class="card-img-overlay d-flex flex-column justify-content-center">
-                                <h3 class="card-title">Ưu Đãi Cho Khách Hàng VIP</h3>
-                                <p class="card-text">Đăng ký hôm nay để nhận giảm giá 15% cho đơn hàng đầu tiên</p>
-                                <a href="#" class="btn btn-light">Đăng ký ngay</a>
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h3 class="card-title mb-0"><i class="bi bi-trophy"></i> Khách Hàng Thân Thiết</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Khách hàng</th>
+                                                <th>Đơn hàng</th>
+                                                <th>Tổng chi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            // Kết nối database - sử dụng lại kết nối đã có ở trên
+                                            $conn = new mysqli($servername, $username, $password, $dbname);
+                                            
+                                            if ($conn->connect_error) {
+                                                die("Kết nối thất bại: " . $conn->connect_error);
+                                            }
+                                            
+                                            // Truy vấn lấy top 5 khách hàng có số tiền mua hàng nhiều nhất
+                                            $top_customers_sql = "SELECT u.id_user, u.tenuser, COUNT(d.id_donhang) as order_count, 
+                                                                 SUM(d.tongtien) as total_spent
+                                                          FROM users u
+                                                          JOIN donhang d ON u.id_user = d.id_nguoidung
+                                                          WHERE d.trangthai = 4 
+                                                          GROUP BY u.id_user
+                                                          ORDER BY total_spent DESC
+                                                          LIMIT 5";
+                                                          
+                                            $top_result = $conn->query($top_customers_sql);
+                                            
+                                            if ($top_result && $top_result->num_rows > 0) {
+                                                $rank = 1;
+                                                while($customer = $top_result->fetch_assoc()) {
+                                                    $badge_class = ($rank <= 3) ? 'bg-' . ['warning', 'secondary', 'danger'][$rank-1] : 'bg-info';
+                                            ?>
+                                            <tr>
+                                                <td>
+                                                    <span class="badge rounded-pill <?php echo $badge_class; ?>">
+                                                        <?php echo $rank; ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <?php echo htmlspecialchars($customer['tenuser']); ?>
+                                                </td>
+                                                <td><?php echo $customer['order_count']; ?></td>
+                                                <td><?php echo number_format($customer['total_spent'], 0, ',', '.'); ?>₫</td>
+                                            </tr>
+                                            <?php
+                                                    $rank++;
+                                                }
+                                            } else {
+                                                // Không có dữ liệu
+                                                echo '<tr><td colspan="4" class="text-center">Chưa có dữ liệu</td></tr>';
+                                            }
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="dangky.php" class="btn btn-primary">Tham gia ngay</a>
+                                    <p class="small text-muted mt-2">Mua sắm nhiều để nhận ưu đãi đặc biệt!</p>
+                                </div>
                             </div>
                         </div>
                     </div>

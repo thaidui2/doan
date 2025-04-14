@@ -100,3 +100,15 @@
 2025-04-12 19:13:00 - Session info - {"session_id":"rfapdnlino5balg2jibtvej59v","user_id":5}
 2025-04-12 19:13:00 - Found existing cart - {"cart_id":2}
 2025-04-12 19:13:00 - Added new item - {"product_id":6,"quantity":1}
+2025-04-13 10:15:02 - Received data - {"productId":6,"quantity":"1","sizeId":"1","colorId":"9"}
+2025-04-13 10:15:02 - Session info - {"session_id":"7hgrm571nos3k92ombg6md1c42","user_id":7}
+2025-04-13 10:15:02 - Found existing cart - {"cart_id":14}
+2025-04-13 10:15:02 - Added new item - {"product_id":6,"quantity":1}
+2025-04-13 10:16:20 - Received data - {"productId":3,"quantity":"1","sizeId":"1","colorId":"2"}
+2025-04-13 10:16:20 - Session info - {"session_id":"7hgrm571nos3k92ombg6md1c42","user_id":7}
+2025-04-13 10:16:20 - Found existing cart - {"cart_id":14}
+2025-04-13 10:16:20 - Added new item - {"product_id":3,"quantity":1}
+2025-04-14 05:36:55 - Received data - {"productId":6,"quantity":"1","sizeId":"1","colorId":"4"}
+2025-04-14 05:36:55 - Session info - {"session_id":"83075cb1gjjgv9pvmh6qhmg1ea","user_id":6}
+2025-04-14 05:36:55 - Found existing cart - {"cart_id":6}
+2025-04-14 05:36:55 - Added new item - {"product_id":6,"quantity":1}

@@ -17,13 +17,13 @@ if ($order_id <= 0 && isset($_SESSION['last_order_id'])) {
     error_log("Lấy order_id từ session: " . $order_id);
 }
 
-// Hiển thị thông tin debug
-echo "<div style='background: #f8f9fa; padding: 10px; margin: 10px; border: 1px solid #ddd;'>";
-echo "<h4>Debug Information</h4>";
-echo "<p>Order ID: " . $order_id . "</p>";
-echo "<p>Session ID: " . session_id() . "</p>";
-echo "<p>Last Order ID in Session: " . (isset($_SESSION['last_order_id']) ? $_SESSION['last_order_id'] : 'Not set') . "</p>";
-echo "</div>";
+// // Hiển thị thông tin debug
+// echo "<div style='background: #f8f9fa; padding: 10px; margin: 10px; border: 1px solid #ddd;'>";
+// echo "<h4>Debug Information</h4>";
+// echo "<p>Order ID: " . $order_id . "</p>";
+// echo "<p>Session ID: " . session_id() . "</p>";
+// echo "<p>Last Order ID in Session: " . (isset($_SESSION['last_order_id']) ? $_SESSION['last_order_id'] : 'Not set') . "</p>";
+// echo "</div>";
 
 // Kiểm tra nếu không có ID đơn hàng hợp lệ
 if ($order_id <= 0) {
@@ -135,7 +135,9 @@ if (isset($_SESSION['last_order_id'])) {
     </style>
 </head>
 <body>
-    <?php include('includes/header.php'); ?>
+    <?php 
+    include('includes/head.php');
+    include('includes/header.php'); ?>
     
     <div class="container mt-5 mb-5">
         <div class="text-center mb-5">

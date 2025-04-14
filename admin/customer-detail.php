@@ -18,7 +18,11 @@ if ($customer_id <= 0) {
 }
 
 // Get customer details
-$stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ?");
+$stmt = $conn->prepare("
+    SELECT u.*
+    FROM users u
+    WHERE u.id_user = ?
+");
 $stmt->bind_param("i", $customer_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -58,124 +62,241 @@ $order_statuses = [
 <!-- Include sidebar -->
 <?php include('includes/sidebar.php'); ?>
 
+<!-- Add custom CSS for this page -->
+<style>
+    /* Profile card enhancements */
+    .profile-card {
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: transform 0.3s;
+    }
+    
+    .profile-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 4px solid #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .profile-avatar-placeholder {
+        width: 120px;
+        height: 120px;
+        font-size: 3rem;
+        background-color: #6c757d;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin: 0 auto;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Info list styling */
+    .info-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .info-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .info-list li i {
+        width: 24px;
+        color: #6c757d;
+        margin-right: 10px;
+    }
+    
+    /* Tabs enhancements */
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        padding: 10px 20px;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #495057;
+        transition: all 0.2s;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #007bff;
+        background: transparent;
+        border-bottom: 3px solid #007bff;
+    }
+    
+    .nav-tabs .nav-link:hover:not(.active) {
+        border-bottom: 3px solid #e9ecef;
+    }
+    
+    /* Orders table */
+    .table-hover tr:hover {
+        background-color: rgba(0,123,255,0.03);
+    }
+    
+    /* Reviews styling */
+    .review-card {
+        border-left: 4px solid #007bff;
+        margin-bottom: 15px;
+    }
+    
+    .review-rating {
+        color: #ffc107;
+    }
+    
+    /* Notes styling */
+    .note-card {
+        border-radius: 10px;
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+    }
+    
+    .note-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .badge-soft {
+        font-weight: 500;
+        padding: 5px 10px;
+    }
+    
+    /* Button styling */
+    .btn-action {
+        border-radius: 50px;
+        padding: 0.25rem 0.75rem;
+    }
+</style>
+
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-    <nav aria-label="breadcrumb">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="index.php">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a href="customers.php">Quản lý khách hàng</a></li>
+            <li class="breadcrumb-item"><a href="index.php" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="customers.php" class="text-decoration-none">Khách hàng</a></li>
             <li class="breadcrumb-item active" aria-current="page"><?php echo htmlspecialchars($customer['tenuser']); ?></li>
         </ol>
     </nav>
     
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Thông tin khách hàng</h1>
+    <!-- Page header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
+        <h1 class="h2 fw-bold">
+            <i class="bi bi-person-badge me-2 text-primary"></i>
+            <?php echo htmlspecialchars($customer['tenuser']); ?>
+        </h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="edit_customer.php?id=<?php echo $customer_id; ?>" class="btn btn-sm btn-outline-secondary me-2">
+            <a href="edit_customer.php?id=<?php echo $customer_id; ?>" class="btn btn-sm btn-outline-primary me-2">
                 <i class="bi bi-pencil"></i> Chỉnh sửa
             </a>
-            <a href="customers.php" class="btn btn-sm btn-outline-primary">
+            <a href="customers.php" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Quay lại
             </a>
         </div>
     </div>
     
     <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <?php echo $_SESSION['success_message']; ?>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <?php echo $_SESSION['success_message']; ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         <?php unset($_SESSION['success_message']); ?>
     <?php endif; ?>
     
     <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?php echo $_SESSION['error_message']; ?>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?php echo $_SESSION['error_message']; ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         <?php unset($_SESSION['error_message']); ?>
     <?php endif; ?>
     
-    <div class="row">
+    <div class="row g-4">
         <!-- Customer Info Card -->
         <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Thông tin cá nhân</h5>
-                    <span class="badge <?php echo $customer['trang_thai'] ? 'bg-success' : 'bg-danger'; ?>">
-                        <?php echo $customer['trang_thai'] ? 'Đang hoạt động' : 'Đã khóa'; ?>
-                    </span>
-                </div>
-                <div class="card-body">
+            <div class="card profile-card h-100">
+                <div class="card-body p-4">
+                    <!-- Profile Header -->
                     <div class="text-center mb-4">
                         <?php if (!empty($customer['anh_dai_dien'])): ?>
-                            <img src="../uploads/users/<?php echo $customer['anh_dai_dien']; ?>" alt="Profile" class="rounded-circle img-thumbnail" style="width: 120px; height: 120px; object-fit: cover;">
+                            <img src="../uploads/users/<?php echo $customer['anh_dai_dien']; ?>" 
+                                 alt="Profile" 
+                                 class="rounded-circle profile-avatar mb-3">
                         <?php else: ?>
-                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px; font-size: 3rem;">
+                            <div class="profile-avatar-placeholder mb-3">
                                 <i class="bi bi-person"></i>
                             </div>
                         <?php endif; ?>
-                        <h5 class="mt-3"><?php echo htmlspecialchars($customer['tenuser']); ?></h5>
-                        <p class="text-muted"><?php echo htmlspecialchars($customer['taikhoan']); ?></p>
+                        
+                        <h4 class="fw-bold mb-1"><?php echo htmlspecialchars($customer['tenuser']); ?></h4>
+                        <p class="text-muted mb-2">@<?php echo htmlspecialchars($customer['taikhoan']); ?></p>
+                        
+                        <div class="d-flex justify-content-center gap-2 mb-3">
+                            <span class="badge <?php echo $customer['trang_thai'] ? 'bg-success' : 'bg-danger'; ?> badge-soft">
+                                <?php echo $customer['trang_thai'] ? 'Đang hoạt động' : 'Đã khóa'; ?>
+                            </span>
+                            <span class="badge bg-<?php echo $customer['loai_user'] == 0 ? 'info' : 'primary'; ?> badge-soft">
+                                <?php echo $customer['loai_user'] == 0 ? 'Người mua' : 'Người dùng'; ?>
+                            </span>
+                            <span class="badge bg-<?php echo $customer['trang_thai_xac_thuc'] ? 'success' : 'warning'; ?> badge-soft">
+                                <?php echo $customer['trang_thai_xac_thuc'] ? 'Đã xác thực' : 'Chưa xác thực'; ?>
+                            </span>
+                        </div>
                     </div>
                     
-                    <hr>
-                    
-                    <div class="mb-3">
-                        <h6 class="text-muted">Thông tin liên hệ</h6>
-                        <p class="mb-1"><i class="bi bi-envelope me-2"></i> <?php echo htmlspecialchars($customer['email'] ?: 'Chưa cập nhật'); ?></p>
-                        <p class="mb-1"><i class="bi bi-telephone me-2"></i> <?php echo htmlspecialchars($customer['sdt']); ?></p>
-                        <p class="mb-1"><i class="bi bi-geo-alt me-2"></i> <?php echo htmlspecialchars($customer['diachi'] ?: 'Chưa cập nhật'); ?></p>
+                    <div class="border-top border-bottom py-3 mb-4">
+                        <h6 class="text-uppercase text-muted mb-3 small fw-bold"><i class="bi bi-info-circle me-2"></i>Thông tin liên hệ</h6>
+                        <ul class="info-list mb-0">
+                            <li>
+                                <i class="bi bi-envelope"></i>
+                                <span><?php echo htmlspecialchars($customer['email'] ?: 'Chưa cập nhật'); ?></span>
+                            </li>
+                            <li>
+                                <i class="bi bi-telephone"></i>
+                                <span><?php echo htmlspecialchars($customer['sdt']); ?></span>
+                            </li>
+                            <li>
+                                <i class="bi bi-geo-alt"></i>
+                                <span><?php echo htmlspecialchars($customer['diachi'] ?: 'Chưa cập nhật'); ?></span>
+                            </li>
+                        </ul>
                     </div>
                     
-                    <hr>
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted mb-3 small fw-bold"><i class="bi bi-clock-history me-2"></i>Thông tin tài khoản</h6>
+                        <ul class="info-list mb-0">
+                            <li>
+                                <i class="bi bi-calendar-check"></i>
+                                <span>Ngày đăng ký: <strong><?php echo date('d/m/Y H:i', strtotime($customer['ngay_tao'])); ?></strong></span>
+                            </li>
+                            <li>
+                                <i class="bi bi-bag-check"></i>
+                                <span>Đơn hàng: <strong><?php echo $orders_result->num_rows; ?></strong></span>
+                            </li>
+                        </ul>
+                    </div>
                     
-                    <div class="mb-3">
-                        <h6 class="text-muted">Thông tin tài khoản</h6>
-                        <p class="mb-1"><i class="bi bi-calendar-check me-2"></i> Ngày đăng ký: <?php echo date('d/m/Y H:i', strtotime($customer['ngay_tao'])); ?></p>
-                        <p class="mb-1">
-                            <i class="bi bi-shield-check me-2"></i> 
-                            Trạng thái xác thực: 
-                            <?php if ($customer['trang_thai_xac_thuc']): ?>
-                                <span class="badge bg-success">Đã xác thực</span>
-                            <?php else: ?>
-                                <span class="badge bg-warning text-dark">Chưa xác thực</span>
-                            <?php endif; ?>
-                        </p>
-                        <p class="mb-1">
-                            <i class="bi bi-person-badge me-2"></i> 
-                            Loại tài khoản: 
-                            <?php if ($customer['loai_user'] == 0): ?>
-                                <span class="badge bg-info">Người mua</span>
-                            <?php else: ?>
-                                <span class="badge bg-primary">Người bán</span>
-                            <?php endif; ?>
-                        </p>
-
-                        <?php if ($customer['trang_thai'] == 0 && !empty($customer['ly_do_khoa'])): ?>
-                        <div class="alert alert-danger mt-2">
-                            <strong>Lý do khóa tài khoản:</strong> 
+                    <?php if ($customer['trang_thai'] == 0 && !empty($customer['ly_do_khoa'])): ?>
+                        <div class="alert alert-danger mt-2 mb-4">
+                            <h6 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Lý do khóa tài khoản</h6>
                             <p class="mb-0 mt-1"><?php echo nl2br(htmlspecialchars($customer['ly_do_khoa'])); ?></p>
                         </div>
-                        <?php endif; ?>
-
-                        <?php if ($customer['loai_user'] == 1): ?>
-                        <hr>
-                        <div class="mb-3">
-                            <h6 class="text-muted">Thông tin cửa hàng</h6>
-                            <p class="mb-1"><strong><?php echo htmlspecialchars($customer['ten_shop'] ?: 'Chưa đặt tên shop'); ?></strong></p>
-                            <p class="mb-1"><?php echo $customer['mo_ta_shop'] ? nl2br(htmlspecialchars($customer['mo_ta_shop'])) : 'Chưa có mô tả'; ?></p>
-                            <p class="mb-1">
-                                <i class="bi bi-calendar3 me-2"></i> Ngày trở thành người bán: 
-                                <?php echo $customer['ngay_tro_thanh_nguoi_ban'] ? date('d/m/Y', strtotime($customer['ngay_tro_thanh_nguoi_ban'])) : 'N/A'; ?>
-                            </p>
-                        </div>
-                        <?php endif; ?>
-                    </div>
+                    <?php endif; ?>
                 </div>
-                <div class="card-footer bg-white">
-                    <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="resetPasswordBtn" 
+                
+                <div class="card-footer bg-white py-3 border-top">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="resetPasswordBtn" 
                                 data-id="<?php echo $customer['id_user']; ?>" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#resetPasswordModal">
@@ -194,18 +315,6 @@ $order_statuses = [
                                 <i class="bi bi-unlock"></i> Mở khóa tài khoản
                             <?php endif; ?>
                         </button>
-
-                        <button type="button" class="btn btn-sm btn-outline-primary change-user-type"
-                                data-id="<?php echo $customer['id_user']; ?>"
-                                data-type="<?php echo $customer['loai_user']; ?>"
-                                data-bs-toggle="modal" 
-                                data-bs-target="#changeUserTypeModal">
-                            <?php if ($customer['loai_user'] == 0): ?>
-                                <i class="bi bi-shop"></i> Nâng cấp thành người bán
-                            <?php else: ?>
-                                <i class="bi bi-person"></i> Chuyển thành người mua
-                            <?php endif; ?>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -213,62 +322,65 @@ $order_statuses = [
         
         <!-- Customer Activity Card -->
         <div class="col-md-8 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 shadow-sm">
                 <div class="card-header bg-white py-3">
                     <ul class="nav nav-tabs card-header-tabs" id="customerTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="true">
-                                Đơn hàng <span class="badge bg-secondary ms-1"><?php echo $orders_result->num_rows; ?></span>
+                            <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab">
+                                <i class="bi bi-cart3 me-1"></i> Đơn hàng 
+                                <span class="badge bg-secondary rounded-pill ms-1"><?php echo $orders_result->num_rows; ?></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
-                                Đánh giá
+                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">
+                                <i class="bi bi-star me-1"></i> Đánh giá
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab" aria-controls="activity" aria-selected="false">
-                                Hoạt động
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
-                                Ghi chú
+                            <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab">
+                                <i class="bi bi-journal-text me-1"></i> Ghi chú
                             </button>
                         </li>
                     </ul>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="tab-content" id="customerTabContent">
                         <!-- Orders Tab -->
-                        <div class="tab-pane fade show active" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+                        <div class="tab-pane fade show active p-4" id="orders" role="tabpanel">
                             <?php if ($orders_result->num_rows > 0): ?>
                                 <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
                                             <tr>
-                                                <th>ID</th>
-                                                <th>Ngày đặt</th>
-                                                <th>Sản phẩm</th>
-                                                <th>Tổng tiền</th>
-                                                <th>Trạng thái</th>
-                                                <th>Hành động</th>
+                                                <th scope="col" width="80">ID</th>
+                                                <th scope="col" width="120">Ngày đặt</th>
+                                                <th scope="col">Sản phẩm</th>
+                                                <th scope="col" width="120">Tổng tiền</th>
+                                                <th scope="col" width="130">Trạng thái</th>
+                                                <th scope="col" width="80" class="text-end">Xem</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php while ($order = $orders_result->fetch_assoc()): ?>
                                                 <tr>
-                                                    <td>#<?php echo $order['id_donhang']; ?></td>
-                                                    <td><?php echo date('d/m/Y H:i', strtotime($order['ngaytao'])); ?></td>
-                                                    <td><?php echo $order['total_items']; ?> sản phẩm</td>
-                                                    <td><?php echo number_format($order['tongtien'], 0, ',', '.'); ?>₫</td>
+                                                    <td><strong>#<?php echo $order['id_donhang']; ?></strong></td>
+                                                    <td><span class="text-muted"><?php echo date('d/m/Y', strtotime($order['ngaytao'])); ?></span><br>
+                                                    <small><?php echo date('H:i', strtotime($order['ngaytao'])); ?></small></td>
+                                                    <td>
+                                                        <span class="badge bg-light text-dark border">
+                                                            <?php echo $order['total_items']; ?> sản phẩm
+                                                        </span>
+                                                    </td>
+                                                    <td><strong class="text-primary"><?php echo number_format($order['tongtien'], 0, ',', '.'); ?>₫</strong></td>
                                                     <td>
                                                         <span class="badge bg-<?php echo $order_statuses[$order['trangthai']]['badge']; ?>">
                                                             <?php echo $order_statuses[$order['trangthai']]['name']; ?>
                                                         </span>
                                                     </td>
-                                                    <td>
-                                                        <a href="order-detail.php?id=<?php echo $order['id_donhang']; ?>" class="btn btn-sm btn-outline-primary">
+                                                    <td class="text-end">
+                                                        <a href="order-detail.php?id=<?php echo $order['id_donhang']; ?>" 
+                                                           class="btn btn-sm btn-outline-primary rounded-circle" 
+                                                           title="Xem chi tiết đơn hàng">
                                                             <i class="bi bi-eye"></i>
                                                         </a>
                                                     </td>
@@ -279,14 +391,16 @@ $order_statuses = [
                                 </div>
                             <?php else: ?>
                                 <div class="text-center py-5">
-                                    <i class="bi bi-cart text-muted" style="font-size: 3rem;"></i>
-                                    <p class="mt-3 text-muted">Khách hàng chưa có đơn hàng nào</p>
+                                    <div class="py-5">
+                                        <i class="bi bi-cart text-muted" style="font-size: 4rem;"></i>
+                                        <p class="mt-3 text-muted">Khách hàng chưa có đơn hàng nào</p>
+                                    </div>
                                 </div>
                             <?php endif; ?>
                         </div>
                         
                         <!-- Reviews Tab -->
-                        <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        <div class="tab-pane fade p-4" id="reviews" role="tabpanel">
                             <?php
                             // Get customer's reviews
                             $reviews_stmt = $conn->prepare("
@@ -302,43 +416,56 @@ $order_statuses = [
                             ?>
                             
                             <?php if ($reviews_result->num_rows > 0): ?>
-                                <div class="list-group">
+                                <div class="reviews-container">
                                     <?php while ($review = $reviews_result->fetch_assoc()): ?>
-                                        <div class="list-group-item list-group-item-action">
-                                            <div class="d-flex w-100 justify-content-between">
-                                                <h6 class="mb-1"><?php echo htmlspecialchars($review['tensanpham']); ?></h6>
-                                                <small><?php echo date('d/m/Y', strtotime($review['ngaydanhgia'])); ?></small>
-                                            </div>
-                                            <p class="mb-1"><?php echo htmlspecialchars($review['noidung']); ?></p>
-                                            <div>
-                                                <?php for ($i = 0; $i < 5; $i++): ?>
-                                                    <?php if ($i < $review['diemdanhgia']): ?>
-                                                        <i class="bi bi-star-fill text-warning"></i>
-                                                    <?php else: ?>
-                                                        <i class="bi bi-star text-warning"></i>
-                                                    <?php endif; ?>
-                                                <?php endfor; ?>
+                                        <div class="card review-card mb-3 shadow-sm">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0 fw-bold">
+                                                        <a href="../product-detail.php?id=<?php echo $review['id_sanpham']; ?>" 
+                                                           class="text-decoration-none" target="_blank">
+                                                           <?php echo htmlspecialchars($review['tensanpham']); ?>
+                                                        </a>
+                                                    </h6>
+                                                    <span class="text-muted small"><?php echo date('d/m/Y', strtotime($review['ngaydanhgia'])); ?></span>
+                                                </div>
+                                                
+                                                <div class="review-rating mb-2">
+                                                    <?php for ($i = 0; $i < 5; $i++): ?>
+                                                        <?php if ($i < $review['diemdanhgia']): ?>
+                                                            <i class="bi bi-star-fill"></i>
+                                                        <?php else: ?>
+                                                            <i class="bi bi-star"></i>
+                                                        <?php endif; ?>
+                                                    <?php endfor; ?>
+                                                </div>
+                                                
+                                                <p class="card-text"><?php echo htmlspecialchars($review['noidung'] ?: 'Không có nội dung đánh giá'); ?></p>
+                                                
+                                                <?php if (!empty($review['hinhanh'])): ?>
+                                                    <div class="mt-2">
+                                                        <img src="../uploads/reviews/<?php echo $review['hinhanh']; ?>" 
+                                                             alt="Review Image" 
+                                                             class="img-thumbnail" 
+                                                             style="max-height: 100px;">
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     <?php endwhile; ?>
                                 </div>
                             <?php else: ?>
                                 <div class="text-center py-5">
-                                    <i class="bi bi-star text-muted" style="font-size: 3rem;"></i>
-                                    <p class="mt-3 text-muted">Khách hàng chưa có đánh giá nào</p>
+                                    <div class="py-5">
+                                        <i class="bi bi-star text-muted" style="font-size: 4rem;"></i>
+                                        <p class="mt-3 text-muted">Khách hàng chưa có đánh giá nào</p>
+                                    </div>
                                 </div>
                             <?php endif; ?>
                         </div>
                         
-                        <!-- Activity Tab -->
-                        <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i> Chức năng đang được phát triển
-                            </div>
-                        </div>
-                        
                         <!-- Notes Tab -->
-                        <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+                        <div class="tab-pane fade p-4" id="notes" role="tabpanel">
                             <?php
                             // Check if customer_notes table exists
                             $table_check = $conn->query("SHOW TABLES LIKE 'customer_notes'");
@@ -367,38 +494,50 @@ $order_statuses = [
                             $notes_result = $notes_stmt->get_result();
                             ?>
                             
-                            <form id="addNoteForm" action="process_customer_note.php" method="post" class="mb-4">
-                                <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
-                                <div class="mb-3">
-                                    <label for="noteContent" class="form-label">Thêm ghi chú mới</label>
-                                    <textarea class="form-control" id="noteContent" name="note" rows="3" required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-save"></i> Lưu ghi chú
-                                </button>
-                            </form>
-                            
-                            <hr>
-                            
-                            <div class="notes-list">
-                                <?php if ($notes_result->num_rows > 0): ?>
-                                    <?php while ($note = $notes_result->fetch_assoc()): ?>
-                                        <div class="card mb-3">
-                                            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                                                <span><i class="bi bi-person-circle me-2"></i><?php echo htmlspecialchars($note['created_by']); ?></span>
-                                                <small><?php echo date('d/m/Y H:i', strtotime($note['created_at'])); ?></small>
-                                            </div>
-                                            <div class="card-body py-2">
-                                                <p class="card-text"><?php echo nl2br(htmlspecialchars($note['note'])); ?></p>
-                                            </div>
+                            <div class="row">
+                                <div class="col-lg-4 order-lg-2">
+                                    <div class="card shadow-sm mb-4">
+                                        <div class="card-header bg-light py-3">
+                                            <h6 class="card-title mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>Thêm ghi chú mới</h6>
                                         </div>
-                                    <?php endwhile; ?>
-                                <?php else: ?>
-                                    <div class="text-center py-4">
-                                        <i class="bi bi-sticky text-muted" style="font-size: 2rem;"></i>
-                                        <p class="text-muted mt-2">Chưa có ghi chú nào</p>
+                                        <div class="card-body">
+                                            <form id="addNoteForm" action="process_customer_note.php" method="post">
+                                                <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
+                                                <div class="mb-3">
+                                                    <textarea class="form-control" id="noteContent" name="note" rows="5" placeholder="Nhập nội dung ghi chú..." required></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary w-100">
+                                                    <i class="bi bi-save me-1"></i> Lưu ghi chú
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
-                                <?php endif; ?>
+                                </div>
+                                
+                                <div class="col-lg-8 order-lg-1">
+                                    <h6 class="fw-bold text-muted mb-3"><i class="bi bi-journals me-2"></i>Danh sách ghi chú</h6>
+                                    
+                                    <div class="notes-list">
+                                        <?php if ($notes_result->num_rows > 0): ?>
+                                            <?php while ($note = $notes_result->fetch_assoc()): ?>
+                                                <div class="card note-card shadow-sm mb-3">
+                                                    <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                                                        <span class="fw-bold"><i class="bi bi-person-circle me-2"></i><?php echo htmlspecialchars($note['created_by']); ?></span>
+                                                        <span class="text-muted small"><?php echo date('d/m/Y H:i', strtotime($note['created_at'])); ?></span>
+                                                    </div>
+                                                    <div class="card-body py-3">
+                                                        <p class="card-text"><?php echo nl2br(htmlspecialchars($note['note'])); ?></p>
+                                                    </div>
+                                                </div>
+                                            <?php endwhile; ?>
+                                        <?php else: ?>
+                                            <div class="text-center py-4 mb-3 bg-light rounded">
+                                                <i class="bi bi-sticky text-muted" style="font-size: 2.5rem;"></i>
+                                                <p class="text-muted mt-2">Chưa có ghi chú nào</p>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -410,10 +549,10 @@ $order_statuses = [
 
 <!-- Reset Password Modal -->
 <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Đặt lại mật khẩu</h5>
+                <h5 class="modal-title"><i class="bi bi-key me-2 text-primary"></i>Đặt lại mật khẩu</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="resetPasswordForm" action="process_reset_password.php" method="post">
@@ -421,7 +560,7 @@ $order_statuses = [
                     <input type="hidden" name="customer_id" id="resetPasswordUserId" value="<?php echo $customer_id; ?>">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i> 
-                        Hành động này sẽ tạo một mật khẩu ngẫu nhiên mới cho người dùng.
+                        Hành động này sẽ tạo một mật khẩu mới cho người dùng.
                     </div>
                     <div class="mb-3">
                         <label for="newPassword" class="form-label">Mật khẩu mới</label>
@@ -437,7 +576,7 @@ $order_statuses = [
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-lg"></i> Xác nhận
+                        <i class="bi bi-check-lg me-1"></i> Xác nhận
                     </button>
                 </div>
             </form>
@@ -526,14 +665,14 @@ $page_specific_js = '
                     document.getElementById("toggleStatusTitle").textContent = "Mở khóa tài khoản";
                     document.getElementById("unlockAccountContent").classList.remove("d-none");
                     document.getElementById("lockAccountContent").classList.add("d-none");
-                    document.getElementById("toggleStatusSubmitBtn").innerHTML = \'<i class="bi bi-unlock-fill"></i> Mở khóa tài khoản\';
+                    document.getElementById("toggleStatusSubmitBtn").innerHTML = "<i class=\"bi bi-unlock-fill\"></i> Mở khóa tài khoản";
                     document.getElementById("toggleStatusSubmitBtn").className = "btn btn-success";
                 } else {
                     // Locking
                     document.getElementById("toggleStatusTitle").textContent = "Khóa tài khoản";
                     document.getElementById("lockAccountContent").classList.remove("d-none");
                     document.getElementById("unlockAccountContent").classList.add("d-none");
-                    document.getElementById("toggleStatusSubmitBtn").innerHTML = \'<i class="bi bi-lock-fill"></i> Khóa tài khoản\';
+                    document.getElementById("toggleStatusSubmitBtn").innerHTML = "<i class=\"bi bi-lock-fill\"></i> Khóa tài khoản";
                     document.getElementById("toggleStatusSubmitBtn").className = "btn btn-danger";
                 }
             });

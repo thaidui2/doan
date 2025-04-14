@@ -262,9 +262,9 @@ while ($item = $items_result->fetch_assoc()) {
                                         <td>
                                             <!-- Thêm nút đánh giá sản phẩm nếu đơn hàng đã giao -->
                                             <?php if ($order['trangthai'] == 4): // Đơn hàng đã giao ?>
-                                                <a href="danhgia.php?product_id=<?php echo $item['id_sanpham']; ?>&order_id=<?php echo $order_id; ?>" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-star"></i> Đánh giá
+                                                <a href="hoantra.php?product_id=<?php echo $item['id_sanpham']; ?>&order_id=<?php echo $order_id; ?>" 
+                                                class="btn btn-sm btn-outline-warning">
+                                                <i class="bi bi-arrow-return-left"></i> Hoàn trả
                                                 </a>
                                             <?php endif; ?>
                                         </td>

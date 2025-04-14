@@ -12,6 +12,14 @@ include('../config/config.php');
 $status_filter = isset($_GET['status']) ? (int)$_GET['status'] : 0;
 $search_keyword = isset($_GET['search']) ? $_GET['search'] : '';
 
+// Biến lọc thời gian
+$time_filter = isset($_GET['time']) ? $_GET['time'] : 'all';
+
+// Thiết lập phân trang
+$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$orders_per_page = 10; // Số đơn hàng hiển thị trên mỗi trang
+$offset = ($current_page - 1) * $orders_per_page;
+
 // Xây dựng truy vấn
 $query = "SELECT * FROM donhang";
 
@@ -26,16 +34,42 @@ if (!empty($search_keyword)) {
     $where_conditions[] = "(id_donhang LIKE '%$search_keyword%' OR tennguoinhan LIKE '%$search_keyword%' OR sodienthoai LIKE '%$search_keyword%' OR email LIKE '%$search_keyword%')";
 }
 
+// Thêm điều kiện lọc theo thời gian
+if ($time_filter !== 'all') {
+    $today = date('Y-m-d');
+    if ($time_filter === 'today') {
+        $where_conditions[] = "DATE(ngaytao) = '$today'";
+    } elseif ($time_filter === 'yesterday') {
+        $yesterday = date('Y-m-d', strtotime('-1 day'));
+        $where_conditions[] = "DATE(ngaytao) = '$yesterday'";
+    } elseif ($time_filter === 'week') {
+        $week_start = date('Y-m-d', strtotime('-7 days'));
+        $where_conditions[] = "DATE(ngaytao) >= '$week_start'";
+    } elseif ($time_filter === 'month') {
+        $month_start = date('Y-m-d', strtotime('-30 days'));
+        $where_conditions[] = "DATE(ngaytao) >= '$month_start'";
+    }
+}
+
 // Kết hợp các điều kiện
 if (!empty($where_conditions)) {
     $query .= " WHERE " . implode(" AND ", $where_conditions);
 }
 
-// Sắp xếp
-$query .= " ORDER BY id_donhang DESC";
+// Sắp xếp và phân trang
+$query .= " ORDER BY id_donhang DESC LIMIT 20"; // Chỉ hiển thị 20 đơn hàng mới nhất
 
 // Thực hiện truy vấn
 $result = $conn->query($query);
+
+// Thêm truy vấn đếm tổng số đơn hàng để tính số trang
+$count_query = "SELECT COUNT(*) as total FROM donhang";
+if (!empty($where_conditions)) {
+    $count_query .= " WHERE " . implode(" AND ", $where_conditions);
+}
+$count_result = $conn->query($count_query);
+$total_orders = $count_result->fetch_assoc()['total'];
+$total_pages = ceil($total_orders / $orders_per_page);
 
 // Mảng trạng thái đơn hàng
 $order_statuses = [
@@ -82,6 +116,28 @@ $order_statuses = [
                     <i class="bi bi-search"></i> Tìm kiếm
                 </button>
             </form>
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <a href="?<?php echo $status_filter > 0 ? 'status='.$status_filter.'&' : ''; ?><?php echo !empty($search_keyword) ? 'search='.urlencode($search_keyword).'&' : ''; ?>time=all" class="btn <?php echo $time_filter === 'all' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                    Tất cả
+                </a>
+                <a href="?<?php echo $status_filter > 0 ? 'status='.$status_filter.'&' : ''; ?><?php echo !empty($search_keyword) ? 'search='.urlencode($search_keyword).'&' : ''; ?>time=today" class="btn <?php echo $time_filter === 'today' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                    Hôm nay
+                </a>
+                <a href="?<?php echo $status_filter > 0 ? 'status='.$status_filter.'&' : ''; ?><?php echo !empty($search_keyword) ? 'search='.urlencode($search_keyword).'&' : ''; ?>time=yesterday" class="btn <?php echo $time_filter === 'yesterday' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                    Hôm qua
+                </a>
+                <a href="?<?php echo $status_filter > 0 ? 'status='.$status_filter.'&' : ''; ?><?php echo !empty($search_keyword) ? 'search='.urlencode($search_keyword).'&' : ''; ?>time=week" class="btn <?php echo $time_filter === 'week' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                    7 ngày qua
+                </a>
+                <a href="?<?php echo $status_filter > 0 ? 'status='.$status_filter.'&' : ''; ?><?php echo !empty($search_keyword) ? 'search='.urlencode($search_keyword).'&' : ''; ?>time=month" class="btn <?php echo $time_filter === 'month' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                    30 ngày qua
+                </a>
+            </div>
         </div>
     </div>
     
@@ -203,6 +259,51 @@ $order_statuses = [
                 </table>
             </div>
         </div>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Phân trang đơn hàng">
+            <ul class="pagination">
+                <?php if ($current_page > 1): ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1<?php echo $status_filter > 0 ? '&status='.$status_filter : ''; ?><?php echo !empty($search_keyword) ? '&search='.urlencode($search_keyword) : ''; ?>" aria-label="Trang đầu">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<?php echo $current_page - 1; ?><?php echo $status_filter > 0 ? '&status='.$status_filter : ''; ?><?php echo !empty($search_keyword) ? '&search='.urlencode($search_keyword) : ''; ?>" aria-label="Trang trước">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                
+                <?php 
+                // Hiển thị tối đa 5 trang gần nhất
+                $start_page = max(1, $current_page - 2);
+                $end_page = min($total_pages, $current_page + 2);
+                
+                for ($i = $start_page; $i <= $end_page; $i++): 
+                ?>
+                    <li class="page-item <?php echo $i == $current_page ? 'active' : ''; ?>">
+                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo $status_filter > 0 ? '&status='.$status_filter : ''; ?><?php echo !empty($search_keyword) ? '&search='.urlencode($search_keyword) : ''; ?>"><?php echo $i; ?></a>
+                    </li>
+                <?php endfor; ?>
+                
+                <?php if ($current_page < $total_pages): ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<?php echo $current_page + 1; ?><?php echo $status_filter > 0 ? '&status='.$status_filter : ''; ?><?php echo !empty($search_keyword) ? '&search='.urlencode($search_keyword) : ''; ?>" aria-label="Trang sau">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<?php echo $total_pages; ?><?php echo $status_filter > 0 ? '&status='.$status_filter : ''; ?><?php echo !empty($search_keyword) ? '&search='.urlencode($search_keyword) : ''; ?>" aria-label="Trang cuối">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </nav>
     </div>
 </main>
 

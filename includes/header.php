@@ -306,21 +306,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                     </li>
                                     <li><a class="dropdown-item" href="taikhoan.php"><i class="bi bi-person me-2"></i>Tài khoản của tôi</a></li>
                                     <li><a class="dropdown-item" href="donhang.php"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
+                                    <li><a class="dropdown-item" href="donhoantra.php"><i class="bi bi-arrow-return-left me-2"></i>Yêu cầu hoàn trả</a></li>
                                     <li><a class="dropdown-item" href="wishlist.php"><i class="bi bi-heart me-2"></i>Sản phẩm yêu thích</a></li>
                                     
                                     <?php 
-                                    // Kiểm tra nếu là người bán thì hiển thị link đến kênh người bán
-                                    $seller_check = $conn->prepare("SELECT loai_user FROM users WHERE id_user = ? AND loai_user = 1");
-                                    $seller_check->bind_param("i", $_SESSION['user']['id']);
-                                    $seller_check->execute();
-                                    $is_seller = $seller_check->get_result()->num_rows > 0;
-                                    
-                                    if ($is_seller): 
+                                    // Xóa bỏ phần kiểm tra người bán
                                     ?>
-                                        <li><a class="dropdown-item" href="seller/trang-chu.php"><i class="bi bi-shop me-2"></i>Kênh người bán</a></li>
-                                    <?php else: ?>
-                                        <li><a class="dropdown-item" href="tro-thanh-nguoi-ban.php"><i class="bi bi-shop me-2"></i>Trở thành người bán</a></li>
-                                    <?php endif; ?>
                                     
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>

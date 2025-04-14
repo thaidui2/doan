@@ -164,3 +164,20 @@ function logAction($action, $description) {
     
     logAdminActivity($conn, $admin_id, $action, 'promo', 0, $description);
 }
+
+/**
+ * Lấy thông tin trạng thái sản phẩm dưới dạng mảng
+ * @param int $status_code Mã trạng thái
+ * @return array Mảng chứa text và class CSS
+ */
+function getProductStatusInfo($status_code) {
+    $status_labels = [
+        0 => ['text' => 'Đang ẩn', 'class' => 'warning text-dark', 'icon' => 'bi-eye-slash'],
+        1 => ['text' => 'Đang hiển thị', 'class' => 'success', 'icon' => 'bi-eye'],
+        2 => ['text' => 'Hết hàng', 'class' => 'danger', 'icon' => 'bi-x-circle'],
+        3 => ['text' => 'Đang hoàn trả', 'class' => 'info', 'icon' => 'bi-arrow-return-left'],
+        4 => ['text' => 'Ngừng kinh doanh', 'class' => 'secondary', 'icon' => 'bi-slash-circle']
+    ];
+    
+    return $status_labels[$status_code] ?? ['text' => 'Không xác định', 'class' => 'secondary', 'icon' => 'bi-question-circle'];
+}

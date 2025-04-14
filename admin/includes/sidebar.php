@@ -125,6 +125,21 @@ include_once('includes/permissions.php');
             </li>
             <?php endif; ?>
             
+            <!-- Thêm vào danh sách menu -->
+            <li class="nav-item">
+                <a class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], 'returns.php') !== false ? 'active' : ''; ?>" href="returns.php">
+                    <i class="bi bi-arrow-return-left"></i>
+                    Quản lý hoàn trả
+                    <?php
+                    // Đếm số yêu cầu hoàn trả đang chờ xử lý
+                    $pending_returns = $conn->query("SELECT COUNT(*) as count FROM hoantra WHERE trangthai = 1")->fetch_assoc()['count'];
+                    if ($pending_returns > 0): 
+                    ?>
+                    <span class="badge text-bg-warning rounded-pill ms-1"><?php echo $pending_returns; ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            
             <hr class="bg-secondary my-3">
             
             <li class="nav-item">

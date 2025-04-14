@@ -449,10 +449,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                 
                                 <!-- Truyền thông tin sản phẩm được chọn -->
                                 <?php if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected'): ?>
-                                    <?php foreach ($selected_items as $item_id): ?>
-                                        <input type="hidden" name="selected_items[]" value="<?php echo $item_id; ?>">
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+    <?php 
+    // Đảm bảo $selected_items được định nghĩa trước khi sử dụng
+    $selected_items = isset($_SESSION['checkout_items']) ? $_SESSION['checkout_items'] : [];
+    
+    // Bây giờ an toàn để sử dụng trong foreach
+    foreach ($selected_items as $item_id): ?>
+        <input type="hidden" name="selected_items[]" value="<?php echo $item_id; ?>">
+    <?php endforeach; ?>
+<?php endif; ?>
                                 
                                 <div class="d-flex justify-content-between mt-5">
                                     <a href="giohang.php" class="btn btn-outline-secondary">

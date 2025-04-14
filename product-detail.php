@@ -39,14 +39,12 @@ $update_view = $conn->prepare("UPDATE sanpham SET luotxem = luotxem + 1 WHERE id
 $update_view->bind_param("i", $product_id);
 $update_view->execute();
 
-// Thay đổi câu truy vấn sản phẩm để lấy thêm thông tin người bán
+// Modify query to remove references to seller information (id_nguoiban)
 $product_stmt = $conn->prepare("
-    SELECT sp.*, lsp.tenloai, th.tenthuonghieu, th.logo AS thuonghieu_logo, 
-           u.tenuser, u.ten_shop, u.email_shop, u.anh_dai_dien, u.loai_user
+    SELECT sp.*, lsp.tenloai, th.tenthuonghieu, th.logo AS thuonghieu_logo
     FROM sanpham sp
     LEFT JOIN loaisanpham lsp ON sp.id_loai = lsp.id_loai
     LEFT JOIN thuonghieu th ON sp.id_thuonghieu = th.id_thuonghieu
-    LEFT JOIN users u ON sp.id_nguoiban = u.id_user
     WHERE sp.id_sanpham = ? AND sp.trangthai = 1
 ");
 $product_stmt->bind_param("i", $product_id);
@@ -62,30 +60,6 @@ if ($result->num_rows === 0) {
 $product = $result->fetch_assoc();
 
 // Thêm vào file product-detail.php sau khi lấy thông tin sản phẩm
-
-// Lấy thông tin thêm về người bán
-if (!empty($product['id_nguoiban'])) {
-    $seller_id = $product['id_nguoiban'];
-    
-    // Đếm số sản phẩm của shop
-    $product_count_query = $conn->prepare("SELECT COUNT(*) as product_count FROM sanpham WHERE id_nguoiban = ? AND trangthai = 1");
-    $product_count_query->bind_param("i", $seller_id);
-    $product_count_query->execute();
-    $product_count = $product_count_query->get_result()->fetch_assoc()['product_count'];
-    
-    // Tính đánh giá trung bình của shop
-    $shop_rating_query = $conn->prepare("
-        SELECT AVG(dg.diemdanhgia) as avg_rating, COUNT(dg.id_danhgia) as rating_count
-        FROM danhgia dg
-        JOIN sanpham sp ON dg.id_sanpham = sp.id_sanpham
-        WHERE sp.id_nguoiban = ? AND dg.trangthai = 1
-    ");
-    $shop_rating_query->bind_param("i", $seller_id);
-    $shop_rating_query->execute();
-    $shop_rating_result = $shop_rating_query->get_result()->fetch_assoc();
-    $shop_rating = $shop_rating_result['avg_rating'];
-    $shop_rating_count = $shop_rating_result['rating_count'];
-}
 
 // Lấy các biến thể sản phẩm (kích thước, màu sắc, hình ảnh)
 $variants_stmt = $conn->prepare("
@@ -470,48 +444,6 @@ if (!empty($product['hinhanh_phu'])) {
                         </div>
                         
                         <hr>
-
-                        <!-- Shop Information -->
-                        <?php if (!empty($product['id_nguoiban']) && $product['loai_user'] == 1): ?>
-                        <div class="mb-4 shop-info-container">
-                            <div class="shop-info d-flex align-items-center">
-                                <div class="shop-avatar">
-                                    <?php if (!empty($product['anh_dai_dien'])): ?>
-                                        <img src="uploads/users/<?php echo $product['anh_dai_dien']; ?>" class="rounded-circle" width="50" height="50" alt="Shop logo">
-                                    <?php else: ?>
-                                        <div class="default-avatar rounded-circle d-flex align-items-center justify-content-center bg-light" style="width: 50px; height: 50px;">
-                                            <i class="bi bi-shop text-muted"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="shop-details ms-3">
-                                    <h5 class="mb-0">
-                                        <?php echo !empty($product['ten_shop']) ? htmlspecialchars($product['ten_shop']) : htmlspecialchars($product['tenuser']); ?>
-                                    </h5>
-                                    <div class="shop-meta my-1">
-                                        <span class="badge bg-light text-dark">
-                                            <i class="bi bi-box me-1"></i><?php echo $product_count ?? 0; ?> sản phẩm
-                                        </span>
-                                        <?php if (!empty($shop_rating)): ?>
-                                        <span class="badge bg-light text-dark ms-2">
-                                            <i class="bi bi-star-fill me-1 text-warning"></i>
-                                            <?php echo number_format($shop_rating, 1); ?>/5
-                                            (<?php echo $shop_rating_count; ?>)
-                                        </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <a href="thongtinshop.php?id=<?php echo $product['id_nguoiban']; ?>" class="btn btn-sm btn-outline-primary me-2">
-                                            <i class="bi bi-shop me-1"></i> Xem shop
-                                        </a>
-                                        <a href="chat.php?seller=<?php echo $product['id_nguoiban']; ?>" class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-chat-dots me-1"></i> Chat
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endif; ?>
 
                         <hr>
                         
