@@ -281,8 +281,8 @@ if (isset($_SESSION['last_order_id'])) {
                             <a href="index.php" class="btn btn-outline-primary">
                                 <i class="bi bi-arrow-left me-2"></i>Quay lại trang chủ
                             </a>
-                            <a href="lich-su-don-hang.php" class="btn btn-primary">
-                                <i class="bi bi-list-check me-2"></i>Xem lịch sử đơn hàng
+                            <a href="donhang.php" class="btn btn-primary">
+                                <i class="bi bi-list-check me-2"></i>xem đơn hàng của tôi
                             </a>
                         </div>
                     </div>

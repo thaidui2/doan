@@ -143,7 +143,10 @@ while ($row = $result->fetch_assoc()) {
                                         Chi tiết
                                     </a>
                                     
-                                    <?php if ($order['trangthai'] == 1): ?>
+                                    <?php if ($order['trangthai'] == 1 || 
+                                             ($order['trangthai'] == 2 && 
+                                              (strpos(strtolower($order['ghichu']), 'vnpay') !== false || 
+                                               strpos(strtolower($order['phuongthucthanhtoan']), 'vnpay') !== false))): ?>
                                         <button type="button" class="btn btn-sm btn-outline-danger ms-1" 
                                                 data-bs-toggle="modal" data-bs-target="#cancelModal<?php echo $order['id_donhang']; ?>">
                                             Hủy
@@ -158,6 +161,10 @@ while ($row = $result->fetch_assoc()) {
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
+                                                        <?php if (strpos(strtolower($order['ghichu']), 'vnpay') !== false || 
+                                                                 strpos(strtolower($order['phuongthucthanhtoan']), 'vnpay') !== false): ?>
+                                                            <p>Đơn hàng này đã thanh toán qua VNPAY. Nếu hủy đơn, số tiền sẽ được hoàn về tài khoản của bạn trong 7-14 ngày làm việc.</p>
+                                                        <?php endif; ?>
                                                         <p>Bạn có chắc chắn muốn hủy đơn hàng #<?php echo $order['id_donhang']; ?>?</p>
                                                     </div>
                                                     <div class="modal-footer">
