@@ -1,7 +1,7 @@
 <?php
 ob_start();
 // Set page title
-$page_title = 'Chỉnh sửa nhân viên';
+$page_title = 'Chỉnh sửa tài khoản quản trị';
 
 // Include header (will check for login)
 include('includes/header.php');
@@ -9,73 +9,56 @@ include('includes/header.php');
 // Include database connection
 include('../config/config.php');
 
-// Check if user has permission to edit admins
-checkPermissionRedirect('admin_edit');
-
-// Get admin ID
-$admin_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
-// Validate admin ID
-if ($admin_id <= 0) {
-    $_SESSION['error_message'] = 'ID nhân viên không hợp lệ!';
+// Check if user has admin permission (admin_level should be 2 for admin)
+if ($admin_level < 2) {
+    $_SESSION['error_message'] = 'Bạn không có quyền thực hiện thao tác này.';
     header('Location: admins.php');
     exit();
 }
 
-// Get admin information
-$admin_query = $conn->prepare("SELECT * FROM admin WHERE id_admin = ?");
-$admin_query->bind_param("i", $admin_id);
-$admin_query->execute();
-$admin_result = $admin_query->get_result();
-$admin = $admin_result->fetch_assoc();
+// Get user ID
+$user_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// Nếu cần, in thông tin để debug
-// var_dump($admin); exit;
-
-if ($admin_result->num_rows === 0) {
-    $_SESSION['error_message'] = 'Không tìm thấy nhân viên!';
+// Validate user ID
+if ($user_id <= 0) {
+    $_SESSION['error_message'] = 'ID tài khoản không hợp lệ!';
     header('Location: admins.php');
     exit();
 }
 
-// Check if current admin can edit this admin
-if ($admin['cap_bac'] == 3 && $_SESSION['admin_level'] < 3 && $admin_id != $_SESSION['admin_id']) {
-    $_SESSION['error_message'] = 'Bạn không có quyền chỉnh sửa thông tin của Super Admin.';
+// Get user information - updated for new schema
+$user_query = $conn->prepare("SELECT * FROM users WHERE id = ? AND (loai_user = 1 OR loai_user = 2)");
+$user_query->bind_param("i", $user_id);
+$user_query->execute();
+$user_result = $user_query->get_result();
+$user = $user_result->fetch_assoc();
+
+if ($user_result->num_rows === 0) {
+    $_SESSION['error_message'] = 'Không tìm thấy tài khoản quản trị!';
     header('Location: admins.php');
     exit();
 }
 
-// Get all roles
-$roles_query = "SELECT * FROM roles ORDER BY ten_role";
-$roles_result = $conn->query($roles_query);
-
-// Get admin's current roles
-$admin_roles = [];
-$admin_roles_query = $conn->prepare("SELECT id_role FROM admin_roles WHERE id_admin = ?");
-$admin_roles_query->bind_param("i", $admin_id);
-$admin_roles_query->execute();
-$admin_roles_result = $admin_roles_query->get_result();
-
-while ($role = $admin_roles_result->fetch_assoc()) {
-    $admin_roles[] = $role['id_role'];
+// Prevent editing super admin if you're not super admin yourself
+if ($user['loai_user'] == 2 && $_SESSION['admin_level'] < 2 && $user_id != $_SESSION['admin_id']) {
+    $_SESSION['error_message'] = 'Bạn không có quyền chỉnh sửa thông tin của quản trị viên.';
+    header('Location: admins.php');
+    exit();
 }
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $taikhoan = $admin['taikhoan'];  // Lấy từ dữ liệu admin đã được truy vấn
-    $ten_admin = trim($_POST['ten_admin']); // Không phải ho_ten
-    $matkhau = $_POST['matkhau'];           // Không phải mat_khau
+    $taikhoan = $user['taikhoan'];
+    $ten = trim($_POST['ten']);
     $email = trim($_POST['email']);
-    $cap_bac = (int)$_POST['cap_bac'];
+    $matkhau = $_POST['matkhau'];
+    $loai_user = (int)$_POST['loai_user'];
     $trang_thai = isset($_POST['trang_thai']) ? 1 : 0;
-    
-    // Thêm đoạn này sau các lệnh lấy dữ liệu từ form (sau dòng $trang_thai = isset($_POST['trang_thai']) ? 1 : 0;)
-    $selected_roles = isset($_POST['roles']) ? $_POST['roles'] : [];
     
     // Basic validation
     $errors = [];
     
-    if (empty($ten_admin)) {
+    if (empty($ten)) {
         $errors[] = 'Vui lòng nhập họ tên.';
     }
     
@@ -88,22 +71,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Check if email already exists (if provided and changed)
-    if (!empty($email) && $email != $admin['email']) {
-        $check_email = $conn->prepare("SELECT id_admin FROM admin WHERE email = ? AND id_admin != ?");
-        $check_email->bind_param("si", $email, $admin_id);
+    if (!empty($email) && $email != $user['email']) {
+        $check_email = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $check_email->bind_param("si", $email, $user_id);
         $check_email->execute();
         if ($check_email->get_result()->num_rows > 0) {
             $errors[] = 'Email đã được sử dụng.';
         }
     }
     
-    // Validate cap_bac (only accept valid values)
-    if ($cap_bac < 1 || $cap_bac > 2) {
-        $errors[] = 'Cấp bậc không hợp lệ.';
+    // Validate loai_user (only accept valid values)
+    if ($loai_user != 1 && $loai_user != 2) {
+        $errors[] = 'Loại tài khoản không hợp lệ.';
     }
     
     // Prevent self-locking
-    if ($admin_id == $_SESSION['admin_id'] && $trang_thai == 0) {
+    if ($user_id == $_SESSION['admin_id'] && $trang_thai == 0) {
         $errors[] = 'Bạn không thể khóa tài khoản của chính mình.';
     }
     
@@ -118,9 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $query_types = "";
             
             // Always update these fields
-            $query_parts[] = "ten_admin = ?";
+            $query_parts[] = "ten = ?";
             $query_types .= "s";
-            $query_params[] = $ten_admin;
+            $query_params[] = $ten;
             
             // Update email if provided
             if (!empty($email)) {
@@ -137,102 +120,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $query_params[] = $hashed_password;
             }
             
-            // Update cap_bac and trang_thai
-            $query_parts[] = "cap_bac = ?";
+            // Update loai_user and trang_thai
+            $query_parts[] = "loai_user = ?";
             $query_types .= "i";
-            $query_params[] = $cap_bac;
+            $query_params[] = $loai_user;
             
             $query_parts[] = "trang_thai = ?";
             $query_types .= "i";
             $query_params[] = $trang_thai;
             
-            // Add admin_id to params for WHERE clause
+            // Add user_id to params for WHERE clause
             $query_types .= "i";
-            $query_params[] = $admin_id;
+            $query_params[] = $user_id;
             
             // Build and execute update query
-            $update_query = "UPDATE admin SET ten_admin = ?, email = ?, cap_bac = ?, trang_thai = ? WHERE id_admin = ?";
-$update_stmt = $conn->prepare($update_query);
-$update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $admin_id);
+            $update_query = "UPDATE users SET " . implode(", ", $query_parts) . " WHERE id = ?";
+            $update_stmt = $conn->prepare($update_query);
+            $update_stmt->bind_param($query_types, ...$query_params);
             $update_stmt->execute();
             
-            // Update roles
-            
-            // Delete existing roles
-            $delete_roles = $conn->prepare("DELETE FROM admin_roles WHERE id_admin = ?");
-            $delete_roles->bind_param("i", $admin_id);
-            $delete_roles->execute();
-            
-            // Insert new roles
-            if (!empty($selected_roles)) {
-                $insert_role_stmt = $conn->prepare("INSERT INTO admin_roles (id_admin, id_role) VALUES (?, ?)");
-                
-                foreach ($selected_roles as $role_id) {
-                    $insert_role_stmt->bind_param("ii", $admin_id, $role_id);
-                    $insert_role_stmt->execute();
-                }
-            }
-            
             // Log the action
-            $admin_name = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
-            
-            // Check if the log table exists
-            $table_check = $conn->query("SHOW TABLES LIKE 'admin_actions'");
-            
-            if ($table_check->num_rows === 0) {
-                // Create table if it doesn't exist
-                $create_table = "CREATE TABLE admin_actions (
-                    id INT(11) NOT NULL AUTO_INCREMENT,
-                    admin_id INT(11) NOT NULL,
-                    action_type VARCHAR(100) NOT NULL,
-                    target_type VARCHAR(50) NOT NULL,
-                    target_id INT(11) NOT NULL,
-                    details TEXT DEFAULT NULL,
-                    ip_address VARCHAR(45) DEFAULT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (id),
-                    KEY admin_id (admin_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-                
-                $conn->query($create_table);
-            }
-            
-            // Add log entry
-            $log_stmt = $conn->prepare("
-                INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details, ip_address) 
-                VALUES (?, ?, ?, ?, ?, ?)
-            ");
-            $action = 'edit';
-            $target_type = 'admin'; // Đặt chuỗi vào biến
-            $username_display = $admin['taikhoan'] ?? 'Unknown';
-            $details = "Chỉnh sửa thông tin admin #$admin_id ($username_display) bởi $admin_name";
-            $ip = $_SERVER['REMOTE_ADDR'];
-            
-            $log_stmt->bind_param("ississ", $_SESSION['admin_id'], $action, $target_type, $admin_id, $details, $ip);
-            $log_stmt->execute();
+            $details = "Chỉnh sửa tài khoản quản trị: " . $user['ten'] . " (ID: $user_id)";
+            logAdminActivity($conn, $_SESSION['admin_id'], 'update', 'admin', $user_id, $details);
             
             // Commit transaction
             $conn->commit();
             
             // Update session variables if editing own account
-            if ($admin_id == $_SESSION['admin_id']) {
-                $_SESSION['admin_name'] = $ten_admin;
-                if ($cap_bac != $_SESSION['admin_level']) {
-                    $_SESSION['admin_level'] = $cap_bac;
-                    // Clear cached permissions to force refresh
-                    unset($_SESSION['admin_permissions']);
-                    unset($_SESSION['admin_roles']);
+            if ($user_id == $_SESSION['admin_id']) {
+                $_SESSION['admin_name'] = $ten;
+                if ($loai_user != $_SESSION['admin_level']) {
+                    $_SESSION['admin_level'] = $loai_user;
                 }
             }
             
-            $_SESSION['success_message'] = 'Cập nhật thông tin nhân viên thành công!';
-            echo "<script>window.location.href='view_admin.php?id=$admin_id';</script>";
+            $_SESSION['success_message'] = 'Cập nhật thông tin tài khoản thành công!';
+            header('Location: admins.php');
             exit();
             
         } catch (Exception $e) {
             // Rollback on error
             $conn->rollback();
-            $_SESSION['error_message'] = 'Lỗi khi cập nhật thông tin nhân viên: ' . $e->getMessage();
+            $_SESSION['error_message'] = 'Lỗi khi cập nhật thông tin: ' . $e->getMessage();
         }
     } else {
         $_SESSION['error_message'] = implode('<br>', $errors);
@@ -240,25 +169,18 @@ $update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $ad
 }
 ?>
 
-<!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
-
-<!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a href="admins.php">Quản lý nhân viên</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa nhân viên</li>
+            <li class="breadcrumb-item"><a href="admins.php">Quản lý tài khoản</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa tài khoản</li>
         </ol>
     </nav>
     
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Chỉnh sửa thông tin nhân viên</h1>
+        <h1 class="h2">Chỉnh sửa tài khoản quản trị</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="view_admin.php?id=<?php echo $admin_id; ?>" class="btn btn-sm btn-outline-secondary me-2">
-                <i class="bi bi-eye"></i> Xem chi tiết
-            </a>
             <a href="admins.php" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Quay lại
             </a>
@@ -275,7 +197,7 @@ $update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $ad
     
     <div class="card">
         <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">Thông tin nhân viên</h5>
+            <h5 class="card-title mb-0">Thông tin tài khoản</h5>
         </div>
         <div class="card-body">
             <form method="post" action="">
@@ -283,18 +205,18 @@ $update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $ad
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="taikhoan" class="form-label">Tên đăng nhập</label>
-                            <input type="text" class="form-control" id="taikhoan" value="<?php echo htmlspecialchars($admin['taikhoan']); ?>" disabled>
+                            <input type="text" class="form-control" id="taikhoan" value="<?php echo htmlspecialchars($user['taikhoan']); ?>" disabled>
                             <div class="form-text">Tên đăng nhập không thể thay đổi</div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="ten_admin" class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ten_admin" name="ten_admin" value="<?php echo htmlspecialchars($admin['ten_admin']); ?>" required>
+                            <label for="ten" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ten" name="ten" value="<?php echo htmlspecialchars($user['ten']); ?>" required>
                         </div>
                         
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($admin['email'] ?? ''); ?>">
+                            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>">
                         </div>
                     </div>
                     
@@ -314,20 +236,20 @@ $update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $ad
                         </div>
                         
                         <div class="mb-3">
-                            <label for="cap_bac" class="form-label">Cấp bậc <span class="text-danger">*</span></label>
-                            <select class="form-select" id="cap_bac" name="cap_bac" required>
-                                <option value="1" <?php echo ($admin['cap_bac'] == 1) ? 'selected' : ''; ?>>Quản lý</option>
-                                <option value="2" <?php echo ($admin['cap_bac'] == 2) ? 'selected' : ''; ?>>Admin</option>
+                            <label for="loai_user" class="form-label">Cấp bậc <span class="text-danger">*</span></label>
+                            <select class="form-select" id="loai_user" name="loai_user" required>
+                                <option value="1" <?php echo ($user['loai_user'] == 1) ? 'selected' : ''; ?>>Nhân viên</option>
+                                <option value="2" <?php echo ($user['loai_user'] == 2) ? 'selected' : ''; ?>>Quản trị viên</option>
                             </select>
-                            <div class="form-text">Chọn cấp bậc phù hợp với vai trò của nhân viên</div>
+                            <div class="form-text">Chọn cấp bậc phù hợp với vai trò của tài khoản</div>
                         </div>
                         
                         <div class="mb-3 form-check">
                             <input class="form-check-input" type="checkbox" id="trang_thai" name="trang_thai" value="1" 
-                                <?php echo $admin['trang_thai'] ? 'checked' : ''; ?>
-                                <?php echo ($admin_id == $_SESSION['admin_id']) ? 'disabled' : ''; ?>>
+                                <?php echo $user['trang_thai'] ? 'checked' : ''; ?>
+                                <?php echo ($user_id == $_SESSION['admin_id']) ? 'disabled' : ''; ?>>
                             <label class="form-check-label" for="trang_thai">Tài khoản hoạt động</label>
-                            <?php if ($admin_id == $_SESSION['admin_id']): ?>
+                            <?php if ($user_id == $_SESSION['admin_id']): ?>
                                 <input type="hidden" name="trang_thai" value="1">
                                 <div class="form-text">Bạn không thể khóa tài khoản của chính mình</div>
                             <?php endif; ?>
@@ -335,45 +257,8 @@ $update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $ad
                     </div>
                 </div>
                 
-                <hr>
-                
-                <div class="mb-4">
-                    <label class="form-label">Vai trò</label>
-                    <?php if ($admin['cap_bac'] == 3): ?>
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle me-2"></i> Super Admin có tất cả các quyền mà không cần phải gán vai trò cụ thể.
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="card">
-                        <div class="card-body">
-                            <?php if ($roles_result->num_rows > 0): ?>
-                                <div class="row">
-                                    <?php while ($role = $roles_result->fetch_assoc()): ?>
-                                        <div class="col-md-4 mb-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="role_<?php echo $role['id_role']; ?>" 
-                                                    name="roles[]" value="<?php echo $role['id_role']; ?>"
-                                                    <?php echo in_array($role['id_role'], $admin_roles) ? 'checked' : ''; ?>>
-                                                <label class="form-check-label" for="role_<?php echo $role['id_role']; ?>">
-                                                    <?php echo htmlspecialchars($role['ten_role']); ?>
-                                                    <small class="text-muted d-block"><?php echo htmlspecialchars($role['mo_ta'] ?? ''); ?></small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    <?php endwhile; ?>
-                                </div>
-                            <?php else: ?>
-                                <div class="alert alert-warning mb-0">
-                                    Chưa có vai trò nào. <a href="add_role.php">Tạo vai trò mới</a>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="d-flex justify-content-between">
-                    <a href="view_admin.php?id=<?php echo $admin_id; ?>" class="btn btn-secondary">
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="admins.php" class="btn btn-secondary">
                         <i class="bi bi-x-circle"></i> Hủy
                     </a>
                     <button type="submit" class="btn btn-primary">
@@ -385,9 +270,6 @@ $update_stmt->bind_param("ssiii", $ten_admin, $email, $cap_bac, $trang_thai, $ad
     </div>
 </main>
 
-<?php 
-// JavaScript for the page
-$page_specific_js = '
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         // Password toggle visibility
@@ -426,49 +308,7 @@ $page_specific_js = '
                 icon.classList.replace("bi-eye", "bi-eye-slash");
             }
         });
-        
-        // Form validation
-        const form = document.querySelector("form");
-        
-        form.addEventListener("submit", function(event) {
-            const password = document.getElementById("matkhau").value;
-            
-            let isValid = true;
-            let errorMessage = "";
-            
-            if (password && password.length < 8) {
-                isValid = false;
-                errorMessage += "Mật khẩu mới phải có ít nhất 8 ký tự.<br>";
-            }
-            
-            if (!isValid) {
-                event.preventDefault();
-                
-                const errorAlert = document.createElement("div");
-                errorAlert.className = "alert alert-danger alert-dismissible fade show";
-                errorAlert.role = "alert";
-                errorAlert.innerHTML = errorMessage;
-                
-                const closeButton = document.createElement("button");
-                closeButton.type = "button";
-                closeButton.className = "btn-close";
-                closeButton.setAttribute("data-bs-dismiss", "alert");
-                closeButton.setAttribute("aria-label", "Close");
-                
-                errorAlert.appendChild(closeButton);
-                
-                // Insert error alert after the heading
-                const heading = document.querySelector(".border-bottom");
-                heading.insertAdjacentElement("afterend", errorAlert);
-                
-                // Scroll to top
-                window.scrollTo(0, 0);
-            }
-        });
     });
 </script>
-';
 
-// Include footer
-include('includes/footer.php');
-?>
+<?php include('includes/footer.php'); ?>

@@ -319,9 +319,28 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                 <div class="card shadow-sm">
                     <div class="card-body p-3">
                         <div class="main-image-container position-relative" id="image-container">
-                            <img src="uploads/products/<?php echo !empty($product['hinhanh']) ? $product['hinhanh'] : 'no-image.png'; ?>" 
+                            <?php 
+                            // Fix image path handling
+                            $main_image_path = 'images/no-image.png'; // Default image
+                            
+                            if (!empty($product['hinhanh'])) {
+                                // Check if path already includes directory prefix
+                                if (strpos($product['hinhanh'], 'uploads/') === 0) {
+                                    $main_image_path = $product['hinhanh'];
+                                } else {
+                                    // Check if file exists in uploads/products directory
+                                    if (file_exists('uploads/products/' . $product['hinhanh'])) {
+                                        $main_image_path = 'uploads/products/' . $product['hinhanh'];
+                                    } elseif (file_exists($product['hinhanh'])) {
+                                        $main_image_path = $product['hinhanh'];
+                                    }
+                                }
+                            }
+                            ?>
+                            <img src="<?php echo $main_image_path; ?>" 
                                  id="main-product-image" class="img-fluid" 
-                                 alt="<?php echo htmlspecialchars($product['tensanpham']); ?>">
+                                 alt="<?php echo htmlspecialchars($product['tensanpham']); ?>"
+                                 onerror="this.onerror=null; this.src='images/no-image.png';">
                         </div>
                         
                         <!-- Thumbnail Gallery -->
@@ -329,12 +348,28 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                             <!-- Hiển thị ảnh màu sắc với indicator -->
                             <?php if (!empty($color_images)): ?>
                                 <?php foreach ($color_images as $color_id => $img): ?>
+                                    <?php 
+                                    // Fix color image path handling
+                                    $color_img_path = 'images/no-image.png';
+                                    if (!empty($img)) {
+                                        if (strpos($img, 'uploads/') === 0) {
+                                            $color_img_path = $img;
+                                        } else if (file_exists('uploads/colors/' . $img)) {
+                                            $color_img_path = 'uploads/colors/' . $img;
+                                        } else if (file_exists('uploads/products/' . $img)) {
+                                            $color_img_path = 'uploads/products/' . $img;
+                                        } else if (file_exists($img)) {
+                                            $color_img_path = $img;
+                                        }
+                                    }
+                                    ?>
                                     <div class="thumbnail-wrapper" data-type="color" data-color-id="<?php echo $color_id; ?>">
-                                        <img src="uploads/colors/<?php echo $img; ?>" 
+                                        <img src="<?php echo $color_img_path; ?>" 
                                              class="thumbnail-image color-thumbnail" 
                                              alt="<?php echo htmlspecialchars($color_info[$color_id]['name']); ?>"
                                              data-color-id="<?php echo $color_id; ?>" 
-                                             title="<?php echo htmlspecialchars($color_info[$color_id]['name']); ?>">
+                                             title="<?php echo htmlspecialchars($color_info[$color_id]['name']); ?>"
+                                             onerror="this.onerror=null; this.src='images/no-image.png';">
                                         <div class="color-thumbnail-indicator" style="background-color: <?php echo htmlspecialchars($color_info[$color_id]['code']); ?>"></div>
                                     </div>
                                 <?php endforeach; ?>
@@ -342,12 +377,26 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                             
                             <!-- Hiển thị ảnh mặc định -->
                             <?php if (count($images) > 0): ?>
+                                <?php 
+                                // Fix default image path handling
+                                $default_img_path = 'images/no-image.png';
+                                if (!empty($images[0])) {
+                                    if (strpos($images[0], 'uploads/') === 0) {
+                                        $default_img_path = $images[0];
+                                    } else if (file_exists('uploads/products/' . $images[0])) {
+                                        $default_img_path = 'uploads/products/' . $images[0];
+                                    } else if (file_exists($images[0])) {
+                                        $default_img_path = $images[0];
+                                    }
+                                }
+                                ?>
                                 <div class="thumbnail-wrapper active" data-type="default">
-                                    <img src="uploads/products/<?php echo $images[0]; ?>" 
+                                    <img src="<?php echo $default_img_path; ?>" 
                                          class="thumbnail-image default-thumbnail" 
                                          alt="Default Image" 
                                          data-default="true" 
-                                         title="Ảnh mặc định">
+                                         title="Ảnh mặc định"
+                                         onerror="this.onerror=null; this.src='images/no-image.png';">
                                 </div>
                                 
                                 <!-- Hiển thị ảnh phụ với cải tiến -->
@@ -359,11 +408,25 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                                         
                                         <div class="thumbnails-container d-flex flex-wrap gap-2">
                                             <?php for($i=1; $i < count($images); $i++): ?>
+                                                <?php 
+                                                // Fix additional image path handling
+                                                $additional_img_path = 'images/no-image.png';
+                                                if (!empty($images[$i])) {
+                                                    if (strpos($images[$i], 'uploads/') === 0) {
+                                                        $additional_img_path = $images[$i];
+                                                    } else if (file_exists('uploads/products/' . $images[$i])) {
+                                                        $additional_img_path = 'uploads/products/' . $images[$i];
+                                                    } else if (file_exists($images[$i])) {
+                                                        $additional_img_path = $images[$i];
+                                                    }
+                                                }
+                                                ?>
                                                 <div class="thumbnail-wrapper position-relative" data-type="additional" data-index="<?php echo $i; ?>">
-                                                    <img src="uploads/products/<?php echo $images[$i]; ?>" 
+                                                    <img src="<?php echo $additional_img_path; ?>" 
                                                          class="thumbnail-image img-thumbnail" 
                                                          alt="Product Image <?php echo $i+1; ?>" 
-                                                         title="Hình ảnh <?php echo $i+1; ?> - Click để xem">
+                                                         title="Hình ảnh <?php echo $i+1; ?> - Click để xem"
+                                                         onerror="this.onerror=null; this.src='images/no-image.png';">
                                                     <div class="thumbnail-overlay">
                                                         <span class="image-number badge rounded-pill bg-dark"><?php echo $i+1; ?>/<?php echo count($images); ?></span>
                                                     </div>

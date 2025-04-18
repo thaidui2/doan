@@ -2,6 +2,9 @@
 session_start();
 include('config/config.php');
 
+// Include email functionality but don't call functions yet
+include_once 'includes/order_emails.php';
+
 // Kiểm tra đăng nhập
 if (!isset($_SESSION['user'])) {
     $_SESSION['redirect_after_login'] = 'donhang.php';

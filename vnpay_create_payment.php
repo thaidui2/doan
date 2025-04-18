@@ -11,12 +11,15 @@ if (!isset($_SESSION['payment_info']) || !is_array($_SESSION['payment_info'])) {
 
 $payment_info = $_SESSION['payment_info'];
 
-// Thông tin đơn hàng
-$order_id = isset($payment_info['order_id']) ? $payment_info['order_id'] : time(); // Mã đơn hàng
+// Updated to use ma_donhang instead of order_id for compatibility
+$order_id = isset($payment_info['ma_donhang']) ? $payment_info['ma_donhang'] : 'BUG' . time(); 
 $amount = $payment_info['amount']; // Số tiền thanh toán
 $order_desc = isset($payment_info['order_desc']) ? $payment_info['order_desc'] : 'Thanh toan don hang Bug Shop';
 $bank_code = ''; // Để trống để hiển thị tất cả ngân hàng
 $language = 'vn';
+
+// Log payment information for debugging
+error_log("VNPAY Payment Request: " . json_encode($payment_info));
 
 // Tạo tham số cho VNPAY
 $vnp_Params = array(
@@ -65,7 +68,8 @@ $vnpUrl = $vnp_Url . "?" . $query . '&vnp_SecureHash=' . $vnp_SecureHash;
 
 // Lưu thông tin thanh toán vào SESSION để kiểm tra khi VNPAY callback
 $_SESSION['vnpay_payment'] = [
-    'order_id' => $order_id,
+    'order_id' => $payment_info['id'] ?? null, // Database ID
+    'ma_donhang' => $order_id,                 // Order reference code
     'amount' => $amount,
     'created_at' => time()
 ];

@@ -72,20 +72,24 @@ function paginationLinks($current_page, $total_pages, $url_params = '') {
 function hasPermission($permission) {
     global $admin_level, $conn;
     
-    // Trong hệ thống mới, admin là loại user = 2, quản lý = 1
-    if ($permission == 'admin' && $admin_level == 2) {
+    // Super admin always has all permissions
+    if ($admin_level == 2) {
         return true;
     }
     
-    if ($permission == 'manager' && ($admin_level >= 1)) {
+    // For loai_user = 1 (staff), check specific permissions
+    if ($permission == 'manager' && $admin_level >= 1) {
         return true;
     }
     
-    // Các quyền khác có thể kiểm tra từ bảng quyen_han nếu cần
+    // For debugging purposes - log permission check failures
+    error_log("Permission check failed: $permission required, admin_level: $admin_level");
+    
+    // Specific permissions can be checked here from quyen_han table
     if (isset($_SESSION['admin_id'])) {
         $admin_id = $_SESSION['admin_id'];
-        $query = $conn->prepare("SELECT * FROM quyen_han WHERE id_user = ? AND module = ? AND quyen = 'view'");
-        $module = explode('_', $permission)[0]; // Lấy module từ tên quyền (vd: product_edit -> product)
+        $module = explode('_', $permission)[0]; // Extract module name from permission code
+        $query = $conn->prepare("SELECT * FROM quyen_han WHERE id_user = ? AND module = ?");
         $query->bind_param("is", $admin_id, $module);
         $query->execute();
         $result = $query->get_result();
@@ -99,11 +103,33 @@ function hasPermission($permission) {
  * Kiểm tra quyền và chuyển hướng nếu không có
  */
 function checkPermissionRedirect($permission_code, $redirect_url = 'index.php') {
+    global $admin_level;
+    
+    // Log the permission check for debugging
+    error_log("Checking permission: $permission_code, admin_level: $admin_level");
+    
+    // Super admin bypass - always grant permission
+    if ($admin_level == 2) {
+        return true; // Super admin always has access
+    }
+    
+    // Check permission for regular staff
     if (!hasPermission($permission_code)) {
         $_SESSION['error_message'] = 'Bạn không có quyền thực hiện thao tác này.';
-        header("Location: $redirect_url");
-        exit();
+        
+        // Check if headers already sent
+        if (!headers_sent()) {
+            header("Location: $redirect_url");
+            exit();
+        } else {
+            // Use JavaScript redirect when headers are already sent
+            echo '<script>window.location.href="'.$redirect_url.'";</script>';
+            echo 'Đang chuyển hướng... Nếu không tự chuyển, hãy <a href="'.$redirect_url.'">click vào đây</a>.';
+            exit();
+        }
     }
+    
+    return true;
 }
 
 /**

@@ -1,6 +1,134 @@
 /**
  * Module xử lý địa chỉ Việt Nam
  */
+
+// Create a reusable module for Vietnamese address selection
+const VNAddressManager = {
+  DEBUG: true,
+  apiUrl: {
+    provinces: "https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1",
+    districts: (provinceCode) =>
+      `https://vn-public-apis.fpo.vn/districts/getByProvince?provinceCode=${provinceCode}&limit=-1`,
+    wards: (districtCode) =>
+      `https://vn-public-apis.fpo.vn/wards/getByDistrict?districtCode=${districtCode}&limit=-1`,
+  },
+
+  logDebug(message, data) {
+    if (this.DEBUG) {
+      console.log(
+        `[${new Date().toLocaleTimeString()}] ${message}`,
+        data || ""
+      );
+    }
+  },
+
+  showError(container, message) {
+    const alertDiv = document.createElement("div");
+    alertDiv.className = "alert alert-danger mt-2";
+    alertDiv.role = "alert";
+    alertDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${message}`;
+
+    // Remove existing error messages
+    const oldAlert = container.querySelector(".alert-danger");
+    if (oldAlert) oldAlert.remove();
+
+    // Add new message
+    container.appendChild(alertDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => alertDiv.remove(), 5000);
+  },
+
+  async loadProvinces() {
+    try {
+      const response = await fetch(this.apiUrl.provinces);
+      const data = await response.json();
+
+      if (!data.data || !data.data.data) {
+        throw new Error("Dữ liệu tỉnh/thành phố không hợp lệ");
+      }
+
+      const provinces = data.data.data;
+      // Sort provinces by name
+      return provinces.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+    } catch (error) {
+      this.logDebug("Error loading provinces:", error);
+      throw error;
+    }
+  },
+
+  async loadDistricts(provinceCode) {
+    try {
+      const response = await fetch(this.apiUrl.districts(provinceCode));
+      const data = await response.json();
+
+      if (!data.data || !data.data.data) {
+        throw new Error("Dữ liệu quận/huyện không hợp lệ");
+      }
+
+      const districts = data.data.data;
+      // Sort districts by name
+      return districts.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+    } catch (error) {
+      this.logDebug("Error loading districts:", error);
+      throw error;
+    }
+  },
+
+  async loadWards(districtCode) {
+    try {
+      const response = await fetch(this.apiUrl.wards(districtCode));
+      const data = await response.json();
+
+      if (!data.data || !data.data.data) {
+        throw new Error("Dữ liệu phường/xã không hợp lệ");
+      }
+
+      const wards = data.data.data;
+      // Sort wards by name
+      return wards.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+    } catch (error) {
+      this.logDebug("Error loading wards:", error);
+      throw error;
+    }
+  },
+
+  populateSelect(
+    selectElement,
+    items,
+    valueProperty,
+    textProperty,
+    selectedValue = null
+  ) {
+    // Clear existing options
+    selectElement.innerHTML = "";
+
+    // Add default option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = selectElement.dataset.placeholder || "Chọn...";
+    selectElement.appendChild(defaultOption);
+
+    // Add options from items
+    items.forEach((item) => {
+      const option = document.createElement("option");
+      option.value =
+        valueProperty === textProperty
+          ? item[valueProperty]
+          : item[valueProperty];
+      option.textContent = item[textProperty];
+      if (selectedValue !== null && item[valueProperty] == selectedValue) {
+        option.selected = true;
+      }
+      selectElement.appendChild(option);
+    });
+
+    // Enable the select element
+    selectElement.disabled = false;
+  },
+};
+
+// Original implementation using the shared module
 document.addEventListener("DOMContentLoaded", function () {
   // Các phần tử DOM
   const provinceSelect = document.getElementById("province");
@@ -15,21 +143,11 @@ document.addEventListener("DOMContentLoaded", function () {
   let selectedDistrict = { code: "", name: "" };
   let selectedWard = { code: "", name: "" };
 
-  // Biến debug
-  const DEBUG = true;
-
-  // Hàm log nâng cao
-  function logDebug(message, data) {
-    if (DEBUG) {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] ${message}`,
-        data || ""
-      );
-    }
-  }
+  // Skip if elements don't exist
+  if (!provinceSelect) return;
 
   // Lấy dữ liệu tỉnh/thành phố
-  function loadProvinces() {
+  async function loadProvinces() {
     if (!provinceSelect) return;
 
     provinceSelect.innerHTML =
@@ -39,46 +157,27 @@ document.addEventListener("DOMContentLoaded", function () {
     districtSelect.disabled = true;
     wardSelect.disabled = true;
 
-    // Sử dụng API thay thế ngay từ đầu vì API có vẻ ổn định hơn
-    fetch("https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1")
-      .then((response) => {
-        logDebug("Provinces API Response:", response.status);
-        return response.json();
-      })
-      .then((data) => {
-        logDebug("Provinces data structure:", Object.keys(data));
-
-        if (!data.data || !data.data.data) {
-          throw new Error("Dữ liệu tỉnh/thành phố không hợp lệ");
-        }
-
-        const provinces = data.data.data;
-        logDebug(`Đã tải ${provinces.length} tỉnh/thành phố`);
-
-        // Sắp xếp tỉnh/thành phố theo tên
-        const sortedProvinces = provinces.sort((a, b) => {
-          return a.name.localeCompare(b.name, "vi");
-        });
-
-        let options = '<option value="">Chọn tỉnh/thành phố</option>';
-        sortedProvinces.forEach((province) => {
-          options += `<option value="${province.code}">${province.name}</option>`;
-        });
-
-        provinceSelect.innerHTML = options;
-      })
-      .catch((error) => {
-        console.error("Lỗi khi tải tỉnh/thành phố:", error);
-        provinceSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
-        showError(
-          "Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại sau hoặc nhập thủ công."
-        );
-        addManualAddressField();
-      });
+    try {
+      const provinces = await VNAddressManager.loadProvinces();
+      VNAddressManager.populateSelect(
+        provinceSelect,
+        provinces,
+        "code",
+        "name"
+      );
+    } catch (error) {
+      console.error("Lỗi khi tải tỉnh/thành phố:", error);
+      provinceSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+      VNAddressManager.showError(
+        provinceSelect.parentNode,
+        "Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại sau hoặc nhập thủ công."
+      );
+      addManualAddressField();
+    }
   }
 
   // Lấy dữ liệu quận/huyện
-  function loadDistricts(provinceCode) {
+  async function loadDistricts(provinceCode) {
     if (!districtSelect) return;
     if (!provinceCode) {
       districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
@@ -88,61 +187,32 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    logDebug(
-      "Province Code được chọn:",
-      provinceCode + " (type: " + typeof provinceCode + ")"
-    );
-
     districtSelect.innerHTML =
       '<option value="">Đang tải quận/huyện...</option>';
     wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
     districtSelect.disabled = true;
     wardSelect.disabled = true;
 
-    // Sử dụng API thay thế ngay từ đầu
-    fetch(
-      `https://vn-public-apis.fpo.vn/districts/getByProvince?provinceCode=${provinceCode}&limit=-1`
-    )
-      .then((response) => {
-        logDebug("Districts API Response:", response.status);
-        return response.json();
-      })
-      .then((data) => {
-        logDebug("Districts data structure:", Object.keys(data));
-
-        if (!data.data || !data.data.data) {
-          throw new Error("Dữ liệu quận/huyện không hợp lệ");
-        }
-
-        const districts = data.data.data;
-        logDebug(
-          `Đã tải ${districts.length} quận/huyện cho tỉnh ${provinceCode}`
-        );
-
-        // Sắp xếp quận/huyện theo tên
-        const sortedDistricts = districts.sort((a, b) => {
-          return a.name.localeCompare(b.name, "vi");
-        });
-
-        let options = '<option value="">Chọn quận/huyện</option>';
-        sortedDistricts.forEach((district) => {
-          options += `<option value="${district.code}">${district.name}</option>`;
-        });
-
-        districtSelect.innerHTML = options;
-        districtSelect.disabled = false;
-      })
-      .catch((error) => {
-        console.error("Lỗi khi tải quận/huyện:", error);
-        districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
-        showError(
-          "Không thể tải danh sách quận/huyện. Vui lòng thử lại hoặc nhập thủ công."
-        );
-      });
+    try {
+      const districts = await VNAddressManager.loadDistricts(provinceCode);
+      VNAddressManager.populateSelect(
+        districtSelect,
+        districts,
+        "code",
+        "name"
+      );
+    } catch (error) {
+      console.error("Lỗi khi tải quận/huyện:", error);
+      districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+      VNAddressManager.showError(
+        districtSelect.parentNode,
+        "Không thể tải danh sách quận/huyện. Vui lòng thử lại hoặc nhập thủ công."
+      );
+    }
   }
 
   // Lấy dữ liệu phường/xã
-  function loadWards(districtCode) {
+  async function loadWards(districtCode) {
     if (!wardSelect) return;
     if (!districtCode) {
       wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
@@ -150,54 +220,20 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    logDebug(
-      "District Code được chọn:",
-      districtCode + " (type: " + typeof districtCode + ")"
-    );
-
     wardSelect.innerHTML = '<option value="">Đang tải phường/xã...</option>';
     wardSelect.disabled = true;
 
-    // Sử dụng API thay thế ngay từ đầu
-    fetch(
-      `https://vn-public-apis.fpo.vn/wards/getByDistrict?districtCode=${districtCode}&limit=-1`
-    )
-      .then((response) => {
-        logDebug("Wards API Response:", response.status);
-        return response.json();
-      })
-      .then((data) => {
-        logDebug("Wards data structure:", Object.keys(data));
-
-        if (!data.data || !data.data.data) {
-          throw new Error("Dữ liệu phường/xã không hợp lệ");
-        }
-
-        const wards = data.data.data;
-        logDebug(
-          `Đã tải ${wards.length} phường/xã cho quận/huyện ${districtCode}`
-        );
-
-        // Sắp xếp phường/xã theo tên
-        const sortedWards = wards.sort((a, b) => {
-          return a.name.localeCompare(b.name, "vi");
-        });
-
-        let options = '<option value="">Chọn phường/xã</option>';
-        sortedWards.forEach((ward) => {
-          options += `<option value="${ward.code}">${ward.name}</option>`;
-        });
-
-        wardSelect.innerHTML = options;
-        wardSelect.disabled = false;
-      })
-      .catch((error) => {
-        console.error("Lỗi khi tải phường/xã:", error);
-        wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
-        showError(
-          "Không thể tải danh sách phường/xã. Vui lòng thử lại hoặc nhập thủ công."
-        );
-      });
+    try {
+      const wards = await VNAddressManager.loadWards(districtCode);
+      VNAddressManager.populateSelect(wardSelect, wards, "code", "name");
+    } catch (error) {
+      console.error("Lỗi khi tải phường/xã:", error);
+      wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+      VNAddressManager.showError(
+        wardSelect.parentNode,
+        "Không thể tải danh sách phường/xã. Vui lòng thử lại hoặc nhập thủ công."
+      );
+    }
   }
 
   // Thêm trường nhập địa chỉ thủ công khi API không hoạt động
@@ -275,11 +311,6 @@ document.addEventListener("DOMContentLoaded", function () {
             ? selectedOption.text
             : "";
 
-        logDebug("Selected province:", {
-          code: selectedProvince.code,
-          name: selectedProvince.name,
-        });
-
         loadDistricts(this.value);
         resetWard();
         updateFullAddressPreview();
@@ -292,11 +323,6 @@ document.addEventListener("DOMContentLoaded", function () {
         selectedDistrict.code = this.value;
         selectedDistrict.name =
           selectedOption.text !== "Chọn quận/huyện" ? selectedOption.text : "";
-
-        logDebug("Selected district:", {
-          code: selectedDistrict.code,
-          name: selectedDistrict.name,
-        });
 
         loadWards(this.value);
         updateFullAddressPreview();
@@ -431,3 +457,159 @@ document.addEventListener("DOMContentLoaded", function () {
   // Expose to global scope
   window.populateAddressData = populateAddressData;
 });
+
+/**
+ * Address selector for Vietnamese provinces, districts and wards
+ * Unified implementation using the shared VNAddressManager
+ */
+// Function to initialize address selectors - reuses the VNAddressManager module
+async function initializeAddressSelectors(options) {
+  const provinceSelector = document.querySelector(options.provinceSelector);
+  const districtSelector = document.querySelector(options.districtSelector);
+  const wardSelector = document.querySelector(options.wardSelector);
+
+  const selectedProvince = options.selectedProvince || "";
+  const selectedDistrict = options.selectedDistrict || "";
+  const selectedWard = options.selectedWard || "";
+
+  if (!provinceSelector || !districtSelector || !wardSelector) {
+    console.error("Address selectors not found");
+    return;
+  }
+
+  // Setup placeholders
+  provinceSelector.dataset.placeholder = "Chọn tỉnh/thành phố";
+  districtSelector.dataset.placeholder = "Chọn quận/huyện";
+  wardSelector.dataset.placeholder = "Chọn phường/xã";
+
+  // Disable selectors initially
+  districtSelector.disabled = true;
+  wardSelector.disabled = true;
+
+  try {
+    // Load provinces
+    const provinces = await VNAddressManager.loadProvinces();
+    VNAddressManager.populateSelect(
+      provinceSelector,
+      provinces,
+      "name",
+      "name",
+      selectedProvince
+    );
+
+    // Setup change event for province
+    provinceSelector.addEventListener("change", async function () {
+      const provinceName = this.value;
+      districtSelector.innerHTML = '<option value="">Chọn quận/huyện</option>';
+      wardSelector.innerHTML = '<option value="">Chọn phường/xã</option>';
+      districtSelector.disabled = true;
+      wardSelector.disabled = true;
+
+      if (!provinceName) return;
+
+      // Find province code by name
+      const province = provinces.find((p) => p.name === provinceName);
+      if (!province) return;
+
+      try {
+        // Load districts for selected province
+        const districts = await VNAddressManager.loadDistricts(province.code);
+        VNAddressManager.populateSelect(
+          districtSelector,
+          districts,
+          "name",
+          "name",
+          selectedDistrict
+        );
+
+        // If we have a pre-selected district, trigger district change to load wards
+        if (selectedDistrict && province.name === selectedProvince) {
+          const district = districts.find((d) => d.name === selectedDistrict);
+          if (district) {
+            await loadWards(district.code, selectedWard);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading districts:", error);
+      }
+    });
+
+    // Setup district change event
+    districtSelector.addEventListener("change", async function () {
+      const districtName = this.value;
+      wardSelector.innerHTML = '<option value="">Chọn phường/xã</option>';
+      wardSelector.disabled = true;
+
+      if (!districtName) return;
+
+      // Find selected province
+      const provinceName = provinceSelector.value;
+      const province = provinces.find((p) => p.name === provinceName);
+      if (!province) return;
+
+      // Load districts to find district code
+      const districts = await VNAddressManager.loadDistricts(province.code);
+      const district = districts.find((d) => d.name === districtName);
+      if (!district) return;
+
+      await loadWards(district.code);
+    });
+
+    // Trigger province change if we have a pre-selected province
+    if (selectedProvince) {
+      provinceSelector.dispatchEvent(new Event("change"));
+    }
+  } catch (error) {
+    console.error("Error initializing address selectors:", error);
+  }
+
+  // Function to load wards based on district code
+  async function loadWards(districtCode, selectedValue = null) {
+    try {
+      const wards = await VNAddressManager.loadWards(districtCode);
+      VNAddressManager.populateSelect(
+        wardSelector,
+        wards,
+        "name",
+        "name",
+        selectedValue
+      );
+    } catch (error) {
+      console.error("Error loading wards:", error);
+      wardSelector.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+    }
+  }
+}
+
+// Helper function to get the full selected address
+function getSelectedAddressData() {
+  const province = document.getElementById("tinh_tp");
+  const district = document.getElementById("quan_huyen");
+  const ward = document.getElementById("phuong_xa");
+  const addressInput = document.getElementById("diachi");
+
+  const provinceName = province ? province.value : "";
+  const districtName = district ? district.value : "";
+  const wardName = ward ? ward.value : "";
+  const addressDetails = addressInput ? addressInput.value : "";
+
+  // Construct full address
+  let addressParts = [];
+  if (addressDetails) addressParts.push(addressDetails);
+  if (wardName) addressParts.push(wardName);
+  if (districtName) addressParts.push(districtName);
+  if (provinceName) addressParts.push(provinceName);
+
+  const fullAddress = addressParts.join(", ");
+
+  return {
+    provinceName,
+    districtName,
+    wardName,
+    addressDetails,
+    fullAddress,
+  };
+}
+
+// Make getSelectedAddressData available globally
+window.getSelectedAddressData = getSelectedAddressData;

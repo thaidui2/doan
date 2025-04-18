@@ -345,16 +345,26 @@ try {
         'payment_method' => $payment_method
     ];
     
-    // Redirect to thank you page or payment gateway
-    if ($payment_method == 'cod') {
-        header('Location: dathang_thanhcong.php');
-        exit;
-    } else if ($payment_method == 'vnpay') {
-        // Setup VNPAY payment gateway params
-        header('Location: vnpay_checkout.php?order_id=' . $order_id);
+    // Handle payment method selection
+    $payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : 'cod';
+
+    if ($payment_method == 'vnpay') {
+        // Prepare payment info for VNPAY
+        $_SESSION['payment_info'] = [
+            'id' => $order_id,                       // Database ID
+            'ma_donhang' => $order_code,            // Order reference code (e.g., BUG250418501A4)
+            'amount' => $final_total,                // Final amount including shipping
+            'order_desc' => 'Thanh toan don hang ' . $order_code . ' tai Bug Shop'
+        ];
+        
+        // Redirect to VNPAY payment page
+        header("Location: vnpay_create_payment.php");
         exit;
     } else {
-        header('Location: dathang_thanhcong.php');
+        // COD or other payment methods
+        // Redirect to success page with order ID
+        $_SESSION['success_message'] = 'Đặt hàng thành công! Mã đơn hàng của bạn là ' . $order_code;
+        header("Location: thanh-toan-thanh-cong.php?orderId=" . $order_id);
         exit;
     }
     

@@ -9,17 +9,27 @@ if (!isset($conn)) {
     include('config/config.php');
 }
 
-// Get contact information from settings table
+// Get contact information from cai_dat table (updated query)
 $settings_query = $conn->query("
-    SELECT setting_key, setting_value 
-    FROM settings 
-    WHERE setting_group = 'general' 
-    OR setting_key IN ('facebook_url', 'instagram_url', 'twitter_url', 'youtube_url')
+    SELECT khoa, gia_tri 
+    FROM cai_dat 
+    WHERE nhom = 'general' 
+    OR khoa IN ('facebook_url', 'instagram_url', 'twitter_url', 'youtube_url')
 ");
 
 $settings = [];
-while ($row = $settings_query->fetch_assoc()) {
-    $settings[$row['setting_key']] = $row['setting_value'];
+if ($settings_query) {
+    while ($row = $settings_query->fetch_assoc()) {
+        $settings[$row['khoa']] = $row['gia_tri'];
+    }
+} else {
+    // Fallback if table doesn't exist
+    $settings = [
+        'site_name' => 'Bug Shop',
+        'contact_email' => 'contact@bugshop.com',
+        'contact_phone' => '0123456789',
+        'address' => 'Số 123, Đường ABC, Quận XYZ, TP. HCM'
+    ];
 }
 
 // Initialize variables for form
@@ -64,14 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // If no errors, process form submission
     if (empty($errors)) {
         try {
-            // Insert contact message into database
-            $stmt = $conn->prepare("
-                INSERT INTO lien_he (ho_ten, email, so_dien_thoai, chu_de, noi_dung, ngay_gui)
-                VALUES (?, ?, ?, ?, ?, NOW())
-            ");
-
-            // If lien_he table doesn't exist, create it
-            if (!$stmt) {
+            // Check if lien_he table exists
+            $table_check = $conn->query("SHOW TABLES LIKE 'lien_he'");
+            
+            if ($table_check->num_rows == 0) {
+                // Create lien_he table if it doesn't exist
                 $create_table = $conn->query("
                     CREATE TABLE IF NOT EXISTS lien_he (
                         id INT(11) NOT NULL AUTO_INCREMENT,
@@ -85,16 +92,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         PRIMARY KEY (id)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 ");
-                
-                // Prepare the statement again
-                $stmt = $conn->prepare("
-                    INSERT INTO lien_he (ho_ten, email, so_dien_thoai, chu_de, noi_dung, ngay_gui)
-                    VALUES (?, ?, ?, ?, ?, NOW())
-                ");
             }
+            
+            // Insert contact message into database
+            $stmt = $conn->prepare("
+                INSERT INTO lien_he (ho_ten, email, so_dien_thoai, chu_de, noi_dung, ngay_gui)
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
 
+            if (!$stmt) {
+                throw new Exception("Error preparing statement: " . $conn->error);
+            }
+            
             $stmt->bind_param("sssss", $name, $email, $phone, $subject, $message);
-            $stmt->execute();
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Error executing statement: " . $stmt->error);
+            }
             
             // Reset form fields
             $name = $email = $phone = $subject = $message = '';
@@ -102,10 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Set success message
             $success_message = 'Cảm ơn bạn đã gửi thông tin. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể!';
             
-            // Optional: Send notification email to admin
-            // This requires additional configuration for sending emails
         } catch (Exception $e) {
-            $errors['general'] = 'Có lỗi xảy ra khi gửi thông tin. Vui lòng thử lại sau.';
+            $errors['general'] = 'Có lỗi xảy ra khi gửi thông tin: ' . $e->getMessage();
         }
     }
 }

@@ -9,6 +9,9 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+// Debug admin session data
+error_log("ADMIN SESSION: " . json_encode($_SESSION));
+
 // Kiểm tra đăng nhập
 if(!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     // Lưu URL hiện tại để redirect sau khi đăng nhập
@@ -27,6 +30,35 @@ include_once(__DIR__ . '/functions.php');
 
 // Lấy thông tin admin
 $admin_id = $_SESSION['admin_id'];
+
+// Make sure admin_level is set in the session
+if (!isset($_SESSION['admin_level'])) {
+    // Retrieve admin level from database if not in session
+    $admin_level_query = $conn->prepare("
+        SELECT loai_user FROM users 
+        WHERE id = ? AND (loai_user = 1 OR loai_user = 2)
+    ");
+    $admin_level_query->bind_param("i", $admin_id);
+    $admin_level_query->execute();
+    $admin_level_result = $admin_level_query->get_result();
+    
+    if ($admin_level_result->num_rows === 1) {
+        $admin_data = $admin_level_result->fetch_assoc();
+        $_SESSION['admin_level'] = $admin_data['loai_user'];
+    } else {
+        // If can't determine admin level, log out
+        session_unset();
+        session_destroy();
+        header('Location: login.php?error=unauthorized');
+        exit;
+    }
+}
+
+// Set admin level from session
+$admin_level = $_SESSION['admin_level'];
+
+// Debug admin level
+error_log("Admin Level: $admin_level for user ID: $admin_id");
 
 // Sửa lại truy vấn để sử dụng bảng users thay vì admin
 $admin_query = $conn->prepare("
@@ -50,14 +82,6 @@ $admin = $admin_result->fetch_assoc();
 // Nhận thông tin từ session hoặc từ DB
 $admin_name = $_SESSION['admin_name'] ?? $admin['ten'];
 $admin_username = $_SESSION['admin_username'] ?? $admin['taikhoan'];
-$admin_level = $_SESSION['admin_level'] ?? $admin['loai_user'];
-
-// Kiểm tra quyền hạn - ví dụ: chỉ cho admin cấp cao truy cập một số trang
-$restricted_pages = ['admins.php', 'settings.php', 'activity-logs.php'];
-if (in_array($current_page, $restricted_pages) && $admin_level < 2) {
-    header('Location: index.php?error=permission');
-    exit;
-}
 
 // Kiểm tra xem có thông báo lỗi hoặc thành công không 
 $error_message = '';
@@ -72,8 +96,6 @@ if (isset($_SESSION['success_message'])) {
     $success_message = $_SESSION['success_message'];
     unset($_SESSION['success_message']);
 }
-
-// Xóa hàm hasPermission vì đã được khai báo trong functions.php
 
 // Make sure to end output buffering and send content after all headers are set
 // Only include this if you're confident no more redirects will be needed

@@ -451,15 +451,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                         <div class="list-group-item border-0 px-0">
                                             <div class="d-flex">
                                                 <div class="position-relative me-3">
-                                                    <img src="<?php echo isset($item['hinhanh']) && $item['hinhanh'] ? 
-                                                        (strpos($item['hinhanh'], 'uploads/') !== false ? $item['hinhanh'] : 'uploads/products/' . $item['hinhanh']) : 
-                                                        'uploads/products/no-image.png'; ?>" 
-                                                         class="img-thumbnail" width="60" 
-                                                         alt="<?php echo isset($item['tensanpham']) ? htmlspecialchars($item['tensanpham']) : 'Sản phẩm'; ?>">
-                                                    <span class="product-quantity badge bg-primary position-absolute">
+                                                    <?php
+                                                    // Enhanced image path handling with debugging
+                                                    $img_path = 'images/no-image.png'; // Default fallback image
+                                                    $original_path = $item['hinhanh'] ?? '';
+                                                    
+                                                    // Debug image info
+                                                    error_log("Original image path: " . $original_path);
+                                                    
+                                                    // Try to get image from product_images table if direct path doesn't work
+                                                    if (empty($original_path) && isset($item['id_sanpham'])) {
+                                                        $img_query = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? AND la_anh_chinh = 1 LIMIT 1");
+                                                        $img_query->bind_param("i", $item['id_sanpham']);
+                                                        $img_query->execute();
+                                                        $img_result = $img_query->get_result();
+                                                        
+                                                        if ($img_result->num_rows > 0) {
+                                                            $original_path = $img_result->fetch_assoc()['hinhanh'];
+                                                            error_log("Found image in sanpham_hinhanh: " . $original_path);
+                                                        }
+                                                    }
+                                                    
+                                                    // Final path resolution logic
+                                                    if (!empty($original_path)) {
+                                                        // Path already contains uploads/ prefix
+                                                        if (strpos($original_path, 'uploads/') === 0) {
+                                                            $img_path = $original_path;
+                                                            error_log("Using path with uploads/ prefix: " . $img_path);
+                                                        }
+                                                        // Check if file exists in uploads/products directory
+                                                        else if (file_exists('uploads/products/' . $original_path)) {
+                                                            $img_path = 'uploads/products/' . $original_path;
+                                                            error_log("Found in uploads/products/: " . $img_path);
+                                                        }
+                                                        // Check if file exists directly
+                                                        else if (file_exists($original_path)) {
+                                                            $img_path = $original_path;
+                                                            error_log("Found directly: " . $img_path);
+                                                        }
+                                                        // Try alternative directory structure
+                                                        else {
+                                                            $possible_locations = [
+                                                                'uploads/' . $original_path,
+                                                                '../uploads/products/' . $original_path,
+                                                                'images/products/' . $original_path
+                                                            ];
+                                                            
+                                                            foreach ($possible_locations as $location) {
+                                                                if (file_exists($location)) {
+                                                                    $img_path = $location;
+                                                                    error_log("Found in alternative location: " . $img_path);
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    ?>
+                                                    <!-- Image with better error handling -->
+                                                    <img src="<?php echo htmlspecialchars($img_path); ?>" 
+                                                         class="img-thumbnail product-image" width="60" height="60"
+                                                         alt="<?php echo isset($item['tensanpham']) ? htmlspecialchars($item['tensanpham']) : 'Sản phẩm'; ?>"
+                                                         onerror="this.onerror=null; this.src='images/no-image.png';"
+                                                         style="object-fit: cover;">
+                                                    <span class="product-quantity badge bg-primary position-absolute top-0 end-0 translate-middle">
                                                         <?php echo isset($item['so_luong']) ? $item['so_luong'] : 1; ?>
                                                     </span>
                                                 </div>
+                                                
+                                                <!-- Rest of the product info -->
                                                 <div class="flex-grow-1">
                                                     <h6 class="mb-0">
                                                         <?php echo htmlspecialchars($item['tensanpham'] ?? 'Sản phẩm không xác định'); ?>

@@ -365,25 +365,50 @@ if (!isset($category)) {
         $discount_percent = round(100 - ($product['gia'] / $product['giagoc'] * 100));
     }
     
-    // Xử lý đường dẫn hình ảnh
-    if (!empty($product['hinhanh']) && file_exists('uploads/products/' . $product['hinhanh'])) {
-        $img_path = 'uploads/products/' . $product['hinhanh'];
-    } else {
-        // Kiểm tra hình ảnh từ bảng sanpham_hinhanh thay vì mausac_hinhanh
-        $img_stmt = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? LIMIT 1");
+    // Xử lý đường dẫn hình ảnh - FIX IMAGE DISPLAY
+    $img_path = 'images/no-image.jpg'; // Default image path
+    
+    if (!empty($product['hinhanh'])) {
+        // Check if path already contains 'uploads/'
+        if (strpos($product['hinhanh'], 'uploads/') === 0) {
+            $img_path = $product['hinhanh']; // Path already has uploads/ prefix
+        } else {
+            // Check both possible locations
+            if (file_exists('uploads/products/' . $product['hinhanh'])) {
+                $img_path = 'uploads/products/' . $product['hinhanh'];
+            } elseif (file_exists($product['hinhanh'])) {
+                $img_path = $product['hinhanh'];
+            }
+        }
+    }
+    
+    // If still no valid image, try to get from sanpham_hinhanh table
+    if ($img_path === 'images/no-image.jpg') {
+        $img_stmt = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? AND la_anh_chinh = 1 LIMIT 1");
         $img_stmt->bind_param("i", $product['id']);
         $img_stmt->execute();
         $img_result = $img_stmt->get_result();
         
+        if ($img_result->num_rows === 0) {
+            // If no main image, get any image
+            $img_stmt = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? LIMIT 1");
+            $img_stmt->bind_param("i", $product['id']);
+            $img_stmt->execute();
+            $img_result = $img_stmt->get_result();
+        }
+        
         if ($img_result->num_rows > 0) {
             $img_row = $img_result->fetch_assoc();
-            if (file_exists('uploads/products/' . $img_row['hinhanh'])) {
-                $img_path = 'uploads/products/' . $img_row['hinhanh'];
-            } else {
-                $img_path = 'images/no-image.jpg';
+            if (!empty($img_row['hinhanh'])) {
+                // Same checks as above
+                if (strpos($img_row['hinhanh'], 'uploads/') === 0) {
+                    $img_path = $img_row['hinhanh'];
+                } elseif (file_exists('uploads/products/' . $img_row['hinhanh'])) {
+                    $img_path = 'uploads/products/' . $img_row['hinhanh'];
+                } elseif (file_exists($img_row['hinhanh'])) {
+                    $img_path = $img_row['hinhanh'];
+                }
             }
-        } else {
-            $img_path = 'images/no-image.jpg';
         }
     }
     ?>

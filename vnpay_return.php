@@ -14,7 +14,7 @@ file_put_contents($log_file, $log_data, FILE_APPEND);
 
 // Lấy thông tin trả về từ VNPAY
 $vnp_ResponseCode = isset($_GET['vnp_ResponseCode']) ? $_GET['vnp_ResponseCode'] : '';
-$vnp_TxnRef = isset($_GET['vnp_TxnRef']) ? $_GET['vnp_TxnRef'] : '';
+$vnp_TxnRef = isset($_GET['vnp_TxnRef']) ? $_GET['vnp_TxnRef'] : ''; // This is ma_donhang
 $vnp_Amount = isset($_GET['vnp_Amount']) ? $_GET['vnp_Amount'] / 100 : 0; // Chia 100 vì VNPAY gửi số tiền * 100
 $vnp_TransactionNo = isset($_GET['vnp_TransactionNo']) ? $_GET['vnp_TransactionNo'] : '';
 $vnp_BankCode = isset($_GET['vnp_BankCode']) ? $_GET['vnp_BankCode'] : '';
@@ -45,18 +45,21 @@ foreach ($inputData as $key => $value) {
 $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
 $isValidSignature = ($secureHash == $vnp_SecureHash);
 
-// Kiểm tra xem đơn hàng đã tồn tại trong cơ sở dữ liệu chưa
-$order_id = $vnp_TxnRef;
-$order_query = $conn->prepare("SELECT id_donhang, tongtien, trangthai FROM donhang WHERE id_donhang = ?");
-$order_query->bind_param("i", $order_id);
+// DEBUG
+error_log("VNPAY return signature validation: " . ($isValidSignature ? "Valid" : "Invalid"));
+
+// Kiểm tra xem đơn hàng đã tồn tại trong cơ sở dữ liệu chưa - UPDATED COLUMN NAMES
+$order_query = $conn->prepare("SELECT id, ma_donhang, thanh_tien, trang_thai_don_hang FROM donhang WHERE ma_donhang = ?");
+$order_query->bind_param("s", $vnp_TxnRef);
 $order_query->execute();
 $order_result = $order_query->get_result();
 $order_exists = $order_result->num_rows > 0;
 
 if ($order_exists) {
     $order_data = $order_result->fetch_assoc();
-    $current_status = $order_data['trangthai'];
-    $order_amount = $order_data['tongtien'];
+    $order_id = $order_data['id'];
+    $current_status = $order_data['trang_thai_don_hang'];
+    $order_amount = $order_data['thanh_tien'];
     
     // Nếu đơn hàng đã được xử lý thanh toán trước đó
     if ($current_status >= 2) {
@@ -64,17 +67,26 @@ if ($order_exists) {
         header('Location: thanh-toan-thanh-cong.php?orderId=' . $order_id);
         exit();
     }
+} else {
+    error_log("Order not found: " . $vnp_TxnRef);
 }
 
 // Kiểm tra kết quả giao dịch từ VNPAY
 if ($isValidSignature) {
     if ($vnp_ResponseCode == '00') {
         // Thanh toán thành công
-        // Cập nhật trạng thái đơn hàng
         if ($order_exists) {
-            // Cập nhật trạng thái đơn hàng thành "Đang xử lý" (trạng thái 2)
-            $update_order = $conn->prepare("UPDATE donhang SET trangthai = 2, phuongthucthanhtoan = 'vnpay', ngaycapnhat = NOW() WHERE id_donhang = ?");
-            $update_order->bind_param("i", $order_id);
+            // Cập nhật trạng thái đơn hàng thành "Đã xác nhận" (trạng thái 2)
+            $update_order = $conn->prepare("
+                UPDATE donhang 
+                SET trang_thai_don_hang = 2, 
+                    phuong_thuc_thanh_toan = 'vnpay', 
+                    trang_thai_thanh_toan = 1,
+                    ma_giao_dich = ?,
+                    ngay_capnhat = NOW() 
+                WHERE id = ?
+            ");
+            $update_order->bind_param("si", $vnp_TransactionNo, $order_id);
             $update_order->execute();
             
             // Ghi lịch sử đơn hàng
@@ -82,17 +94,13 @@ if ($isValidSignature) {
             $performer = "Hệ thống";
             $note = "Thanh toán qua VNPAY với mã giao dịch: " . $vnp_TransactionNo;
             
-            $history_query = $conn->prepare("INSERT INTO donhang_lichsu (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu, ngay_thaydoi) VALUES (?, ?, ?, ?, NOW())");
+            $history_query = $conn->prepare("
+                INSERT INTO donhang_lichsu 
+                (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu, ngay_thaydoi) 
+                VALUES (?, ?, ?, ?, NOW())
+            ");
             $history_query->bind_param("isss", $order_id, $action, $performer, $note);
             $history_query->execute();
-            
-            // Lưu thông tin thanh toán
-            $method = "vnpay";
-            $bank_query = $conn->prepare("INSERT INTO thanh_toan (id_donhang, ma_giaodich, so_tien, phuong_thuc, ngan_hang, ngay_thanhtoan, trang_thai, ghi_chu) VALUES (?, ?, ?, ?, ?, NOW(), 1, ?)");
-            $status = 1; // Thành công
-            $payment_date = date('Y-m-d H:i:s', strtotime($vnp_PayDate));
-            $bank_query->bind_param("isdsss", $order_id, $vnp_TransactionNo, $vnp_Amount, $method, $vnp_BankCode, $vnp_OrderInfo);
-            $bank_query->execute();
             
             $_SESSION['payment_success'] = true;
             $_SESSION['payment_message'] = 'Thanh toán thành công qua VNPAY!';
@@ -105,24 +113,32 @@ if ($isValidSignature) {
             exit();
         }
     } else {
-        // Thanh toán thất bại/bị hủy nhưng vẫn lưu vào database
+        // Thanh toán thất bại/bị hủy
         if ($order_exists) {
-            // Lưu thông tin thanh toán thất bại vào database
-            $method = "vnpay";
-            $bank_query = $conn->prepare("INSERT INTO thanh_toan (id_donhang, ma_giaodich, so_tien, phuong_thuc, ngan_hang, ngay_thanhtoan, trang_thai, ghi_chu) VALUES (?, ?, ?, ?, ?, NOW(), 0, ?)");
-            $status = 0; // Thất bại
-            $error_note = 'Thanh toán thất bại qua VNPAY. Mã lỗi: ' . $vnp_ResponseCode;
-            $bank_query->bind_param("isdsss", $order_id, $vnp_TransactionNo, $vnp_Amount, $method, $vnp_BankCode, $error_note);
-            $bank_query->execute();
-            
             // Ghi lịch sử đơn hàng
             $action = "Thanh toán VNPAY thất bại";
             $performer = "Hệ thống";
-            $note = "Thanh toán qua VNPAY thất bại với mã giao dịch: " . $vnp_TransactionNo . ". Mã lỗi: " . $vnp_ResponseCode;
+            $note = "Thanh toán qua VNPAY thất bại. Mã giao dịch: " . $vnp_TransactionNo . ". Mã lỗi: " . $vnp_ResponseCode;
             
-            $history_query = $conn->prepare("INSERT INTO donhang_lichsu (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu, ngay_thaydoi) VALUES (?, ?, ?, ?, NOW())");
+            $history_query = $conn->prepare("
+                INSERT INTO donhang_lichsu 
+                (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu, ngay_thaydoi) 
+                VALUES (?, ?, ?, ?, NOW())
+            ");
             $history_query->bind_param("isss", $order_id, $action, $performer, $note);
             $history_query->execute();
+            
+            // Cập nhật đơn hàng với thông tin thất bại
+            $update_order = $conn->prepare("
+                UPDATE donhang 
+                SET trang_thai_thanh_toan = 0,
+                    ma_giao_dich = ?,
+                    ghi_chu = CONCAT(IFNULL(ghi_chu, ''), '\nThanh toán VNPAY thất bại. Mã lỗi: ', ?),
+                    ngay_capnhat = NOW() 
+                WHERE id = ?
+            ");
+            $update_order->bind_param("ssi", $vnp_TransactionNo, $vnp_ResponseCode, $order_id);
+            $update_order->execute();
         }
         
         $_SESSION['payment_error'] = 'Thanh toán không thành công. Mã lỗi: ' . $vnp_ResponseCode;

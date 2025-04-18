@@ -1,182 +1,158 @@
 <?php
-// filepath: c:\xampp\htdocs\bug_shop\apply_promo_code.php
 session_start();
 include('config/config.php');
+header('Content-Type: application/json');
 
-// Ghi log để kiểm tra lỗi
-$log_dir = __DIR__ . '/logs';
-if (!is_dir($log_dir)) {
-    mkdir($log_dir, 0755, true);
+// Check if request is POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+    exit;
 }
-$log_file = $log_dir . '/promo_code_log_' . date('Y-m-d') . '.log';
 
-try {
-    // Kiểm tra request
-    if (!isset($_POST['code']) || empty($_POST['code'])) {
-        throw new Exception('Vui lòng nhập mã giảm giá');
-    }
+// Get input parameters
+$code = isset($_POST['code']) ? trim($_POST['code']) : '';
+$order_total = isset($_POST['total']) ? (float)$_POST['total'] : 0;
+$cart_items_json = isset($_POST['cart_items']) ? $_POST['cart_items'] : '[]';
+$cart_items = json_decode($cart_items_json, true);
 
-    $code = trim($_POST['code']);
-    $total_amount = isset($_POST['total']) ? (float)$_POST['total'] : 0;
-    $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
-    $cart_items = isset($_POST['cart_items']) ? json_decode($_POST['cart_items'], true) : [];
+// Input validation
+if (empty($code)) {
+    echo json_encode(['success' => false, 'message' => 'Vui lòng nhập mã giảm giá']);
+    exit;
+}
 
-    // Log thông tin đầu vào
-    $log_data = date('Y-m-d H:i:s') . " | Request - Code: $code | Total: $total_amount | User: " . ($user_id ?? 'guest') . "\n";
-    file_put_contents($log_file, $log_data, FILE_APPEND);
+if ($order_total <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Tổng đơn hàng không hợp lệ']);
+    exit;
+}
 
-    // Lấy thông tin các sản phẩm đang mua
-    $product_ids = [];
-    $category_ids = [];
-    
-    if (!empty($cart_items)) {
-        foreach ($cart_items as $item) {
-            if (isset($item['id_sanpham']) && !in_array($item['id_sanpham'], $product_ids)) {
-                $product_ids[] = $item['id_sanpham'];
-            }
-        }
-        
-        // Lấy danh mục của các sản phẩm
-        if (!empty($product_ids)) {
-            $placeholders = implode(',', array_fill(0, count($product_ids), '?'));
-            $stmt = $conn->prepare("SELECT id_sanpham, id_loai FROM sanpham WHERE id_sanpham IN ($placeholders)");
-            
-            $stmt->bind_param(str_repeat('i', count($product_ids)), ...$product_ids);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            while ($row = $result->fetch_assoc()) {
-                if (!in_array($row['id_loai'], $category_ids)) {
-                    $category_ids[] = $row['id_loai'];
-                }
-            }
-        }
-    }
+// Check if the promo code exists and is valid
+$promo_query = $conn->prepare("
+    SELECT * FROM khuyen_mai 
+    WHERE ma_khuyenmai = ? 
+    AND trang_thai = 1
+    AND (ngay_bat_dau IS NULL OR ngay_bat_dau <= NOW())
+    AND (ngay_ket_thuc IS NULL OR ngay_ket_thuc >= NOW())
+");
 
-    // Truy vấn thông tin mã giảm giá
-    $stmt = $conn->prepare("
-        SELECT * FROM khuyen_mai 
-        WHERE ma_code = ? 
-        AND trang_thai = 1 
-        AND CURRENT_TIMESTAMP BETWEEN ngay_bat_dau AND ngay_ket_thuc
-        AND (so_luong > so_luong_da_dung OR so_luong = 0)
-    ");
+$promo_query->bind_param("s", $code);
+$promo_query->execute();
+$result = $promo_query->get_result();
 
-    $stmt->bind_param("s", $code);
-    $stmt->execute();
-    $result = $stmt->get_result();
+if ($result->num_rows === 0) {
+    echo json_encode(['success' => false, 'message' => 'Mã giảm giá không tồn tại hoặc đã hết hạn']);
+    exit;
+}
 
-    if ($result->num_rows === 0) {
-        throw new Exception('Mã giảm giá không hợp lệ hoặc đã hết hạn');
-    }
+$promo = $result->fetch_assoc();
 
-    $promo = $result->fetch_assoc();
+// Check if the promo code is still available
+if ($promo['so_luong'] !== null && $promo['da_su_dung'] >= $promo['so_luong']) {
+    echo json_encode(['success' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng']);
+    exit;
+}
 
-    // Kiểm tra giá trị đơn hàng tối thiểu
-    if ($total_amount < $promo['gia_tri_don_toi_thieu']) {
-        $min_order = number_format($promo['gia_tri_don_toi_thieu'], 0, ',', '.');
-        throw new Exception("Giá trị đơn hàng tối thiểu để sử dụng mã này là {$min_order}₫");
-    }
-
-    // Kiểm tra điều kiện áp dụng theo sản phẩm hoặc danh mục
-    if ($promo['ap_dung_sanpham'] == 1) {
-        // Lấy danh sách sản phẩm được áp dụng
-        $stmt = $conn->prepare("
-            SELECT id_sanpham FROM khuyen_mai_sanpham 
-            WHERE id_khuyen_mai = ?
-        ");
-        $stmt->bind_param("i", $promo['id']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $allowed_products = [];
-        while ($row = $result->fetch_assoc()) {
-            $allowed_products[] = $row['id_sanpham'];
-        }
-        
-        // Kiểm tra xem có sản phẩm nào trong giỏ hàng thuộc diện áp dụng không
-        $valid_products = array_intersect($product_ids, $allowed_products);
-        
-        if (empty($valid_products)) {
-            throw new Exception('Mã giảm giá này không áp dụng cho sản phẩm nào trong giỏ hàng của bạn');
-        }
-    }
-    
-    if ($promo['ap_dung_loai'] == 1) {
-        // Lấy danh sách loại được áp dụng
-        $stmt = $conn->prepare("
-            SELECT id_loai FROM khuyen_mai_loai
-            WHERE id_khuyen_mai = ?
-        ");
-        $stmt->bind_param("i", $promo['id']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $allowed_categories = [];
-        while ($row = $result->fetch_assoc()) {
-            $allowed_categories[] = $row['id_loai'];
-        }
-        
-        // Kiểm tra xem có sản phẩm nào trong giỏ hàng thuộc loại áp dụng không
-        $valid_categories = array_intersect($category_ids, $allowed_categories);
-        
-        if (empty($valid_categories)) {
-            throw new Exception('Mã giảm giá này không áp dụng cho loại sản phẩm nào trong giỏ hàng của bạn');
-        }
-    }
-
-    // Tính toán giá trị giảm giá
-    $discount_amount = 0;
-
-    if ($promo['loai_giam_gia'] == 1) {  // Giảm theo phần trăm
-        $discount_amount = $total_amount * ($promo['gia_tri'] / 100);
-        
-        // Kiểm tra giá trị giảm tối đa
-        if ($promo['gia_tri_giam_toi_da'] > 0 && $discount_amount > $promo['gia_tri_giam_toi_da']) {
-            $discount_amount = $promo['gia_tri_giam_toi_da'];
-        }
-    } else {  // Giảm theo số tiền cố định
-        $discount_amount = $promo['gia_tri'];
-        
-        // Nếu giảm nhiều hơn tổng tiền đơn hàng
-        if ($discount_amount > $total_amount) {
-            $discount_amount = $total_amount;
-        }
-    }
-
-    // Làm tròn về số nguyên
-    $discount_amount = round($discount_amount);
-
-    // Log thành công
-    $log_data = date('Y-m-d H:i:s') . " | Success - Code: $code | Discount: $discount_amount\n";
-    file_put_contents($log_file, $log_data, FILE_APPEND);
-
-    // Trả về kết quả thành công
-    echo json_encode([
-        'success' => true, 
-        'message' => 'Áp dụng mã giảm giá thành công!', 
-        'discount_amount' => $discount_amount,
-        'discount_id' => $promo['id'],
-        'formatted_discount' => number_format($discount_amount, 0, ',', '.'),
-        'formatted_total' => number_format($total_amount - $discount_amount + 30000, 0, ',', '.'),
-        'promo_details' => [
-            'code' => $promo['ma_code'],
-            'type' => $promo['loai_giam_gia'],
-            'value' => $promo['gia_tri'],
-            'max_discount' => $promo['gia_tri_giam_toi_da'],
-            'min_order' => $promo['gia_tri_don_toi_thieu'],
-            'description' => $promo['mo_ta']
-        ]
-    ]);
-
-} catch (Exception $e) {
-    // Ghi log lỗi
-    $log_data = date('Y-m-d H:i:s') . " | Error: " . $e->getMessage() . "\n";
-    file_put_contents($log_file, $log_data, FILE_APPEND);
-    
-    // Trả về lỗi
+// Check minimum order value
+if ($order_total < $promo['dieu_kien_toithieu']) {
+    $min_amount = number_format($promo['dieu_kien_toithieu'], 0, ',', '.');
     echo json_encode([
         'success' => false, 
-        'message' => $e->getMessage()
+        'message' => "Đơn hàng tối thiểu {$min_amount}₫ để áp dụng mã này"
     ]);
+    exit;
 }
+
+// Check if the promo has product/category restrictions
+$valid_for_cart = true;
+$promo_restrictions = false;
+
+// Check for product/category restrictions
+$restrictions_query = $conn->prepare("
+    SELECT * FROM khuyen_mai_apdung WHERE id_khuyenmai = ?
+");
+$restrictions_query->bind_param("i", $promo['id']);
+$restrictions_query->execute();
+$restrictions_result = $restrictions_query->get_result();
+
+if ($restrictions_result->num_rows > 0) {
+    $promo_restrictions = true;
+    $valid_products = [];
+    $valid_categories = [];
+    
+    while ($restriction = $restrictions_result->fetch_assoc()) {
+        if ($restriction['loai_doi_tuong'] == 2) { // Product
+            $valid_products[] = $restriction['id_doi_tuong'];
+        } elseif ($restriction['loai_doi_tuong'] == 1) { // Category
+            $valid_categories[] = $restriction['id_doi_tuong'];
+        } elseif ($restriction['loai_doi_tuong'] == 0) { // All products
+            $promo_restrictions = false;
+            break;
+        }
+    }
+    
+    if ($promo_restrictions) {
+        $valid_for_cart = false;
+        
+        foreach ($cart_items as $item) {
+            $product_id = isset($item['id_sanpham']) ? (int)$item['id_sanpham'] : 0;
+            $product_category = 0;
+            
+            // Get product category if needed for category-based discounts
+            if (!empty($valid_categories) && $product_id > 0) {
+                $cat_query = $conn->prepare("SELECT id_danhmuc FROM sanpham WHERE id = ?");
+                $cat_query->bind_param("i", $product_id);
+                $cat_query->execute();
+                $cat_result = $cat_query->get_result();
+                if ($cat_result->num_rows > 0) {
+                    $product_category = $cat_result->fetch_assoc()['id_danhmuc'];
+                }
+            }
+            
+            // Check if the product is valid for the promo
+            if (in_array($product_id, $valid_products) || in_array($product_category, $valid_categories)) {
+                $valid_for_cart = true;
+                break;
+            }
+        }
+        
+        if (!$valid_for_cart) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Mã giảm giá không áp dụng cho sản phẩm trong giỏ hàng của bạn'
+            ]);
+            exit;
+        }
+    }
+}
+
+// Calculate the discount
+$discount_amount = 0;
+
+if ($promo['loai_giamgia'] == 0) { // Percentage discount
+    $discount_amount = $order_total * ($promo['gia_tri'] / 100);
+} else { // Fixed amount discount
+    $discount_amount = $promo['gia_tri'];
+}
+
+// Ensure discount doesn't exceed order total
+$discount_amount = min($discount_amount, $order_total);
+
+// Calculate new total
+$new_total = $order_total - $discount_amount + 30000; // Adding shipping fee
+
+// Format numbers for display
+$formatted_discount = number_format($discount_amount, 0, ',', '.');
+$formatted_total = number_format($new_total, 0, ',', '.');
+
+// Return success response
+echo json_encode([
+    'success' => true,
+    'message' => 'Áp dụng mã giảm giá thành công!',
+    'discount_amount' => $discount_amount,
+    'formatted_discount' => $formatted_discount,
+    'new_total' => $new_total,
+    'formatted_total' => $formatted_total,
+    'discount_id' => $promo['id'],
+    'discount_type' => $promo['loai_giamgia'],
+    'discount_value' => $promo['gia_tri']
+]);

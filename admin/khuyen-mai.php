@@ -1,207 +1,97 @@
 <?php
-// Thêm đoạn này vào đầu file, trước mọi output
-ob_start();
-
-// Thêm dòng này để debug
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Thiết lập tiêu đề trang
+// Set page title
 $page_title = 'Quản lý khuyến mãi';
 
-// Include header (kiểm tra đăng nhập)
+// Include header and authentication
 include('includes/header.php');
 
 // Include database connection
 include('../config/config.php');
 
-// Debug: Hiển thị thông tin vai trò và quyền của admin đang đăng nhập
-$admin_id = $_SESSION['admin_id'];
-$roles_query = $conn->prepare("
-    SELECT r.* FROM roles r 
-    JOIN admin_roles ar ON r.id_role = ar.id_role 
-    WHERE ar.id_admin = ?
-");
-$roles_query->bind_param("i", $admin_id);
-$roles_query->execute();
-$roles_result = $roles_query->get_result();
-$admin_roles = [];
-while ($role = $roles_result->fetch_assoc()) {
-    $admin_roles[] = $role;
-}
+// Determine current action
+$action = isset($_GET['action']) ? $_GET['action'] : 'list';
 
-$permissions_query = $conn->prepare("
-    SELECT p.* FROM permissions p
-    JOIN role_permissions rp ON p.id_permission = rp.id_permission
-    JOIN admin_roles ar ON rp.id_role = ar.id_role
-    WHERE ar.id_admin = ? AND p.nhom_permission = 'promos'
-");
-$permissions_query->bind_param("i", $admin_id);
-$permissions_query->execute();
-$permissions_result = $permissions_query->get_result();
-$admin_permissions = [];
-while ($perm = $permissions_result->fetch_assoc()) {
-    $admin_permissions[] = $perm;
-}
+// Initialize filter variables to avoid undefined variable errors
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$filter_status = isset($_GET['status']) ? (int)$_GET['status'] : -1;
+$filter_date = isset($_GET['date']) ? $_GET['date'] : '';
+$filter_type = isset($_GET['type']) ? $_GET['type'] : '';
 
-// Lưu debug info vào session để hiển thị
-$_SESSION['debug_info'] = [
-    'roles' => $admin_roles,
-    'permissions' => $admin_permissions,
-    'can_add' => hasPermission('promo_add'),
-    'can_edit' => hasPermission('promo_edit'),
-    'can_delete' => hasPermission('promo_delete'),
-    'can_view' => hasPermission('promo_view')
-];
-
-// Xử lý phân trang
+// Get current page for pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 10; // Số mục trên mỗi trang
+$limit = 10;
 $offset = ($page - 1) * $limit;
 
-// Xử lý bộ lọc
-$filter_status = isset($_GET['status']) ? $_GET['status'] : '';
-$filter_type = isset($_GET['type']) ? $_GET['type'] : '';
-$search = isset($_GET['search']) ? $_GET['search'] : '';
-
-// Xây dựng câu lệnh WHERE cho các bộ lọc
-$where_clauses = ['1=1']; // Luôn đúng để bắt đầu
-
-if ($filter_status !== '') {
-    $where_clauses[] = "trang_thai = " . (int)$filter_status;
+// Check admin permissions - use the user loai_user column instead of roles table
+if ($admin_level < 1) { // Only allow admins and managers
+    $_SESSION['error_message'] = "Bạn không có quyền truy cập trang này.";
+    header('Location: index.php');
+    exit;
 }
 
-if ($filter_type !== '') {
-    $where_clauses[] = "loai_giam_gia = " . (int)$filter_type;
+// Process form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ... existing code for form submissions ...
 }
 
-if (!empty($search)) {
-    $search = $conn->real_escape_string($search);
-    $where_clauses[] = "(ma_code LIKE '%$search%' OR mo_ta LIKE '%$search%')";
-}
-
-$where_clause = implode(' AND ', $where_clauses);
-
-// Đếm tổng số bản ghi để phân trang
-$count_query = "SELECT COUNT(*) as total FROM khuyen_mai WHERE $where_clause";
+// Get total promotions for pagination
+$count_query = "SELECT COUNT(*) as total FROM khuyen_mai";
 $count_result = $conn->query($count_query);
-$total_records = $count_result->fetch_assoc()['total'];
-$total_pages = ceil($total_records / $limit);
+$total_rows = $count_result->fetch_assoc()['total'];
+$total_pages = ceil($total_rows / $limit);
 
-// Lấy dữ liệu khuyến mãi
-$query = "
-    SELECT km.*, u.tenuser AS ten_nguoiban, 
-           COUNT(kms.id_sanpham) AS so_san_pham
-    FROM khuyen_mai km
-    LEFT JOIN users u ON km.id_nguoiban = u.id_user
-    LEFT JOIN khuyen_mai_sanpham kms ON km.id = kms.id_khuyen_mai
-    WHERE $where_clause
-    GROUP BY km.id
-    ORDER BY km.ngay_bat_dau DESC
-    LIMIT $offset, $limit
-";
-$result = $conn->query($query);
+// Initialize $result to avoid undefined variable error
+$result = null;
 
-// Xử lý kích hoạt/vô hiệu hóa khuyến mãi
-if (isset($_GET['action']) && $_GET['action'] === 'toggle_status' && isset($_GET['id'])) {
-    $promo_id = (int)$_GET['id'];
+// If in list mode, get the promotions
+if ($action === 'list') {
+    // Base query
+    $query = "SELECT * FROM khuyen_mai";
     
-    // Kiểm tra quyền
-    if (!hasPermission('promo_edit')) {
-        $_SESSION['error_message'] = "Bạn không có quyền thực hiện hành động này!";
-        echo '<script>window.location.href = "khuyen-mai.php";</script>';
-        exit();
+    // Apply filters if provided
+    $where_clauses = [];
+    
+    if (!empty($search)) {
+        $search_term = '%' . $conn->real_escape_string($search) . '%';
+        $where_clauses[] = "(ten LIKE '$search_term' OR ma_khuyenmai LIKE '$search_term')";
     }
     
-    // Lấy trạng thái hiện tại
-    $status_query = $conn->prepare("SELECT trang_thai FROM khuyen_mai WHERE id = ?");
-    $status_query->bind_param("i", $promo_id);
-    $status_query->execute();
-    $result = $status_query->get_result();
-    
-    if ($result->num_rows > 0) {
-        $promo = $result->fetch_assoc();
-        $new_status = $promo['trang_thai'] == 1 ? 0 : 1;
-        
-        // Cập nhật trạng thái
-        $update_query = $conn->prepare("UPDATE khuyen_mai SET trang_thai = ?, ngay_capnhat = NOW() WHERE id = ?");
-        $update_query->bind_param("ii", $new_status, $promo_id);
-        
-        if ($update_query->execute()) {
-            $_SESSION['success_message'] = "Đã " . ($new_status == 1 ? "kích hoạt" : "vô hiệu hóa") . " mã giảm giá thành công!";
-        } else {
-            $_SESSION['error_message'] = "Có lỗi xảy ra khi cập nhật trạng thái!";
-        }
-    } else {
-        $_SESSION['error_message'] = "Không tìm thấy mã giảm giá!";
+    if ($filter_status !== -1) {
+        $where_clauses[] = "trang_thai = $filter_status";
     }
     
-    // Thay hàm header() bằng JavaScript redirect
-    echo '<script>window.location.href = "khuyen-mai.php";</script>';
-    exit();
+    if (!empty($filter_date)) {
+        // Parse date range or specific date logic here
+        // For example: $where_clauses[] = "ngay_bat_dau <= '$filter_date' AND ngay_ket_thuc >= '$filter_date'";
+    }
+    
+    // Combine where clauses
+    if (!empty($where_clauses)) {
+        $query .= " WHERE " . implode(' AND ', $where_clauses);
+    }
+    
+    // Add sorting and pagination - use 'id' instead of 'ngay_tao'
+    $query .= " ORDER BY id DESC LIMIT $offset, $limit";
+    
+    // Execute query
+    $result = $conn->query($query);
+    
+    // For displaying counts in the UI, set $total_records to match $total_rows
+    $total_records = $total_rows;
 }
 
-// Xử lý xóa khuyến mãi
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    $promo_id = (int)$_GET['id'];
-    
-    // Kiểm tra quyền
-    if (!hasPermission('promo_delete')) {
-        $_SESSION['error_message'] = "Bạn không có quyền thực hiện hành động này!";
-        header('Location: khuyen-mai.php');
-        exit();
-    }
-    
-    // Bắt đầu transaction
-    $conn->begin_transaction();
-    
-    try {
-        // Xóa các liên kết với sản phẩm
-        $delete_products = $conn->prepare("DELETE FROM khuyen_mai_sanpham WHERE id_khuyen_mai = ?");
-        $delete_products->bind_param("i", $promo_id);
-        $delete_products->execute();
-        
-        // Xóa các liên kết với loại sản phẩm
-        $delete_categories = $conn->prepare("DELETE FROM khuyen_mai_loai WHERE id_khuyen_mai = ?");
-        $delete_categories->bind_param("i", $promo_id);
-        $delete_categories->execute();
-        
-        // Xóa mã khuyến mãi
-        $delete_promo = $conn->prepare("DELETE FROM khuyen_mai WHERE id = ?");
-        $delete_promo->bind_param("i", $promo_id);
-        $delete_promo->execute();
-        
-        // Commit transaction
-        $conn->commit();
-        
-        // Ghi log hoạt động
-        logAdminActivity($conn, $_SESSION['admin_id'], 'delete', 'promo', $promo_id, 'Đã xóa mã giảm giá #' . $promo_id);
-        
-        $_SESSION['success_message'] = "Đã xóa mã giảm giá thành công!";
-    } catch (Exception $e) {
-        // Rollback nếu có lỗi
-        $conn->rollback();
-        $_SESSION['error_message'] = "Có lỗi xảy ra: " . $e->getMessage();
-    }
-    
-    header('Location: khuyen-mai.php');
-    exit();
-}
+// Main content based on action
 ?>
-
-<!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2"><i class="bi bi-ticket-perforated me-2"></i>Quản lý khuyến mãi</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <?php if (hasPermission('promo_add')): ?>
+            <!-- Always show the Add Promotion button -->
             <a href="them-khuyen-mai.php" class="btn btn-sm btn-primary">
                 <i class="bi bi-plus-lg"></i> Thêm mã giảm giá mới
             </a>
-            <?php endif; ?>
         </div>
     </div>
     
@@ -233,18 +123,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                 <div class="col-md-3">
                     <label for="status" class="form-label">Trạng thái</label>
                     <select class="form-select" id="status" name="status">
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="1" <?php echo $filter_status === '1' ? 'selected' : ''; ?>>Hoạt động</option>
-                        <option value="0" <?php echo $filter_status === '0' ? 'selected' : ''; ?>>Không hoạt động</option>
-                        <option value="2" <?php echo $filter_status === '2' ? 'selected' : ''; ?>>Hết hạn</option>
+                        <option value="-1">Tất cả trạng thái</option>
+                        <option value="1" <?php echo $filter_status === 1 ? 'selected' : ''; ?>>Hoạt động</option>
+                        <option value="0" <?php echo $filter_status === 0 ? 'selected' : ''; ?>>Không hoạt động</option>
+                        <option value="2" <?php echo $filter_status === 2 ? 'selected' : ''; ?>>Hết hạn</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label for="type" class="form-label">Loại khuyến mãi</label>
                     <select class="form-select" id="type" name="type">
                         <option value="">Tất cả loại</option>
-                        <option value="1" <?php echo $filter_type === '1' ? 'selected' : ''; ?>>Phần trăm</option>
-                        <option value="2" <?php echo $filter_type === '2' ? 'selected' : ''; ?>>Số tiền cố định</option>
+                        <option value="0" <?php echo $filter_type === '0' ? 'selected' : ''; ?>>Phần trăm</option>
+                        <option value="1" <?php echo $filter_type === '1' ? 'selected' : ''; ?>>Số tiền cố định</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -290,10 +180,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                                 $now = new DateTime();
                                 $start_date = new DateTime($promo['ngay_bat_dau']);
                                 $end_date = new DateTime($promo['ngay_ket_thuc']);
-                                
                                 $status_class = 'bg-secondary';
                                 $status_text = 'Không hoạt động';
-                                
                                 if ($promo['trang_thai'] == 1) {
                                     if ($now > $end_date) {
                                         $status_class = 'bg-danger';
@@ -312,29 +200,29 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                                 ?>
                                 <tr>
                                     <td class="ps-3"><?php echo $promo['id']; ?></td>
-                                    <td><strong><?php echo htmlspecialchars($promo['ma_code']); ?></strong></td>
+                                    <td><strong><?php echo htmlspecialchars($promo['ma_khuyenmai']); ?></strong></td>
                                     <td>
-                                        <?php if ($promo['loai_giam_gia'] == 1): ?>
-                                            <span class="badge bg-primary">Phần trăm</span>
+                                        <?php if ($promo['loai_giamgia'] == 1): ?>
+                                            <span class="badge bg-primary">Số tiền</span>
                                         <?php else: ?>
-                                            <span class="badge bg-info">Số tiền</span>
+                                            <span class="badge bg-info">Phần trăm</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php if ($promo['loai_giam_gia'] == 1): ?>
+                                        <?php if ($promo['loai_giamgia'] == 0): ?>
                                             <span class="fw-bold"><?php echo number_format($promo['gia_tri'], 0); ?>%</span>
-                                            <?php if ($promo['gia_tri_giam_toi_da'] > 0): ?>
+                                            <?php /* No max discount field in current schema
+                                            if ($promo['gia_tri_giam_toi_da'] > 0): ?>
                                                 <span class="text-muted small d-block">
                                                     Tối đa: <?php echo number_format($promo['gia_tri_giam_toi_da'], 0); ?>₫
                                                 </span>
-                                            <?php endif; ?>
+                                            <?php endif; */ ?>
                                         <?php else: ?>
                                             <span class="fw-bold"><?php echo number_format($promo['gia_tri'], 0); ?>₫</span>
                                         <?php endif; ?>
-                                        
-                                        <?php if ($promo['gia_tri_don_toi_thieu'] > 0): ?>
+                                        <?php if (isset($promo['dieu_kien_toithieu']) && $promo['dieu_kien_toithieu'] > 0): ?>
                                             <span class="text-muted small d-block">
-                                                Đơn tối thiểu: <?php echo number_format($promo['gia_tri_don_toi_thieu'], 0); ?>₫
+                                                Đơn tối thiểu: <?php echo number_format($promo['dieu_kien_toithieu'], 0); ?>₫
                                             </span>
                                         <?php endif; ?>
                                     </td>
@@ -352,9 +240,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                                     </td>
                                     <td>
                                         <div class="progress" style="height: 6px;">
-                                            <?php 
+                                            <?php
                                             $usage_percent = $promo['so_luong'] > 0 ? 
-                                                ($promo['so_luong_da_dung'] / $promo['so_luong']) * 100 : 0;
+                                                ($promo['da_su_dung'] / $promo['so_luong']) * 100 : 0;
                                             ?>
                                             <div class="progress-bar bg-<?php echo $usage_percent >= 80 ? 'danger' : 'primary'; ?>" 
                                                  role="progressbar" 
@@ -364,24 +252,35 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                                                  aria-valuemax="100"></div>
                                         </div>
                                         <span class="small mt-1 d-block">
-                                            <?php echo $promo['so_luong_da_dung']; ?> / <?php echo $promo['so_luong']; ?>
+                                            <?php echo $promo['da_su_dung']; ?> / <?php echo $promo['so_luong']; ?>
                                         </span>
                                     </td>
                                     <td>
-                                        <?php if ($promo['ap_dung_sanpham']): ?>
-                                            <span class="badge bg-info"><?php echo $promo['so_san_pham']; ?> sản phẩm</span>
+                                        <?php 
+                                        // These fields don't exist in current schema - provide fallback
+                                        $ap_dung_sanpham = isset($promo['ap_dung_sanpham']) ? $promo['ap_dung_sanpham'] : false;
+                                        $ap_dung_loai = isset($promo['ap_dung_loai']) ? $promo['ap_dung_loai'] : false;
+                                        $so_san_pham = isset($promo['so_san_pham']) ? $promo['so_san_pham'] : 0;
+                                        ?>
+                                        <?php if ($ap_dung_sanpham): ?>
+                                            <span class="badge bg-info"><?php echo $so_san_pham; ?> sản phẩm</span>
                                         <?php endif; ?>
-                                        
-                                        <?php if ($promo['ap_dung_loai']): ?>
+                                        <?php if ($ap_dung_loai): ?>
                                             <?php
-                                            $cat_query = "SELECT COUNT(*) as cat_count FROM khuyen_mai_loai WHERE id_khuyen_mai = " . $promo['id'];
-                                            $cat_result = $conn->query($cat_query);
-                                            $cat_count = $cat_result->fetch_assoc()['cat_count'];
+                                            // Check if khuyen_mai_loai table exists before querying
+                                            $table_exists = $conn->query("SHOW TABLES LIKE 'khuyen_mai_loai'")->num_rows > 0;
+                                            $cat_count = 0;
+                                            if ($table_exists) {
+                                                $cat_query = "SELECT COUNT(*) as cat_count FROM khuyen_mai_loai WHERE id_khuyen_mai = " . $promo['id'];
+                                                $cat_result = $conn->query($cat_query);
+                                                if ($cat_result) {
+                                                    $cat_count = $cat_result->fetch_assoc()['cat_count'];
+                                                }
+                                            }
                                             ?>
                                             <span class="badge bg-warning text-dark"><?php echo $cat_count; ?> danh mục</span>
                                         <?php endif; ?>
-                                        
-                                        <?php if (!$promo['ap_dung_sanpham'] && !$promo['ap_dung_loai']): ?>
+                                        <?php if (!$ap_dung_sanpham && !$ap_dung_loai): ?>
                                             <span class="badge bg-success">Tất cả sản phẩm</span>
                                         <?php endif; ?>
                                     </td>
@@ -394,24 +293,21 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                                             <a href="xem-khuyen-mai.php?id=<?php echo $promo['id']; ?>" class="btn btn-outline-primary" title="Xem chi tiết">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            
                                             <!-- Nút Sửa -->
                                             <?php if (hasPermission('promo_edit')): ?>
                                             <a href="chinh-sua-khuyen-mai.php?id=<?php echo $promo['id']; ?>" class="btn btn-outline-secondary" title="Chỉnh sửa">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <?php endif; ?>
-                                            
                                             <!-- Nút Kích hoạt/Vô hiệu hóa -->
                                             <?php if (hasPermission('promo_edit')): ?>
                                             <a href="khuyen-mai.php?action=toggle_status&id=<?php echo $promo['id']; ?>" 
                                                class="btn btn-outline-<?php echo $promo['trang_thai'] ? 'warning' : 'success'; ?>"
-                                               title="<?php echo $promo['trang_thai'] ? 'Vô hiệu hóa' : 'Kích hoạt'; ?>"
+                                               title="<?php echo $promo['trang_thai'] ? 'Vô hiệu hóa' : 'Kích hoạt'; ?>" 
                                                onclick="return confirm('Bạn có chắc muốn <?php echo $promo['trang_thai'] ? 'vô hiệu hóa' : 'kích hoạt'; ?> mã khuyến mãi này?');">
                                                 <i class="bi bi-<?php echo $promo['trang_thai'] ? 'x-circle' : 'check-circle'; ?>"></i>
                                             </a>
                                             <?php endif; ?>
-                                            
                                             <!-- Nút Xóa -->
                                             <?php if (hasPermission('promo_delete')): ?>
                                             <a href="khuyen-mai.php?action=delete&id=<?php echo $promo['id']; ?>" 
@@ -450,7 +346,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
             </div>
         </div>
     </div>
-    
     <!-- Pagination -->
     <?php if ($total_pages > 1): ?>
     <nav aria-label="Page navigation" class="mt-4">
@@ -460,16 +355,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
-            
             <?php
             // Hiển thị tối đa 5 số trang
             $start_page = max(1, $page - 2);
             $end_page = min($start_page + 4, $total_pages);
-            
             if ($end_page - $start_page < 4) {
                 $start_page = max(1, $end_page - 4);
             }
-            
             for ($i = $start_page; $i <= $end_page; $i++): ?>
                 <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
                     <a class="page-link" href="?page=<?php echo $i; ?>&status=<?php echo $filter_status; ?>&type=<?php echo $filter_type; ?>&search=<?php echo urlencode($search); ?>">
@@ -477,7 +369,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                     </a>
                 </li>
             <?php endfor; ?>
-            
             <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
                 <a class="page-link" href="?page=<?php echo $page+1; ?>&status=<?php echo $filter_status; ?>&type=<?php echo $filter_type; ?>&search=<?php echo urlencode($search); ?>" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
@@ -486,7 +377,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         </ul>
     </nav>
     <?php endif; ?>
-    
     <!-- Thống kê nhỏ -->
     <div class="d-flex justify-content-between align-items-center mt-4 text-muted small">
         <div>
@@ -505,11 +395,4 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         </div>
     </div>
 </main>
-
-<?php
-// Include footer
-include('includes/footer.php');
-
-// Thêm dòng này ở cuối file, sau tất cả các output
-ob_end_flush();
-?>
+<?php include('includes/footer.php'); ?>

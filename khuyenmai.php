@@ -1,5 +1,6 @@
 <?php
 session_start();
+include('config/config.php'); // Use the shared config file with the correct database connection
 
 // Kiểm tra đăng nhập
 $user_logged_in = false;
@@ -30,9 +31,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
 
 <body>
 <?php 
-    require_once('includes/head.php');
-    require_once('includes/header.php');
-    
+    require_once('includes/header.php'); // Use only header which already includes the proper head content
     ?>
     
     <main>
@@ -72,19 +71,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                 
                 <div class="row g-4" id="promotion-products">
                     <?php
-                    // Kết nối database
-                    $servername = "localhost";
-                    $username = "root";
-                    $password = "";
-                    $dbname = "shop_vippro";
-                    
-                    $conn = new mysqli($servername, $username, $password, $dbname);
-                    
-                    if ($conn->connect_error) {
-                        die("Kết nối thất bại: " . $conn->connect_error);
-                    }
-                    
-                    $conn->set_charset("utf8mb4");
+                    // Removed direct database connection code that was using the wrong database "shop_vippro"
                     
                     // Xử lý sắp xếp
                     $sort = isset($_GET['sort']) ? $_GET['sort'] : 'discount_desc';
@@ -99,7 +86,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                             $order_by = "ORDER BY s.gia DESC";
                             break;
                         case 'new':
-                            $order_by = "ORDER BY s.ngaytao DESC";
+                            $order_by = "ORDER BY s.ngay_tao DESC";
                             break;
                         case 'discount_desc':
                         default:
@@ -107,14 +94,14 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                             break;
                     }
                     
-                    // Truy vấn sản phẩm khuyến mãi (sản phẩm có giagoc > gia)
-                    $sql = "SELECT s.*, l.tenloai, AVG(dg.diemdanhgia) as diem_trung_binh,
+                    // Updated query to match new database schema
+                    $sql = "SELECT s.*, d.ten as tenloai, AVG(dg.diem) as diem_trung_binh,
                             (1 - s.gia/s.giagoc) * 100 as discount_percent
                             FROM sanpham s 
-                            LEFT JOIN danhgia dg ON s.id_sanpham = dg.id_sanpham 
-                            LEFT JOIN loaisanpham l ON s.id_loai = l.id_loai
+                            LEFT JOIN danhgia dg ON s.id = dg.id_sanpham 
+                            LEFT JOIN danhmuc d ON s.id_danhmuc = d.id
                             WHERE s.trangthai = 1 AND s.giagoc > s.gia AND s.giagoc > 0
-                            GROUP BY s.id_sanpham 
+                            GROUP BY s.id 
                             $order_by";
                     
                     $result = $conn->query($sql);
@@ -126,25 +113,17 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                             $discount_percent = round(100 - ($row['gia'] / $row['giagoc'] * 100));
                             
                             // Xử lý đường dẫn hình ảnh
-                            if (!empty($row['hinhanh']) && file_exists('uploads/products/' . $row['hinhanh'])) {
-                                $img_path = 'uploads/products/' . $row['hinhanh'];
-                            } else {
-                                // Kiểm tra hình ảnh từ bảng mausac_hinhanh
-                                $stmt = $conn->prepare("SELECT hinhanh FROM mausac_hinhanh WHERE id_sanpham = ? LIMIT 1");
-                                $stmt->bind_param("i", $row['id_sanpham']);
-                                $stmt->execute();
-                                $result_img = $stmt->get_result();
-                                
-                                if ($result_img->num_rows > 0) {
-                                    $img_row = $result_img->fetch_assoc();
-                                    if (file_exists('uploads/colors/' . $img_row['hinhanh'])) {
-                                        $img_path = 'uploads/colors/' . $img_row['hinhanh'];
-                                    } else {
-                                        $img_path = 'images/no-image.jpg';
-                                    }
+                            if (!empty($row['hinhanh'])) {
+                                // First check if the path already contains 'uploads/'
+                                if (strpos($row['hinhanh'], 'uploads/') === 0) {
+                                    $img_path = $row['hinhanh'];
+                                } else if (file_exists('uploads/products/' . $row['hinhanh'])) {
+                                    $img_path = 'uploads/products/' . $row['hinhanh'];
                                 } else {
-                                    $img_path = 'images/no-image.jpg';
+                                    $img_path = 'images/no-image.png';
                                 }
+                            } else {
+                                $img_path = 'images/no-image.png';
                             }
                             
                             // Xử lý điểm đánh giá
@@ -163,7 +142,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                         </div>
                                         <?php endif; ?>
                                     </div>
-                                    <a href="product-detail.php?id=<?php echo $row['id_sanpham']; ?>" class="product-img-container">
+                                    <a href="product-detail.php?id=<?php echo $row['id']; ?>" class="product-img-container">
                                         <img src="<?php echo $img_path; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($row['tensanpham']); ?>" 
                                              onerror="this.onerror=null; this.src='images/no-image.jpg';">
                                         <div class="overlay-effect"></div>
@@ -175,17 +154,17 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                         <button class="btn btn-light btn-sm rounded-circle" title="Yêu thích">
                                             <i class="bi bi-heart"></i>
                                         </button>
-                                        <button class="btn btn-light btn-sm rounded-circle quick-view" data-id="<?php echo $row['id_sanpham']; ?>" title="Xem nhanh">
+                                        <button class="btn btn-light btn-sm rounded-circle quick-view" data-id="<?php echo $row['id']; ?>" title="Xem nhanh">
                                             <i class="bi bi-eye"></i>
                                         </button>
-                                        <button class="btn btn-light btn-sm rounded-circle add-to-cart" data-product-id="<?php echo $row['id_sanpham']; ?>" title="Thêm vào giỏ hàng">
+                                        <button class="btn btn-light btn-sm rounded-circle add-to-cart" data-product-id="<?php echo $row['id']; ?>" title="Thêm vào giỏ hàng">
                                             <i class="bi bi-cart-plus"></i>
                                         </button>
                                     </div>
                                     <div class="card-body">
                                         <div class="product-category"><?php echo htmlspecialchars($row['tenloai'] ?? ''); ?></div>
                                         <h5 class="card-title product-title">
-                                            <a href="product-detail.php?id=<?php echo $row['id_sanpham']; ?>" class="text-decoration-none text-dark">
+                                            <a href="product-detail.php?id=<?php echo $row['id']; ?>" class="text-decoration-none text-dark">
                                                 <?php echo htmlspecialchars($row['tensanpham']); ?>
                                             </a>
                                         </h5>
@@ -201,7 +180,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                         </div>
                                     </div>
                                     <div class="card-footer">
-                                        <button class="btn btn-primary w-100 add-to-cart" data-product-id="<?php echo $row['id_sanpham']; ?>">
+                                        <button class="btn btn-primary w-100 add-to-cart" data-product-id="<?php echo $row['id']; ?>">
                                             <i class="bi bi-cart-plus me-2"></i> Thêm vào giỏ
                                         </button>
                                     </div>
@@ -218,8 +197,6 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                 </div>
                               </div>';
                     }
-                    
-                    $conn->close();
                     ?>
                 </div>
                 
