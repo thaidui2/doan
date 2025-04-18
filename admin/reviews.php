@@ -1,102 +1,119 @@
 <?php
 // Set page title
-$page_title = 'Quản Lý Đánh Giá';
+$page_title = 'Quản lý đánh giá';
 
-// Include header (will check for login)
+// Include header (which includes authentication checks)
 include('includes/header.php');
 
 // Include database connection
 include('../config/config.php');
 
-// Check if user has permission to view reviews
-checkPermissionRedirect('product_view');
-
 // Variables for filtering and searching
-$search_keyword = isset($_GET['search']) ? trim($_GET['search']) : '';
-$rating_filter = isset($_GET['rating']) ? (int)$_GET['rating'] : 0; // 0 means all ratings
-$status_filter = isset($_GET['status']) ? (int)$_GET['status'] : -1; // -1 means all statuses
-$product_filter = isset($_GET['product']) ? (int)$_GET['product'] : 0;
-$sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'ngaydanhgia';
-$sort_order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
+$search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
+$product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
+$rating = isset($_GET['rating']) ? (int)$_GET['rating'] : 0;
+$status = isset($_GET['status']) ? (int)$_GET['status'] : -1;
+$sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 
-// Build query
-$query = "SELECT dg.*, sp.tensanpham, u.tenuser, u.taikhoan
-          FROM danhgia dg
-          JOIN sanpham sp ON dg.id_sanpham = sp.id_sanpham
-          JOIN users u ON dg.id_user = u.id_user";
+// Determine current page for pagination
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit = 10;
+$offset = ($page - 1) * $limit;
 
-// Add search conditions
-$where_conditions = [];
-if (!empty($search_keyword)) {
-    $search_keyword = $conn->real_escape_string($search_keyword);
-    $where_conditions[] = "(dg.noidung LIKE '%$search_keyword%' OR sp.tensanpham LIKE '%$search_keyword%' OR u.tenuser LIKE '%$search_keyword%' OR u.taikhoan LIKE '%$search_keyword%')";
+// Build base query with JOINs to related tables - updated table and column names
+$query = "SELECT r.*, s.tensanpham, u.taikhoan, u.ten AS tenuser
+          FROM danhgia r
+          JOIN sanpham s ON r.id_sanpham = s.id
+          JOIN users u ON r.id_user = u.id
+          WHERE 1=1";
+
+// Apply search filter
+if (!empty($search_term)) {
+    $search_param = '%' . $conn->real_escape_string($search_term) . '%';
+    $query .= " AND (s.tensanpham LIKE ? OR r.noi_dung LIKE ? OR u.ten LIKE ?)";
 }
 
-if ($rating_filter > 0) {
-    $where_conditions[] = "dg.diemdanhgia = $rating_filter";
+// Apply product filter
+if ($product_id > 0) {
+    $query .= " AND r.id_sanpham = $product_id";
 }
 
-if ($status_filter !== -1) {
-    $where_conditions[] = "dg.trangthai = $status_filter";
+// Apply rating filter
+if ($rating > 0) {
+    $query .= " AND r.diem = $rating";
 }
 
-if ($product_filter > 0) {
-    $where_conditions[] = "dg.id_sanpham = $product_filter";
+// Apply status filter
+if ($status !== -1) {
+    $query .= " AND r.trang_thai = $status";
 }
 
-// Combine conditions
-if (!empty($where_conditions)) {
-    $query .= " WHERE " . implode(" AND ", $where_conditions);
+// Add sorting - updated column names
+switch ($sort_by) {
+    case 'oldest':
+        $query .= " ORDER BY r.ngay_danhgia ASC";
+        break;
+    case 'highest_rating':
+        $query .= " ORDER BY r.diem DESC, r.ngay_danhgia DESC";
+        break;
+    case 'lowest_rating':
+        $query .= " ORDER BY r.diem ASC, r.ngay_danhgia DESC";
+        break;
+    case 'product_name':
+        $query .= " ORDER BY s.tensanpham ASC";
+        break;
+    default:
+        $query .= " ORDER BY r.ngay_danhgia DESC"; // Default: newest
+        break;
 }
 
-// Add sorting
-$valid_sort_columns = ['id_danhgia', 'diemdanhgia', 'ngaydanhgia', 'trangthai'];
-if (!in_array($sort_by, $valid_sort_columns)) {
-    $sort_by = 'ngaydanhgia';
+// Count total reviews for pagination
+$count_query = str_replace("SELECT r.*, s.tensanpham, u.taikhoan, u.ten AS tenuser", "SELECT COUNT(*) AS total", $query);
+
+// Prepare statement for count
+$stmt_count = $conn->prepare($count_query);
+if (!empty($search_term)) {
+    $stmt_count->bind_param("sss", $search_param, $search_param, $search_param);
 }
+$stmt_count->execute();
+$count_result = $stmt_count->get_result();
+$count_row = $count_result->fetch_assoc();
+$total_reviews = $count_row['total'];
 
-$sort_order = ($sort_order === 'ASC') ? 'ASC' : 'DESC';
-$query .= " ORDER BY dg.$sort_by $sort_order";
+// Calculate total pages
+$total_pages = ceil($total_reviews / $limit);
 
-// Pagination
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$per_page = 10;
-$offset = ($current_page - 1) * $per_page;
+// Add pagination to main query
+$query .= " LIMIT ?, ?";
 
-// Count total rows for pagination
-$count_result = $conn->query(str_replace("dg.*, sp.tensanpham, u.tenuser, u.taikhoan", "COUNT(*) as total", $query));
-$total_rows = $count_result->fetch_assoc()['total'];
-$total_pages = ceil($total_rows / $per_page);
+// Prepare statement for data
+$stmt = $conn->prepare($query);
+if (!empty($search_term)) {
+    $stmt->bind_param("sssi", $search_param, $search_param, $search_param, $offset, $limit);
+} else {
+    $stmt->bind_param("ii", $offset, $limit);
+}
+$stmt->execute();
+$reviews = $stmt->get_result();
 
-// Add limit for pagination
-$query .= " LIMIT $offset, $per_page";
-
-// Execute query
-$result = $conn->query($query);
-
-// Get products for filter dropdown
-$products_query = "SELECT id_sanpham, tensanpham FROM sanpham ORDER BY tensanpham";
+// Get products for filter dropdown - updated column name
+$products_query = "SELECT id, tensanpham FROM sanpham ORDER BY tensanpham ASC";
 $products_result = $conn->query($products_query);
+$products = [];
+while ($product = $products_result->fetch_assoc()) {
+    $products[$product['id']] = $product['tensanpham'];
+}
 
-// Process approve/hide action if requested via AJAX (will be handled by separate ajax file)
 ?>
-
-<!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Quản Lý Đánh Giá</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="exportReviews">
-                <i class="bi bi-download"></i> Xuất CSV
-            </button>
-        </div>
+        <h1 class="h2">Quản lý đánh giá</h1>
     </div>
 
     <?php
-    // Display success/error messages if they exist
+    // Display success or error messages
     if (isset($_SESSION['success_message'])) {
         echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
                 ' . $_SESSION['success_message'] . '
@@ -114,49 +131,62 @@ $products_result = $conn->query($products_query);
     }
     ?>
 
-    <!-- Search and filter form -->
+    <!-- Filter form -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-4">
                     <label for="search" class="form-label">Tìm kiếm</label>
-                    <input type="text" class="form-control" id="search" name="search" 
-                           value="<?php echo htmlspecialchars($search_keyword); ?>" 
-                           placeholder="Nội dung, tên sản phẩm, tên khách hàng...">
+                    <input type="text" class="form-control" id="search" name="search" value="<?php echo htmlspecialchars($search_term); ?>" placeholder="Nhập tên sản phẩm, nội dung đánh giá...">
                 </div>
-                <div class="col-md-2">
-                    <label for="rating" class="form-label">Đánh giá</label>
-                    <select class="form-select" id="rating" name="rating">
-                        <option value="0" <?php echo $rating_filter === 0 ? 'selected' : ''; ?>>Tất cả sao</option>
-                        <option value="5" <?php echo $rating_filter === 5 ? 'selected' : ''; ?>>5 sao</option>
-                        <option value="4" <?php echo $rating_filter === 4 ? 'selected' : ''; ?>>4 sao</option>
-                        <option value="3" <?php echo $rating_filter === 3 ? 'selected' : ''; ?>>3 sao</option>
-                        <option value="2" <?php echo $rating_filter === 2 ? 'selected' : ''; ?>>2 sao</option>
-                        <option value="1" <?php echo $rating_filter === 1 ? 'selected' : ''; ?>>1 sao</option>
+                
+                <div class="col-md-3">
+                    <label for="product_id" class="form-label">Sản phẩm</label>
+                    <select class="form-select" id="product_id" name="product_id">
+                        <option value="0">Tất cả sản phẩm</option>
+                        <?php foreach ($products as $id => $name): ?>
+                            <option value="<?php echo $id; ?>" <?php echo ($product_id == $id) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($name); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
+                
+                <div class="col-md-2">
+                    <label for="rating" class="form-label">Số sao</label>
+                    <select class="form-select" id="rating" name="rating">
+                        <option value="0">Tất cả</option>
+                        <?php for ($i = 5; $i >= 1; $i--): ?>
+                            <option value="<?php echo $i; ?>" <?php echo ($rating == $i) ? 'selected' : ''; ?>>
+                                <?php echo $i; ?> sao
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                
                 <div class="col-md-2">
                     <label for="status" class="form-label">Trạng thái</label>
                     <select class="form-select" id="status" name="status">
-                        <option value="-1" <?php echo $status_filter === -1 ? 'selected' : ''; ?>>Tất cả trạng thái</option>
-                        <option value="1" <?php echo $status_filter === 1 ? 'selected' : ''; ?>>Hiển thị</option>
-                        <option value="0" <?php echo $status_filter === 0 ? 'selected' : ''; ?>>Đã ẩn</option>
+                        <option value="-1" <?php echo ($status === -1) ? 'selected' : ''; ?>>Tất cả</option>
+                        <option value="1" <?php echo ($status === 1) ? 'selected' : ''; ?>>Đang hiển thị</option>
+                        <option value="0" <?php echo ($status === 0) ? 'selected' : ''; ?>>Đã ẩn</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="product" class="form-label">Sản phẩm</label>
-                    <select class="form-select" id="product" name="product">
-                        <option value="0">Tất cả sản phẩm</option>
-                        <?php while ($product = $products_result->fetch_assoc()): ?>
-                            <option value="<?php echo $product['id_sanpham']; ?>" <?php echo $product_filter == $product['id_sanpham'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($product['tensanpham']); ?>
-                            </option>
-                        <?php endwhile; ?>
+                
+                <div class="col-md-1">
+                    <label for="sort" class="form-label">Sắp xếp</label>
+                    <select class="form-select" id="sort" name="sort">
+                        <option value="newest" <?php echo ($sort_by == 'newest') ? 'selected' : ''; ?>>Mới nhất</option>
+                        <option value="oldest" <?php echo ($sort_by == 'oldest') ? 'selected' : ''; ?>>Cũ nhất</option>
+                        <option value="highest_rating" <?php echo ($sort_by == 'highest_rating') ? 'selected' : ''; ?>>Đánh giá cao</option>
+                        <option value="lowest_rating" <?php echo ($sort_by == 'lowest_rating') ? 'selected' : ''; ?>>Đánh giá thấp</option>
+                        <option value="product_name" <?php echo ($sort_by == 'product_name') ? 'selected' : ''; ?>>Theo sản phẩm</option>
                     </select>
                 </div>
-                <div class="col-md-6 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="bi bi-search"></i> Tìm kiếm
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Lọc
                     </button>
                     <a href="reviews.php" class="btn btn-secondary">
                         <i class="bi bi-x-circle"></i> Xóa bộ lọc
@@ -166,369 +196,253 @@ $products_result = $conn->query($products_query);
         </div>
     </div>
 
-    <!-- Reviews table -->
+    <!-- Reviews list -->
     <div class="card">
         <div class="card-header bg-white">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Danh sách đánh giá</h5>
-                <span class="badge bg-secondary"><?php echo $total_rows; ?> đánh giá</span>
+                <span class="badge bg-primary"><?php echo $total_reviews; ?> đánh giá</span>
             </div>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col">ID</th>
-                            <th scope="col">Sản phẩm</th>
-                            <th scope="col">Khách hàng</th>
-                            <th scope="col">Đánh giá</th>
-                            <th scope="col">Nội dung</th>
-                            <th scope="col">Ngày</th>
-                            <th scope="col">Trạng thái</th>
-                            <th scope="col">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($result->num_rows > 0): ?>
-                            <?php while ($review = $result->fetch_assoc()): ?>
+            <?php if ($reviews->num_rows > 0): ?>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">Sản phẩm</th>
+                                <th scope="col">Khách hàng</th>
+                                <th scope="col">Đánh giá</th>
+                                <th scope="col">Nội dung</th>
+                                <th scope="col">Ngày đánh giá</th>
+                                <th scope="col">Trạng thái</th>
+                                <th scope="col">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($review = $reviews->fetch_assoc()): ?>
                                 <tr>
-                                    <td><?php echo $review['id_danhgia']; ?></td>
+                                    <td><?php echo $review['id']; ?></td>
                                     <td>
-                                        <a href="../product-detail.php?id=<?php echo $review['id_sanpham']; ?>" target="_blank" class="text-decoration-none">
+                                        <a href="../product-detail.php?id=<?php echo $review['id_sanpham']; ?>" target="_blank" class="text-decoration-none" title="Xem sản phẩm">
                                             <?php echo htmlspecialchars($review['tensanpham']); ?>
                                         </a>
                                     </td>
-                                    <td><?php echo htmlspecialchars($review['tenuser'] . ' (' . $review['taikhoan'] . ')'); ?></td>
                                     <td>
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="bi bi-star<?php echo ($i <= $review['diemdanhgia']) ? '-fill text-warning' : ''; ?>"></i>
-                                        <?php endfor; ?>
+                                        <a href="customer-detail.php?id=<?php echo $review['id_user']; ?>" class="text-decoration-none" title="Xem khách hàng">
+                                            <?php echo htmlspecialchars($review['tenuser']); ?>
+                                        </a>
                                     </td>
                                     <td>
-                                        <div class="review-content">
-                                            <?php 
-                                            if (strlen($review['noidung']) > 50) {
-                                                echo htmlspecialchars(substr($review['noidung'], 0, 50) . '...');
-                                                echo '<a href="#" class="show-full-review text-primary ms-1" data-content="' . htmlspecialchars($review['noidung']) . '">Xem thêm</a>';
-                                            } else {
-                                                echo htmlspecialchars($review['noidung'] ?: 'N/A');
+                                        <div class="rating">
+                                            <?php
+                                            for ($i = 1; $i <= 5; $i++) {
+                                                if ($i <= $review['diem']) {
+                                                    echo '<i class="bi bi-star-fill text-warning"></i>';
+                                                } else {
+                                                    echo '<i class="bi bi-star text-muted"></i>';
+                                                }
                                             }
                                             ?>
                                         </div>
-                                        <?php if (!empty($review['hinhanh'])): ?>
-                                            <div class="mt-1">
-                                                <a href="../uploads/reviews/<?php echo $review['hinhanh']; ?>" target="_blank">
-                                                    <img src="../uploads/reviews/<?php echo $review['hinhanh']; ?>" class="img-thumbnail" alt="Review image" style="height: 40px;">
-                                                </a>
-                                            </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;" title="<?php echo htmlspecialchars($review['noi_dung']); ?>">
+                                            <?php echo htmlspecialchars($review['noi_dung']); ?>
+                                        </div>
+                                        
+                                        <?php if (!empty($review['hinh_anh'])): ?>
+                                            <small class="text-muted">
+                                                <i class="bi bi-image"></i> Có hình ảnh
+                                            </small>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo date('d/m/Y H:i', strtotime($review['ngaydanhgia'])); ?></td>
+                                    <td><?php echo date('d/m/Y', strtotime($review['ngay_danhgia'])); ?></td>
                                     <td>
-                                        <?php if ($review['trangthai'] == 1): ?>
+                                        <?php if ($review['trang_thai'] == 1): ?>
                                             <span class="badge bg-success">Hiển thị</span>
                                         <?php else: ?>
-                                            <span class="badge bg-danger">Đã ẩn</span>
+                                            <span class="badge bg-secondary">Đã ẩn</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <?php if (hasPermission('product_edit')): ?>
-                                                <?php if ($review['trangthai'] == 1): ?>
-                                                    <button type="button" class="btn btn-outline-secondary toggle-status" 
-                                                        data-id="<?php echo $review['id_danhgia']; ?>" 
-                                                        data-status="0" 
-                                                        title="Ẩn đánh giá">
-                                                        <i class="bi bi-eye-slash"></i>
-                                                    </button>
+                                            <a href="review-detail.php?id=<?php echo $review['id']; ?>" class="btn btn-outline-info">
+                                                <i class="bi bi-eye"></i> Xem
+                                            </a>
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <?php if ($review['trang_thai'] == 1): ?>
+                                                    <li>
+                                                        <a class="dropdown-item text-warning toggle-review-status" href="#" data-id="<?php echo $review['id']; ?>" data-action="hide">
+                                                            <i class="bi bi-eye-slash"></i> Ẩn đánh giá
+                                                        </a>
+                                                    </li>
                                                 <?php else: ?>
-                                                    <button type="button" class="btn btn-outline-success toggle-status" 
-                                                        data-id="<?php echo $review['id_danhgia']; ?>" 
-                                                        data-status="1" 
-                                                        title="Hiển thị đánh giá">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
+                                                    <li>
+                                                        <a class="dropdown-item text-success toggle-review-status" href="#" data-id="<?php echo $review['id']; ?>" data-action="show">
+                                                            <i class="bi bi-eye"></i> Hiển thị đánh giá
+                                                        </a>
+                                                    </li>
                                                 <?php endif; ?>
-                                            <?php endif; ?>
-                                            
-                                            <?php if (hasPermission('product_delete')): ?>
-                                                <button type="button" class="btn btn-outline-danger delete-review" 
-                                                    data-id="<?php echo $review['id_danhgia']; ?>" 
-                                                    title="Xóa đánh giá">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            <?php endif; ?>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger delete-review" href="#" data-id="<?php echo $review['id']; ?>">
+                                                        <i class="bi bi-trash"></i> Xóa đánh giá
+                                                    </a>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>
                             <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="8" class="text-center py-4">
-                                    <div class="text-muted">Không tìm thấy đánh giá nào</div>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="p-4 text-center">
+                    <p class="text-muted mb-0">Không tìm thấy đánh giá nào</p>
+                </div>
+            <?php endif; ?>
         </div>
+        
+        <!-- Pagination -->
+        <?php if ($total_pages > 1): ?>
+            <div class="card-footer bg-white">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1<?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>&product_id=<?php echo $product_id; ?>&rating=<?php echo $rating; ?>&status=<?php echo $status; ?>&sort=<?php echo $sort_by; ?>">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>&product_id=<?php echo $product_id; ?>&rating=<?php echo $rating; ?>&status=<?php echo $status; ?>&sort=<?php echo $sort_by; ?>">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <?php 
+                            $start_page = max(1, $page - 2);
+                            $end_page = min($start_page + 4, $total_pages);
+                            $start_page = max(1, $end_page - 4);
+                            
+                            for ($i = $start_page; $i <= $end_page; $i++): 
+                        ?>
+                            <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
+                                <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>&product_id=<?php echo $product_id; ?>&rating=<?php echo $rating; ?>&status=<?php echo $status; ?>&sort=<?php echo $sort_by; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($page < $total_pages): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>&product_id=<?php echo $product_id; ?>&rating=<?php echo $rating; ?>&status=<?php echo $status; ?>&sort=<?php echo $sort_by; ?>">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=<?php echo $total_pages; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>&product_id=<?php echo $product_id; ?>&rating=<?php echo $rating; ?>&status=<?php echo $status; ?>&sort=<?php echo $sort_by; ?>">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+            </div>
+        <?php endif; ?>
     </div>
-
-    <!-- Pagination -->
-    <?php if ($total_pages > 1): ?>
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                <li class="page-item <?php echo ($current_page <= 1) ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search_keyword); ?>&rating=<?php echo $rating_filter; ?>&status=<?php echo $status_filter; ?>&product=<?php echo $product_filter; ?>&sort=<?php echo $sort_by; ?>&order=<?php echo $sort_order; ?>">
-                        <i class="bi bi-chevron-left"></i> Trước
-                    </a>
-                </li>
-                
-                <?php
-                $start_page = max(1, $current_page - 2);
-                $end_page = min($total_pages, $current_page + 2);
-                
-                if ($start_page > 1) {
-                    echo '<li class="page-item"><a class="page-link" href="?page=1&search=' . urlencode($search_keyword) . '&rating=' . $rating_filter . '&status=' . $status_filter . '&product=' . $product_filter . '&sort=' . $sort_by . '&order=' . $sort_order . '">1</a></li>';
-                    if ($start_page > 2) {
-                        echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                    }
-                }
-                
-                for ($i = $start_page; $i <= $end_page; $i++) {
-                    echo '<li class="page-item ' . (($i == $current_page) ? 'active' : '') . '">';
-                    echo '<a class="page-link" href="?page=' . $i . '&search=' . urlencode($search_keyword) . '&rating=' . $rating_filter . '&status=' . $status_filter . '&product=' . $product_filter . '&sort=' . $sort_by . '&order=' . $sort_order . '">' . $i . '</a>';
-                    echo '</li>';
-                }
-                
-                if ($end_page < $total_pages) {
-                    if ($end_page < $total_pages - 1) {
-                        echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                    }
-                    echo '<li class="page-item"><a class="page-link" href="?page=' . $total_pages . '&search=' . urlencode($search_keyword) . '&rating=' . $rating_filter . '&status=' . $status_filter . '&product=' . $product_filter . '&sort=' . $sort_by . '&order=' . $sort_order . '">' . $total_pages . '</a></li>';
-                }
-                ?>
-                
-                <li class="page-item <?php echo ($current_page >= $total_pages) ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search_keyword); ?>&rating=<?php echo $rating_filter; ?>&status=<?php echo $status_filter; ?>&product=<?php echo $product_filter; ?>&sort=<?php echo $sort_by; ?>&order=<?php echo $sort_order; ?>">
-                        Tiếp <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    <?php endif; ?>
 </main>
 
-<!-- Full Review Modal -->
-<div class="modal fade" id="reviewDetailModal" tabindex="-1" aria-hidden="true">
+<!-- Toggle status confirmation modal -->
+<div class="modal fade" id="toggleStatusModal" tabindex="-1" aria-labelledby="toggleStatusModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Chi tiết đánh giá</h5>
+                <h5 class="modal-title" id="toggleStatusModalLabel">Xác nhận thay đổi trạng thái</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p id="fullReviewContent"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Confirmation Modal -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">Xác nhận</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                Bạn có chắc chắn muốn thực hiện hành động này?
+            <div class="modal-body" id="toggleStatusMessage">
+                <!-- Message will be set dynamically -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="confirmAction">Xác nhận</button>
+                <form id="toggleStatusForm" action="update_review_status.php" method="post">
+                    <input type="hidden" name="review_id" id="toggleReviewId" value="">
+                    <input type="hidden" name="action" id="toggleAction" value="">
+                    <button type="submit" class="btn btn-primary">Xác nhận</button>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Page specific JavaScript -->
-<?php 
-$page_specific_js = '
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Handle "Show more" functionality for review content
-        document.querySelectorAll(".show-full-review").forEach(link => {
-            link.addEventListener("click", function(e) {
-                e.preventDefault();
-                const content = this.getAttribute("data-content");
-                document.getElementById("fullReviewContent").textContent = content;
-                const modal = new bootstrap.Modal(document.getElementById("reviewDetailModal"));
-                modal.show();
-            });
-        });
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteReviewForm" action="delete_review.php" method="post">
+                    <input type="hidden" name="review_id" id="deleteReviewId" value="">
+                    <button type="submit" class="btn btn-danger">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // Toggle review status (show/hide)
-        document.querySelectorAll(".toggle-status").forEach(button => {
-            button.addEventListener("click", function(e) {
+<!-- JavaScript for handling modals and actions -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup status toggle
+        document.querySelectorAll('.toggle-review-status').forEach(function(element) {
+            element.addEventListener('click', function(e) {
                 e.preventDefault();
-                const reviewId = this.getAttribute("data-id");
-                const newStatus = this.getAttribute("data-status");
-                const action = newStatus == "1" ? "hiển thị" : "ẩn";
                 
-                // Set modal content
-                document.getElementById("modalTitle").textContent = newStatus == "1" ? "Hiển thị đánh giá" : "Ẩn đánh giá";
-                document.getElementById("modalBody").innerHTML = `Bạn có chắc chắn muốn <strong>${action}</strong> đánh giá này?`;
+                const reviewId = this.dataset.id;
+                const action = this.dataset.action;
+                const message = action === 'hide' ? 
+                    'Bạn có chắc chắn muốn ẩn đánh giá này?' : 
+                    'Bạn có chắc chắn muốn hiển thị đánh giá này?';
                 
-                // Set confirm button style
-                document.getElementById("confirmAction").className = `btn ${newStatus == "1" ? "btn-success" : "btn-secondary"}`;
+                document.getElementById('toggleStatusMessage').textContent = message;
+                document.getElementById('toggleReviewId').value = reviewId;
+                document.getElementById('toggleAction').value = action;
                 
-                // Show confirmation modal
-                const modal = new bootstrap.Modal(document.getElementById("confirmationModal"));
+                const modal = new bootstrap.Modal(document.getElementById('toggleStatusModal'));
                 modal.show();
-                
-                // Set up action for confirm button
-                document.getElementById("confirmAction").onclick = function() {
-                    // Close the modal
-                    modal.hide();
-                    
-                    // Send AJAX request to update status
-                    updateReviewStatus(reviewId, newStatus);
-                };
             });
         });
         
-        // Delete review
-        document.querySelectorAll(".delete-review").forEach(button => {
-            button.addEventListener("click", function(e) {
+        // Setup delete review
+        document.querySelectorAll('.delete-review').forEach(function(element) {
+            element.addEventListener('click', function(e) {
                 e.preventDefault();
-                const reviewId = this.getAttribute("data-id");
                 
-                // Set modal content
-                document.getElementById("modalTitle").textContent = "Xóa đánh giá";
-                document.getElementById("modalBody").innerHTML = "Bạn có chắc chắn muốn <strong>xóa</strong> đánh giá này? Hành động này không thể hoàn tác.";
+                document.getElementById('deleteReviewId').value = this.dataset.id;
                 
-                // Set confirm button style
-                document.getElementById("confirmAction").className = "btn btn-danger";
-                
-                // Show confirmation modal
-                const modal = new bootstrap.Modal(document.getElementById("confirmationModal"));
+                const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
                 modal.show();
-                
-                // Set up action for confirm button
-                document.getElementById("confirmAction").onclick = function() {
-                    // Close the modal
-                    modal.hide();
-                    
-                    // Send AJAX request to delete review
-                    deleteReview(reviewId);
-                };
             });
-        });
-        
-        // Function to update review status via AJAX
-        function updateReviewStatus(reviewId, status) {
-            fetch("ajax/update-review-status.php", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `id=${reviewId}&status=${status}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast("Cập nhật trạng thái thành công!", "success");
-                    // Reload page after 1 second
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    showToast(`Lỗi: ${data.message}`, "danger");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                showToast("Đã xảy ra lỗi khi cập nhật trạng thái!", "danger");
-            });
-        }
-        
-        // Function to delete review via AJAX
-        function deleteReview(reviewId) {
-            fetch("ajax/delete-review.php", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `id=${reviewId}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast("Xóa đánh giá thành công!", "success");
-                    // Reload page after 1 second
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    showToast(`Lỗi: ${data.message}`, "danger");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                showToast("Đã xảy ra lỗi khi xóa đánh giá!", "danger");
-            });
-        }
-        
-        // Function to show toast notification
-        function showToast(message, type = "info") {
-            const toastContainer = document.querySelector(".toast-container");
-            if (!toastContainer) return;
-            
-            const toastId = `toast-${Date.now()}`;
-            
-            const toastHtml = `
-                <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                </div>
-            `;
-            
-            toastContainer.insertAdjacentHTML("beforeend", toastHtml);
-            
-            const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement, {
-                autohide: true,
-                delay: 3000
-            });
-            toast.show();
-            
-            toastElement.addEventListener("hidden.bs.toast", function() {
-                toastElement.remove();
-            });
-        }
-        
-        // Export reviews to CSV
-        document.getElementById("exportReviews").addEventListener("click", function() {
-            window.location.href = "export-reviews.php" + window.location.search;
         });
     });
 </script>
-';
 
-// Include toast container for notifications
-echo '<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>';
-
+<?php
 // Include footer
 include('includes/footer.php');
 ?>

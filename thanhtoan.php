@@ -2,62 +2,32 @@
 session_start();
 include('config/config.php');
 
-// Debug thông tin session
+// Debug thông tin session (có thể xóa khi production)
 error_log("SESSION DATA: " . print_r($_SESSION, true));
 
 // Kiểm tra đăng nhập ngay từ đầu
-$is_logged_in = isset($_SESSION['user']); // Đơn giản hóa điều kiện
+$is_logged_in = isset($_SESSION['user']); 
 $user_id = $is_logged_in ? $_SESSION['user']['id'] : null;
 $userLoggedIn = $is_logged_in;
-
-// Thêm dòng debug để kiểm tra session
-echo "<!-- Session debug: " . json_encode($_SESSION) . " -->";
 
 // Lấy thông tin user ngay từ đầu nếu đã đăng nhập
 $user_info = [];
 if ($user_id) {
-    // Sửa query để chỉ kiểm tra một trường id phù hợp với cấu trúc DB
-    $user_stmt = $conn->prepare("SELECT * FROM users WHERE id_user = ?");
+    // Sử dụng cột id thay vì id_user để phù hợp với cấu trúc DB mới
+    $user_stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
     $user_stmt->bind_param("i", $user_id);
     $user_stmt->execute();
     $result = $user_stmt->get_result();
     if ($result->num_rows > 0) {
         $user_info = $result->fetch_assoc();
-        // Debug thông tin user
         error_log("User info found: " . print_r($user_info, true));
     } else {
-        // Nếu không tìm thấy dùng id_user, thử lại với id
-        $user_stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
-        $user_stmt->bind_param("i", $user_id);
-        $user_stmt->execute();
-        $result = $user_stmt->get_result();
-        if ($result->num_rows > 0) {
-            $user_info = $result->fetch_assoc();
-            error_log("User info found with 'id' field: " . print_r($user_info, true));
-        } else {
-            error_log("No user found with ID: $user_id");
-        }
+        error_log("No user found with ID: $user_id");
     }
-    
-    // Thêm đoạn debug này
-    echo "<!-- Debug info: ";
-    echo "User ID: " . $user_id . ", ";
-    echo "Found in DB: " . ($result->num_rows > 0 ? "Yes" : "No") . ", ";
-    echo "User info: " . json_encode($user_info);
-    echo " -->";
 }
-
-// Kiểm tra SQL query
-echo "<!-- SQL Debug: SELECT * FROM users WHERE id_user = '$user_id' OR id = '$user_id' -->";
 
 // Biến để kiểm soát hiển thị COD
-$allow_cod = !empty($user_info); // Chỉ cho phép COD khi có thông tin user
-
-// Thêm đoạn này ở đầu file để debug
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Debug payment method
-    error_log("Selected payment method: " . ($_POST['payment_method'] ?? 'not set'));
-}
+$allow_cod = !empty($user_info);
 
 // Kiểm tra nếu bạn đang ở trang thanh toán
 $buy_now = isset($_GET['buy_now']) && $_GET['buy_now'] == '1';
@@ -74,32 +44,31 @@ if ($buy_now) {
     $cart_items = [];
     $cart_item = $_SESSION['buy_now_cart'];
     
-    // Lấy thêm thông tin kích thước và màu sắc nếu có
-    if ($cart_item['size_id']) {
-        $size_query = $conn->prepare("SELECT tenkichthuoc FROM kichthuoc WHERE id_kichthuoc = ?");
-        $size_query->bind_param("i", $cart_item['size_id']);
+    // Lấy thêm thông tin kích thước và màu sắc từ bảng thuoc_tinh thay vì kichthuoc và mausac
+    if (isset($cart_item['id_size'])) {
+        $size_query = $conn->prepare("SELECT gia_tri as ten_kichthuoc FROM thuoc_tinh WHERE id = ? AND loai = 'size'");
+        $size_query->bind_param("i", $cart_item['id_size']);
         $size_query->execute();
         $size_result = $size_query->get_result();
         if ($size_result->num_rows > 0) {
-            $cart_item['tenkichthuoc'] = $size_result->fetch_assoc()['tenkichthuoc'];
+            $cart_item['ten_kichthuoc'] = $size_result->fetch_assoc()['ten_kichthuoc'];
         }
     }
     
-    if ($cart_item['color_id']) {
-        $color_query = $conn->prepare("SELECT tenmau, mamau FROM mausac WHERE id_mausac = ?");
-        $color_query->bind_param("i", $cart_item['color_id']);
+    if (isset($cart_item['id_mau'])) {
+        $color_query = $conn->prepare("SELECT gia_tri as ten_mau, ma_mau FROM thuoc_tinh WHERE id = ? AND loai = 'color'");
+        $color_query->bind_param("i", $cart_item['id_mau']);
         $color_query->execute();
         $color_result = $color_query->get_result();
         if ($color_result->num_rows > 0) {
             $color = $color_result->fetch_assoc();
-            $cart_item['tenmau'] = $color['tenmau'];
-            $cart_item['mamau'] = $color['mamau'];
+            $cart_item['ten_mau'] = $color['gia_tri'];
+            $cart_item['ma_mau'] = $color['ma_mau'];
         }
     }
     
-    $cart_item['thanh_tien'] = $cart_item['price'] * $cart_item['quantity'];
     $cart_items[] = $cart_item;
-    $total_amount = $cart_item['thanh_tien'];
+    $total_amount = $cart_item['gia'] * $cart_item['so_luong'];
     $checkout_items = $cart_items;
 } else {
     // Hiển thị thông báo lỗi nếu có
@@ -128,12 +97,12 @@ if ($buy_now) {
     $session_id = session_id();
     $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
-    // Lấy ID giỏ hàng
+    // Lấy ID giỏ hàng - cập nhật theo schema mới
     if ($user_id) {
-        $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE id_nguoidung = ?");
+        $stmt = $conn->prepare("SELECT id FROM giohang WHERE id_user = ?");
         $stmt->bind_param("i", $user_id);
     } else {
-        $stmt = $conn->prepare("SELECT id_giohang FROM giohang WHERE session_id = ? AND id_nguoidung IS NULL");
+        $stmt = $conn->prepare("SELECT id FROM giohang WHERE session_id = ? AND id_user IS NULL");
         $stmt->bind_param("s", $session_id);
     }
     $stmt->execute();
@@ -146,7 +115,7 @@ if ($buy_now) {
     }
 
     $cart = $result->fetch_assoc();
-    $cart_id = $cart['id_giohang'];
+    $cart_id = $cart['id'];
 
     // Lấy danh sách sản phẩm cần thanh toán
     if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && !empty($_SESSION['checkout_items'])) {
@@ -154,18 +123,20 @@ if ($buy_now) {
         $selected_items = $_SESSION['checkout_items'];
         $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
         
+        // Cập nhật query sử dụng schema mới
         $query = "
             SELECT gct.*, 
                    sp.tensanpham, 
-                   sp.hinhanh, 
-                   kt.tenkichthuoc, 
-                   ms.tenmau, 
-                   ms.mamau
+                   sp.hinhanh,
+                   size.gia_tri AS ten_kichthuoc,
+                   color.gia_tri AS ten_mau,
+                   color.ma_mau
             FROM giohang_chitiet gct
-            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-            LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
-            LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
-            WHERE gct.id_giohang = ? AND gct.id_chitiet IN ($placeholders)
+            JOIN sanpham sp ON gct.id_bienthe IN (SELECT id FROM sanpham_bien_the WHERE id_sanpham = sp.id)
+            JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
+            LEFT JOIN thuoc_tinh size ON sbt.id_size = size.id AND size.loai = 'size'
+            LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
+            WHERE gct.id_giohang = ? AND gct.id IN ($placeholders)
         ";
         
         $types = "i" . str_repeat("i", count($selected_items));
@@ -174,18 +145,19 @@ if ($buy_now) {
         $stmt = $conn->prepare($query);
         $stmt->bind_param($types, ...$params);
     } else {
-        // Nếu thanh toán tất cả sản phẩm trong giỏ hàng
+        // Nếu thanh toán tất cả sản phẩm trong giỏ hàng - cập nhật query theo schema mới
         $stmt = $conn->prepare("
             SELECT gct.*, 
                    sp.tensanpham, 
-                   sp.hinhanh, 
-                   kt.tenkichthuoc, 
-                   ms.tenmau, 
-                   ms.mamau
+                   sp.hinhanh,
+                   size.gia_tri AS ten_kichthuoc,
+                   color.gia_tri AS ten_mau,
+                   color.ma_mau
             FROM giohang_chitiet gct
-            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-            LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
-            LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
+            JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
+            JOIN sanpham sp ON sbt.id_sanpham = sp.id
+            LEFT JOIN thuoc_tinh size ON sbt.id_size = size.id AND size.loai = 'size'
+            LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
             WHERE gct.id_giohang = ?
         ");
         $stmt->bind_param("i", $cart_id);
@@ -200,7 +172,7 @@ if ($buy_now) {
 
     while ($item = $result->fetch_assoc()) {
         $checkout_items[] = $item;
-        $total_amount += $item['thanh_tien'];
+        $total_amount += $item['gia'] * $item['so_luong']; // Cập nhật tên trường
     }
 
     // Nếu không có sản phẩm nào để thanh toán
@@ -228,20 +200,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thanh toán - Bug Shop</title>
-    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/thanhtoan.css">
-    <style>
-        /* Cải thiện giao diện chung */
-        
-    </style>
 </head>
 <body>
 <?php 
     require_once('includes/head.php');
     require_once('includes/header.php');
-    
-    ?>
+?>
     
     <div class="container-fluid py-5 bg-light">
         <div class="checkout-container py-3">
@@ -290,8 +257,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                 </div>
                             <?php endif; ?>
                             
-                            
-
                             <form id="checkout-form" method="post" action="process_order.php<?php echo $buy_now ? '?buy_now=1' : ''; ?>">
                                 <!-- Thêm hidden field để đánh dấu là mua ngay -->
                                 <?php if ($buy_now): ?>
@@ -307,8 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                         <div class="col-md-6">
                                             <label for="fullname" class="form-label">Họ và tên <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="fullname" name="fullname" required
-                                                   value="<?php echo isset($user_info['tenuser']) ? htmlspecialchars($user_info['tenuser']) : 
-                                                         (isset($user_info['username']) ? htmlspecialchars($user_info['username']) : ''); ?>">
+                                                   value="<?php echo isset($user_info['ten']) ? htmlspecialchars($user_info['ten']) : ''; ?>">
                                             <div class="form-text">Tên người nhận hàng</div>
                                         </div>
                                         <div class="col-md-6">
@@ -316,9 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="bi bi-telephone"></i></span>
                                                 <input type="tel" class="form-control" id="phone" name="phone" required
-                                                       value="<?php echo isset($user_info['sodienthoai']) ? htmlspecialchars($user_info['sodienthoai']) : 
-                                                             (isset($user_info['sdt']) ? htmlspecialchars($user_info['sdt']) : 
-                                                             (isset($user_info['phone']) ? htmlspecialchars($user_info['phone']) : '')); ?>"
+                                                       value="<?php echo isset($user_info['sodienthoai']) ? htmlspecialchars($user_info['sodienthoai']) : ''; ?>"
                                                        pattern="[0-9]{10}" title="Vui lòng nhập số điện thoại hợp lệ (10 số)">
                                             </div>
                                             <div class="form-text">Số điện thoại nhận hàng</div>
@@ -449,15 +411,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                 
                                 <!-- Truyền thông tin sản phẩm được chọn -->
                                 <?php if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected'): ?>
-    <?php 
-    // Đảm bảo $selected_items được định nghĩa trước khi sử dụng
-    $selected_items = isset($_SESSION['checkout_items']) ? $_SESSION['checkout_items'] : [];
-    
-    // Bây giờ an toàn để sử dụng trong foreach
-    foreach ($selected_items as $item_id): ?>
-        <input type="hidden" name="selected_items[]" value="<?php echo $item_id; ?>">
-    <?php endforeach; ?>
-<?php endif; ?>
+                                <?php 
+                                $selected_items = isset($_SESSION['checkout_items']) ? $_SESSION['checkout_items'] : [];
+                                foreach ($selected_items as $item_id): ?>
+                                <input type="hidden" name="selected_items[]" value="<?php echo $item_id; ?>">
+                                <?php endforeach; ?>
+                                <?php endif; ?>
                                 
                                 <div class="d-flex justify-content-between mt-5">
                                     <a href="giohang.php" class="btn btn-outline-secondary">
@@ -492,32 +451,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                         <div class="list-group-item border-0 px-0">
                                             <div class="d-flex">
                                                 <div class="position-relative me-3">
-                                                    <img src="uploads/products/<?php echo isset($item['hinhanh']) && !empty($item['hinhanh']) 
-                                                        ? $item['hinhanh'] 
-                                                        : (isset($item['image']) && !empty($item['image']) ? $item['image'] : 'no-image.png'); ?>" 
+                                                    <img src="<?php echo isset($item['hinhanh']) && $item['hinhanh'] ? 
+                                                        (strpos($item['hinhanh'], 'uploads/') !== false ? $item['hinhanh'] : 'uploads/products/' . $item['hinhanh']) : 
+                                                        'uploads/products/no-image.png'; ?>" 
                                                          class="img-thumbnail" width="60" 
                                                          alt="<?php echo isset($item['tensanpham']) ? htmlspecialchars($item['tensanpham']) : 'Sản phẩm'; ?>">
                                                     <span class="product-quantity badge bg-primary position-absolute">
-                                                        <?php echo isset($item['soluong']) ? $item['soluong'] : ($item['quantity'] ?? 1); ?>
+                                                        <?php echo isset($item['so_luong']) ? $item['so_luong'] : 1; ?>
                                                     </span>
                                                 </div>
                                                 <div class="flex-grow-1">
                                                     <h6 class="mb-0">
-                                                        <?php echo htmlspecialchars($item['tensanpham'] ?? $item['name'] ?? 'Sản phẩm không xác định'); ?>
+                                                        <?php echo htmlspecialchars($item['tensanpham'] ?? 'Sản phẩm không xác định'); ?>
                                                     </h6>
                                                     <small class="text-muted d-block mb-1">
-                                                        <?php if (isset($item['tenkichthuoc']) && !empty($item['tenkichthuoc'])): ?>
-                                                            <span>Size: <?php echo htmlspecialchars($item['tenkichthuoc']); ?></span>
+                                                        <?php if (isset($item['ten_kichthuoc']) && !empty($item['ten_kichthuoc'])): ?>
+                                                            <span>Size: <?php echo htmlspecialchars($item['ten_kichthuoc']); ?></span>
                                                         <?php endif; ?>
-                                                        <?php if (isset($item['tenmau']) && !empty($item['tenmau'])): ?>
+                                                        <?php if (isset($item['ten_mau']) && !empty($item['ten_mau'])): ?>
                                                             <span class="mx-1">|</span>
-                                                            <span>Màu: <?php echo htmlspecialchars($item['tenmau']); ?></span>
+                                                            <span>Màu: <?php echo htmlspecialchars($item['ten_mau']); ?></span>
                                                         <?php endif; ?>
                                                     </small>
-                                                    <div class="fw-bold"><?php echo isset($item['thanh_tien']) ? number_format($item['thanh_tien'], 0, ',', '.') : 0; ?>₫</div>
+                                                    <div class="fw-bold"><?php echo number_format($item['gia'] * $item['so_luong'], 0, ',', '.'); ?>₫</div>
                                                     <div class="text-muted small">
-                                                        <?php echo isset($item['soluong']) ? $item['soluong'] : ($item['quantity'] ?? 1); ?> x 
-                                                        <?php echo number_format($item['gia'] ?? ($item['price'] ?? 0), 0, ',', '.'); ?>₫
+                                                        <?php echo $item['so_luong']; ?> x 
+                                                        <?php echo number_format($item['gia'], 0, ',', '.'); ?>₫
                                                     </div>
                                                 </div>
                                             </div>

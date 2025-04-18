@@ -1,5 +1,4 @@
 <?php
-// filepath: c:\xampp\htdocs\bug_shop\ajax\mua_ngay.php
 session_start();
 require_once('../config/config.php');
 
@@ -15,9 +14,17 @@ $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
 $size_id = isset($_POST['sizeId']) ? (int)$_POST['sizeId'] : null;
 $color_id = isset($_POST['colorId']) ? (int)$_POST['colorId'] : null;
 
-// Kiểm tra sản phẩm tồn tại
-$stmt = $conn->prepare("SELECT id_sanpham, tensanpham, gia, hinhanh FROM sanpham WHERE id_sanpham = ? AND trangthai = 1");
-$stmt->bind_param("i", $product_id);
+// Kiểm tra biến thể sản phẩm tồn tại
+$stmt = $conn->prepare("
+    SELECT sbt.id as variant_id, sp.id, sp.tensanpham, sp.gia, sp.hinhanh, 
+          size.gia_tri as ten_size, color.gia_tri as ten_mau, color.ma_mau
+    FROM sanpham_bien_the sbt
+    JOIN sanpham sp ON sbt.id_sanpham = sp.id
+    JOIN thuoc_tinh size ON sbt.id_size = size.id
+    JOIN thuoc_tinh color ON sbt.id_mau = color.id
+    WHERE sp.id = ? AND sbt.id_size = ? AND sbt.id_mau = ? AND sp.trangthai = 1
+");
+$stmt->bind_param("iii", $product_id, $size_id, $color_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -29,24 +36,18 @@ if ($result->num_rows === 0) {
 
 $product = $result->fetch_assoc();
 
-// Lưu thông tin mua ngay vào session với tên trường nhất quán
+// Lưu thông tin mua ngay vào session
 $_SESSION['buy_now_cart'] = [
     'id_sanpham' => $product_id,
-    'soluong' => $quantity,
-    'id_kichthuoc' => $size_id,
-    'id_mausac' => $color_id,
-    'gia' => $product['gia'] ?? 0,
-    'tensanpham' => $product['tensanpham'] ?? 'Sản phẩm',
-    'hinhanh' => $product['hinhanh'] ?? 'no-image.png',
-    'thanh_tien' => ($product['gia'] ?? 0) * $quantity,
-    // Giữ tên cũ để tương thích ngược
-    'product_id' => $product_id,
-    'quantity' => $quantity,
-    'size_id' => $size_id,
-    'color_id' => $color_id,
-    'price' => $product['gia'] ?? 0,
-    'name' => $product['tensanpham'] ?? 'Sản phẩm',
-    'image' => $product['hinhanh'] ?? 'no-image.png'
+    'id_bienthe' => $product['variant_id'],
+    'so_luong' => $quantity,
+    'gia' => $product['gia'],
+    'ten_san_pham' => $product['tensanpham'],
+    'hinh_anh' => $product['hinhanh'],
+    'ten_size' => $product['ten_size'],
+    'ten_mau' => $product['ten_mau'],
+    'ma_mau' => $product['ma_mau'],
+    'thanh_tien' => $product['gia'] * $quantity
 ];
 
 // Chuyển hướng đến trang thanh toán

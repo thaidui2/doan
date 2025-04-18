@@ -69,48 +69,30 @@ function paginationLinks($current_page, $total_pages, $url_params = '') {
  * @param string $permission_code Mã quyền cần kiểm tra
  * @return bool True nếu có quyền, False nếu không
  */
-function hasPermission($permission_code) {
-    global $conn;
+function hasPermission($permission) {
+    global $admin_level, $conn;
     
-    // Debug: Log để kiểm tra
-    error_log("Đang kiểm tra quyền: " . $permission_code);
-    
-    if (!isset($_SESSION['admin_id'])) {
-        return false;
+    // Trong hệ thống mới, admin là loại user = 2, quản lý = 1
+    if ($permission == 'admin' && $admin_level == 2) {
+        return true;
     }
     
-    // Super Admin luôn có tất cả quyền
-    $admin_id = $_SESSION['admin_id'];
-    $check_admin = $conn->prepare("SELECT cap_bac FROM admin WHERE id_admin = ?");
-    $check_admin->bind_param("i", $admin_id);
-    $check_admin->execute();
-    $admin_result = $check_admin->get_result();
-    
-    if ($admin_result->num_rows > 0) {
-        $admin_data = $admin_result->fetch_assoc();
-        if ($admin_data['cap_bac'] == 2) { // Cấp 2 là Super Admin
-            return true;
-        }
+    if ($permission == 'manager' && ($admin_level >= 1)) {
+        return true;
     }
     
-    // Kiểm tra quyền cụ thể từ database
-    $query = "
-        SELECT p.ma_permission 
-        FROM permissions p
-        JOIN role_permissions rp ON p.id_permission = rp.id_permission
-        JOIN admin_roles ar ON rp.id_role = ar.id_role
-        WHERE ar.id_admin = ? AND p.ma_permission = ?
-    ";
+    // Các quyền khác có thể kiểm tra từ bảng quyen_han nếu cần
+    if (isset($_SESSION['admin_id'])) {
+        $admin_id = $_SESSION['admin_id'];
+        $query = $conn->prepare("SELECT * FROM quyen_han WHERE id_user = ? AND module = ? AND quyen = 'view'");
+        $module = explode('_', $permission)[0]; // Lấy module từ tên quyền (vd: product_edit -> product)
+        $query->bind_param("is", $admin_id, $module);
+        $query->execute();
+        $result = $query->get_result();
+        return $result->num_rows > 0;
+    }
     
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("is", $admin_id, $permission_code);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    // Debug: Log để kiểm tra kết quả
-    error_log("Kết quả kiểm tra quyền " . $permission_code . ": " . ($result->num_rows > 0 ? "Có quyền" : "Không có quyền"));
-    
-    return $result->num_rows > 0;
+    return false;
 }
 
 /**
@@ -125,7 +107,7 @@ function checkPermissionRedirect($permission_code, $redirect_url = 'index.php') 
 }
 
 /**
- * Ghi log hoạt động của admin
+ * Ghi log hoạt động 
  */
 function logAdminActivity($conn, $admin_id, $action_type, $target_type, $target_id, $details) {
     // Kiểm tra admin_id có tồn tại không
@@ -133,36 +115,18 @@ function logAdminActivity($conn, $admin_id, $action_type, $target_type, $target_
         // Lấy admin ID từ session nếu có
         if (isset($_SESSION['admin_id'])) {
             $admin_id = $_SESSION['admin_id'];
-        } else if (isset($_SESSION['id_admin'])) {
-            // Kiểm tra tên biến thay thế nếu có
-            $admin_id = $_SESSION['id_admin'];
         } else {
             // Gán giá trị mặc định nếu không có
-            $admin_id = 0; // hoặc giá trị admin ID mặc định khác
+            $admin_id = 0;
         }
     }
     
     $ip_address = $_SERVER['REMOTE_ADDR'];
-    $query = $conn->prepare("INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details, ip_address) 
+    // Thay đổi tên bảng thành nhat_ky và tên các cột cho phù hợp
+    $query = $conn->prepare("INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) 
                            VALUES (?, ?, ?, ?, ?, ?)");
     $query->bind_param("ississ", $admin_id, $action_type, $target_type, $target_id, $details, $ip_address);
     return $query->execute();
-}
-
-/**
- * Log a specific action
- */
-function logAction($action, $description) {
-    global $conn;
-    
-    $admin_id = null;
-    if (isset($_SESSION['admin_id'])) {
-        $admin_id = $_SESSION['admin_id'];
-    } else if (isset($_SESSION['id_admin'])) {
-        $admin_id = $_SESSION['id_admin']; 
-    }
-    
-    logAdminActivity($conn, $admin_id, $action, 'promo', 0, $description);
 }
 
 /**

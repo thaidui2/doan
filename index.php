@@ -137,11 +137,11 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                 <div class="product-carousel">
                     <div class="row g-4" id="featured-products">
                         <?php
-                        // Kết nối database
+                        // Kết nối database - Cập nhật tên database
                         $servername = "localhost";
                         $username = "root";
                         $password = "";
-                        $dbname = "shop_vippro";
+                        $dbname = "shop_vippro_1"; // Đã sửa thành tên database mới
                         
                         $conn = new mysqli($servername, $username, $password, $dbname);
                         
@@ -153,14 +153,14 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                         // Set charset
                         $conn->set_charset("utf8mb4");
                         
-                        // Truy vấn sản phẩm nổi bật
-                        $sql = "SELECT s.*, l.tenloai, AVG(dg.diemdanhgia) as diem_trung_binh 
+                        // Truy vấn sản phẩm nổi bật - Cập nhật tên bảng và trường
+                        $sql = "SELECT s.*, d.ten as tendanhmuc, AVG(dg.diem) as diem_trung_binh 
                                 FROM sanpham s 
-                                LEFT JOIN danhgia dg ON s.id_sanpham = dg.id_sanpham 
-                                LEFT JOIN loaisanpham l ON s.id_loai = l.id_loai
+                                LEFT JOIN danhgia dg ON s.id = dg.id_sanpham 
+                                LEFT JOIN danhmuc d ON s.id_danhmuc = d.id
                                 WHERE s.trangthai = 1 
-                                GROUP BY s.id_sanpham 
-                                ORDER BY s.noibat DESC, s.ngaytao DESC 
+                                GROUP BY s.id 
+                                ORDER BY s.noibat DESC, s.ngay_tao DESC 
                                 LIMIT 8";
                                 
                         $result = $conn->query($sql);
@@ -174,31 +174,61 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                     $discount_percent = round(100 - ($row['gia'] / $row['giagoc'] * 100));
                                 }
                                 
-                                // Xử lý đường dẫn hình ảnh
-                                if (!empty($row['hinhanh']) && file_exists('uploads/products/' . $row['hinhanh'])) {
-                                    $img_path = 'uploads/products/' . $row['hinhanh'];
-                                } else {
-                                    // Kiểm tra hình ảnh từ bảng mausac_hinhanh
-                                    $stmt = $conn->prepare("SELECT hinhanh FROM mausac_hinhanh WHERE id_sanpham = ? LIMIT 1");
-                                    $stmt->bind_param("i", $row['id_sanpham']);
+                                // Xử lý đường dẫn hình ảnh - sử dụng trực tiếp từ bảng sanpham_hinhanh
+                                $img_path = 'images/no-image.jpg';
+                                
+                                // Kiểm tra hình ảnh từ trường hinhanh của bảng sanpham
+                                if (!empty($row['hinhanh'])) {
+                                    $product_image = $row['hinhanh'];
+                                    // Nếu đường dẫn không bắt đầu bằng uploads/, thêm vào
+                                    if (strpos($product_image, 'uploads/') !== 0) {
+                                        $product_image = 'uploads/products/' . $product_image;
+                                    }
+                                    
+                                    // Kiểm tra file có tồn tại không với đường dẫn server
+                                    $server_path = $_SERVER['DOCUMENT_ROOT'] . '/bug_shop/' . $product_image;
+                                    
+                                    if (file_exists($server_path)) {
+                                        $img_path = $product_image;
+                                    } else {
+                                        // Thử với đường dẫn không có bug_shop/
+                                        $server_path = $_SERVER['DOCUMENT_ROOT'] . '/' . $product_image;
+                                        if (file_exists($server_path)) {
+                                            $img_path = $product_image;
+                                        }
+                                    }
+                                }
+                                
+                                // Nếu không tìm thấy từ sanpham, tìm trong sanpham_hinhanh
+                                if ($img_path == 'images/no-image.jpg') {
+                                    $stmt = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? ORDER BY la_anh_chinh DESC LIMIT 1");
+                                    $stmt->bind_param("i", $row['id']);
                                     $stmt->execute();
                                     $result_img = $stmt->get_result();
                                     
                                     if ($result_img->num_rows > 0) {
                                         $img_row = $result_img->fetch_assoc();
-                                        if (file_exists('uploads/colors/' . $img_row['hinhanh'])) {
-                                            $img_path = 'uploads/colors/' . $img_row['hinhanh'];
-                                        } else {
-                                            $img_path = 'images/no-image.jpg';
+                                        $product_image = $img_row['hinhanh'];
+                                        
+                                        // Tương tự, kiểm tra và điều chỉnh đường dẫn
+                                        if (strpos($product_image, 'uploads/') !== 0) {
+                                            $product_image = 'uploads/products/' . $product_image;
                                         }
-                                    } else {
-                                        $img_path = 'images/no-image.jpg';
+                                        
+                                        $img_path = $product_image;
                                     }
                                 }
                                 
                                 // Xử lý điểm đánh giá
                                 $rating = round($row['diem_trung_binh']);
                                 if (is_null($rating)) $rating = 0;
+                                
+                                // Đếm số lượng đánh giá
+                                $count_reviews = $conn->prepare("SELECT COUNT(*) as count FROM danhgia WHERE id_sanpham = ?");
+                                $count_reviews->bind_param("i", $row['id']);
+                                $count_reviews->execute();
+                                $review_result = $count_reviews->get_result();
+                                $review_count = $review_result->fetch_assoc()['count'] ?? 0;
                         ?>
                                 <div class="col-6 col-md-3 product-item">
                                     <div class="card product-card h-100">
@@ -214,22 +244,22 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                             </div>
                                             <?php endif; ?>
                                         </div>
-                                        <a href="product-detail.php?id=<?php echo $row['id_sanpham']; ?>" class="product-img-container">
+                                        <a href="product-detail.php?id=<?php echo $row['id']; ?>" class="product-img-container">
                                             <img src="<?php echo $img_path; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($row['tensanpham']); ?>" 
                                                  onerror="this.onerror=null; this.src='images/no-image.jpg';">
                                             <div class="overlay-effect"></div>
                                         </a>
                                         <div class="product-action">
                                             <button class="btn btn-light btn-sm rounded-circle wishlist-button" 
-                                                    data-product-id="<?php echo $row['id_sanpham']; ?>" 
+                                                    data-product-id="<?php echo $row['id']; ?>" 
                                                     title="Thêm vào yêu thích">
                                                 <i class="bi bi-heart"></i>
                                             </button>
                                         </div>
                                         <div class="card-body">
-                                            <div class="product-category"><?php echo htmlspecialchars($row['tenloai']); ?></div>
+                                            <div class="product-category"><?php echo htmlspecialchars($row['tendanhmuc']); ?></div>
                                             <h5 class="card-title product-title">
-                                                <a href="product-detail.php?id=<?php echo $row['id_sanpham']; ?>" class="text-decoration-none text-dark">
+                                                <a href="product-detail.php?id=<?php echo $row['id']; ?>" class="text-decoration-none text-dark">
                                                     <?php echo htmlspecialchars($row['tensanpham']); ?>
                                                 </a>
                                             </h5>
@@ -237,7 +267,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                                 <?php for ($i = 1; $i <= 5; $i++): ?>
                                                     <i class="bi bi-star<?php echo ($i <= $rating) ? '-fill' : ''; ?> text-warning"></i>
                                                 <?php endfor; ?>
-                                                <span class="ms-1 text-muted small">(<?php echo $row['soluong_danhgia'] ?? 0; ?>)</span>
+                                                <span class="ms-1 text-muted small">(<?php echo $review_count; ?>)</span>
                                             </div>
                                             <div class="price-wrapper">
                                                 <span class="text-danger fw-bold"><?php echo number_format($row['gia'], 0, ',', '.'); ?>₫</span>
@@ -334,12 +364,12 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                             }
                                             
                                             // Truy vấn lấy top 5 khách hàng có số tiền mua hàng nhiều nhất
-                                            $top_customers_sql = "SELECT u.id_user, u.tenuser, COUNT(d.id_donhang) as order_count, 
-                                                                 SUM(d.tongtien) as total_spent
+                                            $top_customers_sql = "SELECT u.id, u.ten, COUNT(d.id) as order_count, 
+                                                                 SUM(d.thanh_tien) as total_spent
                                                           FROM users u
-                                                          JOIN donhang d ON u.id_user = d.id_nguoidung
-                                                          WHERE d.trangthai = 4 
-                                                          GROUP BY u.id_user
+                                                          JOIN donhang d ON u.id = d.id_user
+                                                          WHERE d.trang_thai_don_hang = 4 
+                                                          GROUP BY u.id
                                                           ORDER BY total_spent DESC
                                                           LIMIT 5";
                                                           
@@ -357,7 +387,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <?php echo htmlspecialchars($customer['tenuser']); ?>
+                                                    <?php echo htmlspecialchars($customer['ten']); ?>
                                                 </td>
                                                 <td><?php echo $customer['order_count']; ?></td>
                                                 <td><?php echo number_format($customer['total_spent'], 0, ',', '.'); ?>₫</td>

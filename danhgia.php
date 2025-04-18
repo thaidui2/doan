@@ -3,35 +3,14 @@ session_start();
 include('config/config.php');
 
 // Kiểm tra đăng nhập
-if (!isset($_SESSION['user']) || $_SESSION['user']['logged_in'] !== true) {
+if (!isset($_SESSION['user'])) {
     header('Location: dangnhap.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
     exit();
 }
 
 $user_id = $_SESSION['user']['id'];
-$product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
-$order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
-
-// Kiểm tra trực tiếp bằng cách chèn một đánh giá test
-if (isset($_GET['test'])) {
-    try {
-        $test_review = $conn->prepare("
-            INSERT INTO danhgia (id_user, id_sanpham, id_donhang, id_chitiet, diemdanhgia, noidung, ngaydanhgia, trangthai) 
-            VALUES (?, ?, ?, ?, ?, 'Đánh giá test', NOW(), 1)
-        ");
-        $test_rating = 5;
-        $test_chitiet = 4; // Thay đổi theo id_chitiet thực tế trong cơ sở dữ liệu
-        $test_review->bind_param("iiiis", $user_id, $product_id, $order_id, $test_chitiet, $test_rating);
-        
-        if ($test_review->execute()) {
-            echo '<div class="alert alert-success">Đánh giá test đã được thêm thành công!</div>';
-        } else {
-            echo '<div class="alert alert-danger">Lỗi khi thêm đánh giá test: ' . $test_review->error . '</div>';
-        }
-    } catch (Exception $e) {
-        echo '<div class="alert alert-danger">Exception: ' . $e->getMessage() . '</div>';
-    }
-}
+$product_id = isset($_GET['id_sp']) ? (int)$_GET['id_sp'] : 0;
+$order_id = isset($_GET['id_dh']) ? (int)$_GET['id_dh'] : 0;
 
 // Xử lý form gửi đánh giá
 $success_message = '';
@@ -54,12 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($product_id <= 0 || $order_id <= 0) {
             $error_message = "Thông tin sản phẩm hoặc đơn hàng không hợp lệ";
         } else {
-            // Kiểm tra quyền đánh giá
+            // Kiểm tra quyền đánh giá - Cập nhật schema mới
             $check_query = $conn->prepare("
-                SELECT dc.id_chitiet 
+                SELECT dc.id 
                 FROM donhang_chitiet dc
-                JOIN donhang d ON dc.id_donhang = d.id_donhang
-                WHERE dc.id_donhang = ? AND dc.id_sanpham = ? AND d.id_nguoidung = ? AND d.trangthai = 4
+                JOIN donhang d ON dc.id_donhang = d.id
+                WHERE d.id = ? AND dc.id_sanpham = ? AND d.id_user = ? AND d.trang_thai_don_hang = 4
             ");
             $check_query->bind_param("iii", $order_id, $product_id, $user_id);
             $check_query->execute();
@@ -70,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // Kiểm tra đã đánh giá chưa
                 $existing_check = $conn->prepare("
-                    SELECT id_danhgia FROM danhgia 
+                    SELECT id FROM danhgia 
                     WHERE id_sanpham = ? AND id_user = ? AND id_donhang = ?
                 ");
                 $existing_check->bind_param("iii", $product_id, $user_id, $order_id);
@@ -116,26 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                     
-                    // Debug để xem giá trị
-                    if (isset($_GET['debug'])) {
-                        echo "<pre>";
-                        echo "product_id: " . $product_id . "\n";
-                        echo "order_id: " . $order_id . "\n";
-                        echo "user_id: " . $user_id . "\n";
-                        echo "rating: " . $rating . "\n";
-                        echo "comment: " . $comment . "\n";
-                        echo "images: " . print_r($images, true) . "\n";
-                        echo "</pre>";
-                        exit;
-                    }
-                    
                     try {
                         // Bắt đầu transaction
                         $conn->begin_transaction();
                         
-                        // Lấy id_chitiet từ đơn hàng
+                        // Lấy dữ liệu chi tiết đơn hàng
                         $chitiet_query = $conn->prepare("
-                            SELECT id_chitiet FROM donhang_chitiet 
+                            SELECT id FROM donhang_chitiet 
                             WHERE id_donhang = ? AND id_sanpham = ? LIMIT 1
                         ");
                         $chitiet_query->bind_param("ii", $order_id, $product_id);
@@ -147,17 +113,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                         
                         $chitiet_data = $chitiet_result->fetch_assoc();
-                        $chitiet_id = $chitiet_data['id_chitiet'];
+                        $chitiet_id = $chitiet_data['id'];
                         
                         // Chuẩn bị giá trị hình ảnh (NULL nếu không có)
                         $images_str = !empty($images) ? implode('|', $images) : null;
                         
-                        // Lưu đánh giá
+                        // Lưu đánh giá - Cập nhật schema mới
                         $insert_review = $conn->prepare("
-                            INSERT INTO danhgia (id_user, id_sanpham, id_donhang, id_chitiet, diemdanhgia, noidung, hinhanh, ngaydanhgia, trangthai) 
+                            INSERT INTO danhgia (id_user, id_sanpham, id_donhang, diem, noi_dung, hinh_anh, khuyen_dung, ngay_danhgia, trang_thai) 
                             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 1)
                         ");
-                        $insert_review->bind_param("iiiisss", $user_id, $product_id, $order_id, $chitiet_id, $rating, $comment, $images_str);
+                        $insert_review->bind_param("iiiissi", $user_id, $product_id, $order_id, $rating, $comment, $images_str, $recommend);
                         
                         $insert_result = $insert_review->execute();
                         if (!$insert_result) {
@@ -166,43 +132,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             throw new Exception("Lỗi khi lưu đánh giá: " . $insert_review->error);
                         }
                         
-                        // Cập nhật điểm đánh giá trung bình và số lượng đánh giá cho sản phẩm
-                        $update_product = $conn->prepare("
-                            UPDATE sanpham 
-                            SET 
-                                diemdanhgia_tb = (
-                                    SELECT AVG(diemdanhgia) 
-                                    FROM danhgia 
-                                    WHERE id_sanpham = ? AND trangthai = 1
-                                ),
-                                soluong_danhgia = (
-                                    SELECT COUNT(*) 
-                                    FROM danhgia 
-                                    WHERE id_sanpham = ? AND trangthai = 1
-                                )
-                            WHERE id_sanpham = ?
+                        // Đánh dấu sản phẩm đã được đánh giá trong đơn hàng
+                        $update_order_item = $conn->prepare("
+                            UPDATE donhang_chitiet 
+                            SET da_danh_gia = 1 
+                            WHERE id_donhang = ? AND id_sanpham = ?
                         ");
-                        $update_product->bind_param("iii", $product_id, $product_id, $product_id);
-                        
-                        if (!$update_product->execute()) {
-                            throw new Exception("Lỗi khi cập nhật điểm đánh giá sản phẩm: " . $update_product->error);
-                        }
+                        $update_order_item->bind_param("ii", $order_id, $product_id);
+                        $update_order_item->execute();
                         
                         $conn->commit();
                         $success_message = "Cảm ơn bạn đã đánh giá sản phẩm!";
                         
                         // Chuyển về trang chi tiết đơn hàng sau 2 giây
-                        header("refresh:2;url=chitietdonhang.php?id=" . $order_id);
+                        header("refresh:2;url=chitiet-donhang.php?id=" . $order_id);
                         
                     } catch (Exception $e) {
                         $conn->rollback();
                         $error_message = $e->getMessage();
                         
                         // Ghi log lỗi
-                        error_log("Lỗi đánh giá: " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
-                        
-                        // Hiển thị thông báo lỗi chi tiết hơn cho phát triển (xóa trong môi trường production)
-                        $error_message = "Lỗi khi đánh giá sản phẩm: " . $e->getMessage();
+                        error_log("Lỗi đánh giá: " . $e->getMessage());
                     }
                 }
             }
@@ -211,16 +161,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($product_id > 0 && $order_id > 0) {
-    // Lấy thông tin sản phẩm và kiểm tra quyền đánh giá
+    // Lấy thông tin sản phẩm và kiểm tra quyền đánh giá - Cập nhật schema mới
     $stmt = $conn->prepare("
-        SELECT sp.id_sanpham, sp.tensanpham, sp.hinhanh, dc.id_kichthuoc, dc.id_mausac,
-               kt.tenkichthuoc, ms.tenmau, d.trangthai
+        SELECT sp.id, sp.tensanpham, sp.hinhanh, 
+               sbt.id_mau, sbt.id_size,
+               size.gia_tri AS ten_kichthuoc, 
+               color.gia_tri AS ten_mau,
+               d.trang_thai_don_hang
         FROM donhang_chitiet dc
-        JOIN sanpham sp ON dc.id_sanpham = sp.id_sanpham
-        JOIN donhang d ON dc.id_donhang = d.id_donhang
-        LEFT JOIN kichthuoc kt ON dc.id_kichthuoc = kt.id_kichthuoc
-        LEFT JOIN mausac ms ON dc.id_mausac = ms.id_mausac
-        WHERE dc.id_donhang = ? AND sp.id_sanpham = ? AND d.id_nguoidung = ?
+        JOIN sanpham sp ON dc.id_sanpham = sp.id
+        JOIN donhang d ON dc.id_donhang = d.id
+        LEFT JOIN sanpham_bien_the sbt ON dc.id_bienthe = sbt.id
+        LEFT JOIN thuoc_tinh size ON sbt.id_size = size.id AND size.loai = 'size'
+        LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
+        WHERE d.id = ? AND sp.id = ? AND d.id_user = ?
     ");
     $stmt->bind_param("iii", $order_id, $product_id, $user_id);
     $stmt->execute();
@@ -236,7 +190,7 @@ if ($product_id > 0 && $order_id > 0) {
     
     // Kiểm tra xem người dùng đã đánh giá sản phẩm này từ đơn hàng này chưa
     $check_existing = $conn->prepare("
-        SELECT id_danhgia
+        SELECT id
         FROM danhgia
         WHERE id_sanpham = ? AND id_user = ? AND id_donhang = ?
     ");
@@ -246,14 +200,14 @@ if ($product_id > 0 && $order_id > 0) {
     
     if ($existing_result->num_rows > 0) {
         $_SESSION['error_message'] = "Bạn đã đánh giá sản phẩm này từ đơn hàng này";
-        header('Location: chitietdonhang.php?id=' . $order_id);
+        header('Location: chitiet-donhang.php?id=' . $order_id);
         exit();
     }
     
     // Kiểm tra đơn hàng đã hoàn thành chưa
-    if ($product_info['trangthai'] != 4) {
+    if ($product_info['trang_thai_don_hang'] != 4) {
         $_SESSION['error_message'] = "Bạn chỉ có thể đánh giá sản phẩm khi đơn hàng đã hoàn thành";
-        header('Location: chitietdonhang.php?id=' . $order_id);
+        header('Location: chitiet-donhang.php?id=' . $order_id);
         exit();
     }
 } else {
@@ -380,26 +334,22 @@ if ($product_id > 0 && $order_id > 0) {
                         <div class="d-flex mb-4 align-items-center">
                             <div class="flex-shrink-0 me-3">
                                 <?php 
-                                $product_image = "uploads/products/" . $product_info['hinhanh'];
-                                if (!empty($product_info['hinhanh']) && file_exists($product_image)): 
+                                $product_image = !empty($product_info['hinhanh']) ? 
+                                    (strpos($product_info['hinhanh'], 'uploads/') !== false ? $product_info['hinhanh'] : 'uploads/products/' . $product_info['hinhanh']) : 
+                                    'images/no-image.png';
                                 ?>
-                                    <img src="<?php echo $product_image; ?>" 
-                                         class="product-img rounded border" 
-                                         alt="<?php echo htmlspecialchars($product_info['tensanpham']); ?>">
-                                <?php else: ?>
-                                    <div class="product-img rounded border bg-light d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-image text-muted"></i>
-                                    </div>
-                                <?php endif; ?>
+                                <img src="<?php echo $product_image; ?>" 
+                                     class="product-img rounded border" 
+                                     alt="<?php echo htmlspecialchars($product_info['tensanpham']); ?>">
                             </div>
                             <div>
                                 <h5 class="mb-1"><?php echo htmlspecialchars($product_info['tensanpham']); ?></h5>
-                                <?php if (!empty($product_info['tenkichthuoc']) || !empty($product_info['tenmau'])): ?>
+                                <?php if (!empty($product_info['ten_kichthuoc']) || !empty($product_info['ten_mau'])): ?>
                                     <p class="text-muted mb-0 small">
                                         <?php 
                                         $variants = [];
-                                        if (!empty($product_info['tenkichthuoc'])) $variants[] = "Size: " . $product_info['tenkichthuoc'];
-                                        if (!empty($product_info['tenmau'])) $variants[] = "Màu: " . $product_info['tenmau'];
+                                        if (!empty($product_info['ten_kichthuoc'])) $variants[] = "Size: " . $product_info['ten_kichthuoc'];
+                                        if (!empty($product_info['ten_mau'])) $variants[] = "Màu: " . $product_info['ten_mau'];
                                         echo implode(', ', $variants);
                                         ?>
                                     </p>
@@ -452,7 +402,7 @@ if ($product_id > 0 && $order_id > 0) {
                             </div>
                             
                             <div class="d-flex justify-content-between">
-                                <a href="chitietdonhang.php?id=<?php echo $order_id; ?>" class="btn btn-outline-secondary">
+                                <a href="chitiet-donhang.php?id=<?php echo $order_id; ?>" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-left"></i> Quay lại
                                 </a>
                                 <button type="submit" class="btn btn-primary">
@@ -513,7 +463,7 @@ if ($product_id > 0 && $order_id > 0) {
                 if (input.files.length > maxFiles) {
                     const message = document.createElement('div');
                     message.className = 'text-danger mt-2';
-                    message.textContent = `Chỉ hiển thị ${maxFiles} hình đầu tiên trong số ${input.files.length} hình đã chọn.`;
+                    message.textContent = `Chỉ hiển thị ${maxFiles} hình đầu tiên trong số ${input.files.length đã chọn.`;
                     previewContainer.appendChild(message);
                 }
             }

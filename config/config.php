@@ -4,7 +4,7 @@
 $servername = "localhost";
 $username = "root"; // Mặc định cho XAMPP
 $password = ""; // Mặc định cho XAMPP
-$dbname = "shop_vippro"; // Tên database của bạn
+$dbname = "shop_vippro_1"; // Tên database mới
 
 // Tạo kết nối
 $conn = new mysqli($servername, $username, $password, $dbname);

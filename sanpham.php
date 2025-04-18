@@ -35,43 +35,42 @@ elseif (isset($_GET['id_loai'])) {
 // Nếu có category_id, thêm điều kiện vào câu truy vấn
 if ($category_id) {
     // Thêm điều kiện WHERE vào câu SQL của bạn
-    $sql_conditions[] = "sp.id_loai = ?";
+    $sql_conditions[] = "sp.id_danhmuc = ?";
     $param_types .= "i";
     $params[] = $category_id;
     
     // Lấy tên danh mục để hiển thị
-    $cat_name_stmt = $conn->prepare("SELECT tenloai FROM loaisanpham WHERE id_loai = ?");
+    $cat_name_stmt = $conn->prepare("SELECT ten FROM danhmuc WHERE id = ?");
     $cat_name_stmt->bind_param("i", $category_id);
     $cat_name_stmt->execute();
     $cat_result = $cat_name_stmt->get_result();
     if ($cat_result->num_rows > 0) {
         $category_info = $cat_result->fetch_assoc();
-        $page_title = "Sản phẩm " . $category_info['tenloai'];
+        $page_title = "Sản phẩm " . $category_info['ten'];
     }
 }
 
 $brand = isset($_GET['brand']) ? (int)$_GET['brand'] : 0;
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 
-if($brand > 0) {
+// Comment out brand filter since thuonghieu table doesn't exist
+/* if($brand > 0) {
     $sql_conditions[] = "sp.id_thuonghieu = ?";
     $params[] = $brand;
     $param_types .= "i";
-}
+} */
 
 // Cập nhật câu truy vấn SQL để lấy thêm thông tin đánh giá
-
-$sql = "SELECT sp.*, lsp.tenloai, th.tenthuonghieu,
+$sql = "SELECT sp.*, dm.ten as tendanhmuc, 
         (SELECT COALESCE(SUM(dhct.soluong), 0)
          FROM donhang_chitiet dhct
-         JOIN donhang dh ON dhct.id_donhang = dh.id_donhang
-         WHERE dhct.id_sanpham = sp.id_sanpham
-         AND dh.trangthai >= 3) AS da_ban,
-        (SELECT AVG(dg.diemdanhgia) FROM danhgia dg WHERE dg.id_sanpham = sp.id_sanpham) AS diem_trung_binh,
-        (SELECT COUNT(*) FROM danhgia dg WHERE dg.id_sanpham = sp.id_sanpham) AS soluong_danhgia
+         JOIN donhang dh ON dhct.id_donhang = dh.id
+         WHERE dhct.id_sanpham = sp.id
+         AND dh.trang_thai_don_hang >= 3) AS da_ban,
+        (SELECT AVG(dg.diem) FROM danhgia dg WHERE dg.id_sanpham = sp.id) AS diem_trung_binh,
+        (SELECT COUNT(*) FROM danhgia dg WHERE dg.id_sanpham = sp.id) AS soluong_danhgia
         FROM sanpham sp
-        LEFT JOIN loaisanpham lsp ON sp.id_loai = lsp.id_loai
-        LEFT JOIN thuonghieu th ON sp.id_thuonghieu = th.id_thuonghieu";
+        LEFT JOIN danhmuc dm ON sp.id_danhmuc = dm.id";
 
 if(!empty($sql_conditions)) {
     $sql .= " WHERE " . implode(" AND ", $sql_conditions);
@@ -98,7 +97,7 @@ switch($sort) {
         $sql .= " ORDER BY da_ban DESC";
         break;
     default: // newest
-        $sql .= " ORDER BY sp.ngaytao DESC";
+        $sql .= " ORDER BY sp.ngay_tao DESC";
 }
 
 // Phân trang
@@ -109,16 +108,14 @@ $offset = ($page - 1) * $items_per_page;
 // Lấy tổng số sản phẩm để tính toán phân trang
 $count_sql = "SELECT COUNT(*) as total FROM sanpham sp";
 if($category_id > 0) { // Thay đổi từ $category thành $category_id
-    $count_sql .= " LEFT JOIN loaisanpham lsp ON sp.id_loai = lsp.id_loai";
+    $count_sql .= " LEFT JOIN danhmuc dm ON sp.id_danhmuc = dm.id";
 }
-if($brand > 0) {
-    $count_sql .= " LEFT JOIN thuonghieu th ON sp.id_thuonghieu = th.id_thuonghieu";
-}
-
+/* if($brand > 0) { // Comment out the brand join since thuonghieu table doesn't exist
+    $count_sql .= " LEFT JOIN thuonghieu th ON sp.id_thuonghieu = th.id";
+} */
 if(!empty($sql_conditions)) {
     $count_sql .= " WHERE " . implode(" AND ", $sql_conditions);
 }
-
 $count_stmt = $conn->prepare($count_sql);
 if(!empty($params)) {
     $count_stmt->bind_param($param_types, ...$params);
@@ -128,33 +125,27 @@ $count_result = $count_stmt->get_result();
 $row = $count_result->fetch_assoc();
 $total_items = $row['total'];
 $total_pages = ceil($total_items / $items_per_page);
-
 // Truy vấn lấy sản phẩm với phân trang
 $sql .= " LIMIT ? OFFSET ?";
 $params[] = $items_per_page;
 $params[] = $offset;
 $param_types .= "ii";
-
 $stmt = $conn->prepare($sql);
 if(!empty($params)) {
     $stmt->bind_param($param_types, ...$params);
 }
 $stmt->execute();
 $products = $stmt->get_result();
-
 // Lấy danh sách danh mục
-$categories = $conn->query("SELECT * FROM loaisanpham WHERE trangthai = 1 ORDER BY tenloai");
-
+$categories = $conn->query("SELECT * FROM danhmuc WHERE trang_thai = 1 ORDER BY ten");
 // Lấy danh sách thương hiệu
-$brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY tenthuonghieu");
-
+/* $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY tenthuonghieu"); */
 if (!isset($category)) {
     $category = [];
-    
     // Nếu có tham số loại/category, lấy thông tin danh mục
     if (isset($_GET['loai'])) {
         $category_id = (int)$_GET['loai'];
-        $cat_query = $conn->prepare("SELECT * FROM loaisanpham WHERE id_loai = ?");
+        $cat_query = $conn->prepare("SELECT * FROM danhmuc WHERE id = ?");
         $cat_query->bind_param("i", $category_id);
         $cat_query->execute();
         $category_result = $cat_query->get_result();
@@ -163,7 +154,7 @@ if (!isset($category)) {
         }
     } elseif (isset($_GET['category'])) {
         $category_id = (int)$_GET['category'];
-        $cat_query = $conn->prepare("SELECT * FROM loaisanpham WHERE id_loai = ?");
+        $cat_query = $conn->prepare("SELECT * FROM danhmuc WHERE id = ?");
         $cat_query->bind_param("i", $category_id);
         $cat_query->execute();
         $category_result = $cat_query->get_result();
@@ -173,7 +164,6 @@ if (!isset($category)) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -181,16 +171,13 @@ if (!isset($category)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sản phẩm - Bug Shop</title>
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
-    
-    <link rel="stylesheet" href="css/sanpham.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">  
-    
+    <link rel="stylesheet" href="css/sanpham.css">
 </head>
 <body>
 <?php 
     require_once('includes/head.php');
     require_once('includes/header.php');
-    
     ?>
     
     <!-- Thay đổi phần container chính -->
@@ -208,7 +195,6 @@ if (!isset($category)) {
                 </li>
             </ol>
         </nav>
-        
         <!-- Tiêu đề trang và thông tin hiển thị -->
         <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
             <div>
@@ -219,7 +205,6 @@ if (!isset($category)) {
                     <h1 class="h2 mb-0">Sản phẩm</h1>
                 <?php endif; ?>
             </div>
-            
             <!-- Nút chuyển đổi kiểu hiển thị và sắp xếp -->
             <div class="d-flex align-items-center">
                 <div class="d-none d-md-block">
@@ -241,14 +226,12 @@ if (!isset($category)) {
                 </div>
             </div>
         </div>
-        
         <!-- Nút hiển thị/ẩn bộ lọc trên mobile -->
         <div class="filter-toggle d-lg-none">
             <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
                 <i class="bi bi-funnel me-2"></i> Hiển thị bộ lọc
             </button>
         </div>
-        
         <div class="row">
             <!-- Sidebar / Filters -->
             <div class="col-lg-3">
@@ -266,7 +249,6 @@ if (!isset($category)) {
                                     </button>
                                 </div>
                             </div>
-                            
                             <!-- Price range filter -->
                             <div class="mb-3">
                                 <label class="form-label">Khoảng giá</label>
@@ -281,7 +263,6 @@ if (!isset($category)) {
                                     </div>
                                 </div>
                             </div>
-                            
                             <!-- Categories Filter -->
                             <div class="mb-3">
                                 <label class="form-label">Danh mục</label>
@@ -290,35 +271,39 @@ if (!isset($category)) {
                                         <input class="form-check-input" type="radio" name="category" id="cat-all" value="0" <?php echo $category_id == 0 ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="cat-all">Tất cả danh mục</label>
                                     </div>
-                                    
                                     <?php 
                                     // Reset con trỏ kết quả về vị trí đầu tiên
-                                    $categories->data_seek(0); 
-                                    while($cat = $categories->fetch_assoc()): 
+                                    if ($categories && $categories->num_rows > 0) {
+                                        $categories->data_seek(0); 
+                                        while($cat = $categories->fetch_assoc()): 
+                                            $cat_name = isset($cat['ten']) ? $cat['ten'] : (isset($cat['tenloai']) ? $cat['tenloai'] : 'Unknown');
                                     ?>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="category" id="cat-<?php echo $cat['id_loai']; ?>" value="<?php echo $cat['id_loai']; ?>" <?php echo $category_id == $cat['id_loai'] ? 'checked' : ''; ?>>
-                                        <label class="form-check-label" for="cat-<?php echo $cat['id_loai']; ?>">
-                                            <?php echo htmlspecialchars($cat['tenloai']); ?>
+                                        <input class="form-check-input" type="radio" name="category" id="cat-<?php echo $cat['id']; ?>" value="<?php echo $cat['id']; ?>" <?php echo $category_id == $cat['id'] ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="cat-<?php echo $cat['id']; ?>">
+                                            <?php echo htmlspecialchars($cat_name); ?>
                                         </label>
                                     </div>
-                                    <?php endwhile; ?>
+                                    <?php endwhile; 
+                                    }
+                                    ?>
                                 </div>
                             </div>
-                            
                             <!-- Brands Filter -->
                             <div class="mb-3">
                                 <label class="form-label">Thương hiệu</label>
                                 <div class="scrollable-list">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="brand" id="brand-all" value="0" <?php echo $brand == 0 ? 'checked' : ''; ?>>
+                                        <input class="form-check-input" type="radio" name="brand" id="brand-all" value="0" checked>
                                         <label class="form-check-label" for="brand-all">Tất cả thương hiệu</label>
                                     </div>
-                                    
                                     <?php 
-                                    // Reset con trỏ kết quả về vị trí đầu tiên
-                                    $brands->data_seek(0);
-                                    while($brand_item = $brands->fetch_assoc()): 
+                                    // Brand iteration is commented out since thuonghieu table doesn't exist
+                                    // We previously tried to use $brands which is undefined
+                                    /*
+                                    if (isset($brands) && $brands->num_rows > 0) {
+                                        $brands->data_seek(0);
+                                        while($brand_item = $brands->fetch_assoc()): 
                                     ?>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="brand" id="brand-<?php echo $brand_item['id_thuonghieu']; ?>" value="<?php echo $brand_item['id_thuonghieu']; ?>" <?php echo $brand == $brand_item['id_thuonghieu'] ? 'checked' : ''; ?>>
@@ -326,7 +311,11 @@ if (!isset($category)) {
                                             <?php echo htmlspecialchars($brand_item['tenthuonghieu']); ?>
                                         </label>
                                     </div>
-                                    <?php endwhile; ?>
+                                    <?php 
+                                        endwhile;
+                                    }
+                                    */
+                                    ?>
                                 </div>
                             </div>
                             
@@ -380,16 +369,16 @@ if (!isset($category)) {
     if (!empty($product['hinhanh']) && file_exists('uploads/products/' . $product['hinhanh'])) {
         $img_path = 'uploads/products/' . $product['hinhanh'];
     } else {
-        // Kiểm tra hình ảnh từ bảng mausac_hinhanh
-        $img_stmt = $conn->prepare("SELECT hinhanh FROM mausac_hinhanh WHERE id_sanpham = ? LIMIT 1");
-        $img_stmt->bind_param("i", $product['id_sanpham']);
+        // Kiểm tra hình ảnh từ bảng sanpham_hinhanh thay vì mausac_hinhanh
+        $img_stmt = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? LIMIT 1");
+        $img_stmt->bind_param("i", $product['id']);
         $img_stmt->execute();
         $img_result = $img_stmt->get_result();
         
         if ($img_result->num_rows > 0) {
             $img_row = $img_result->fetch_assoc();
-            if (file_exists('uploads/colors/' . $img_row['hinhanh'])) {
-                $img_path = 'uploads/colors/' . $img_row['hinhanh'];
+            if (file_exists('uploads/products/' . $img_row['hinhanh'])) {
+                $img_path = 'uploads/products/' . $img_row['hinhanh'];
             } else {
                 $img_path = 'images/no-image.jpg';
             }
@@ -412,22 +401,22 @@ if (!isset($category)) {
             </div>
             <?php endif; ?>
         </div>
-        <a href="product-detail.php?id=<?php echo $product['id_sanpham']; ?>" class="product-img-container">
+        <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="product-img-container">
             <img src="<?php echo $img_path; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($product['tensanpham']); ?>" 
                  onerror="this.onerror=null; this.src='images/no-image.jpg';">
             <div class="overlay-effect"></div>
         </a>
         <div class="product-action">
             <button class="btn btn-light btn-sm rounded-circle wishlist-button" 
-                    data-product-id="<?php echo $product['id_sanpham']; ?>" 
+                    data-product-id="<?php echo $product['id']; ?>" 
                     title="Thêm vào yêu thích">
                 <i class="bi bi-heart"></i>
             </button>
         </div>
         <div class="card-body">
-            <div class="product-category"><?php echo htmlspecialchars($product['tenloai']); ?></div>
+            <div class="product-category"><?php echo htmlspecialchars($product['tendanhmuc']); ?></div>
             <h5 class="card-title product-title">
-                <a href="product-detail.php?id=<?php echo $product['id_sanpham']; ?>" class="text-decoration-none text-dark">
+                <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="text-decoration-none text-dark">
                     <?php echo htmlspecialchars($product['tensanpham']); ?>
                 </a>
             </h5>

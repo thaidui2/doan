@@ -18,8 +18,8 @@
         $taikhoan = isset($_POST['taikhoan']) ? trim($_POST['taikhoan']) : "";
         $matkhau = isset($_POST['matkhau']) ? trim($_POST['matkhau']) : "";
         
-        // Kiểm tra tài khoản tồn tại
-        $stmt = $conn->prepare("SELECT id_user, matkhau, tenuser, trang_thai FROM users WHERE taikhoan = ?");
+        // Kiểm tra tài khoản tồn tại - Cập nhật tên cột
+        $stmt = $conn->prepare("SELECT id, matkhau, ten, trang_thai FROM users WHERE taikhoan = ?");
         $stmt->bind_param("s", $taikhoan);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -34,7 +34,7 @@
                     // Tài khoản bị khóa
                     $_SESSION['login_error'] = 'Tài khoản của bạn đã bị khóa.';
                     $_SESSION['account_locked'] = true;
-                    $_SESSION['locked_user_id'] = $user['id_user'];
+                    $_SESSION['locked_user_id'] = $user['id']; // Cập nhật tên cột
                     header('Location: tai-khoan-bi-khoa.php');
                     exit;
                 }
@@ -42,9 +42,9 @@
                 // Đăng nhập thành công - sử dụng namespace 'user'
                 $_SESSION['user'] = [
                     'logged_in' => true,
-                    'id' => $user['id_user'],
+                    'id' => $user['id'], // Cập nhật tên cột
                     'username' => $taikhoan,
-                    'tenuser' => $user['tenuser']
+                    'tenuser' => $user['ten'] // Cập nhật tên cột
                 ];
                 
                 header("Location: index.php");
@@ -64,15 +64,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng Nhập-Bug Shop</title>
-    <link rel="stylesheet" href="css\login.css">
-    <link rel="stylesheet" href="node_modules\bootstrap\dist\css\bootstrap.css">
-    <script src="node_modules\bootstrap\dist\js\bootstrap.bundle.js"></script>
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 
 <body>
     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="POST">
         <div class="container mt-5">
             <h2>Đăng Nhập</h2>
+            <?php if(!empty($error)): ?>
+                <div class="alert alert-danger"><?php echo $error; ?></div>
+            <?php endif; ?>
             <div class="mb-3">
                 <label for="taikhoan" class="form-label">Tên đăng nhập</label>
                 <input type="text" autocomplete="off" class="form-control" id="taikhoan" name="taikhoan" required>

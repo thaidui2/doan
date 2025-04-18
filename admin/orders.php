@@ -5,9 +5,6 @@ $page_title = 'Quản lý đơn hàng';
 // Include header (sẽ kiểm tra đăng nhập)
 include('includes/header.php');
 
-// Include kết nối database
-include('../config/config.php');
-
 // Các biến lọc và tìm kiếm
 $status_filter = isset($_GET['status']) ? (int)$_GET['status'] : 0;
 $search_keyword = isset($_GET['search']) ? $_GET['search'] : '';
@@ -20,34 +17,34 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $orders_per_page = 10; // Số đơn hàng hiển thị trên mỗi trang
 $offset = ($current_page - 1) * $orders_per_page;
 
-// Xây dựng truy vấn
+// Xây dựng truy vấn - Cập nhật tên bảng và các cột
 $query = "SELECT * FROM donhang";
 
-// Thêm điều kiện lọc
+// Thêm điều kiện lọc - Cập nhật tên cột
 $where_conditions = [];
 if ($status_filter > 0) {
-    $where_conditions[] = "trangthai = $status_filter";
+    $where_conditions[] = "trang_thai_don_hang = $status_filter";
 }
 
 if (!empty($search_keyword)) {
     $search_keyword = $conn->real_escape_string($search_keyword);
-    $where_conditions[] = "(id_donhang LIKE '%$search_keyword%' OR tennguoinhan LIKE '%$search_keyword%' OR sodienthoai LIKE '%$search_keyword%' OR email LIKE '%$search_keyword%')";
+    $where_conditions[] = "(ma_donhang LIKE '%$search_keyword%' OR ho_ten LIKE '%$search_keyword%' OR sodienthoai LIKE '%$search_keyword%' OR email LIKE '%$search_keyword%')";
 }
 
-// Thêm điều kiện lọc theo thời gian
+// Thêm điều kiện lọc theo thời gian - Cập nhật tên cột
 if ($time_filter !== 'all') {
     $today = date('Y-m-d');
     if ($time_filter === 'today') {
-        $where_conditions[] = "DATE(ngaytao) = '$today'";
+        $where_conditions[] = "DATE(ngay_dat) = '$today'";
     } elseif ($time_filter === 'yesterday') {
         $yesterday = date('Y-m-d', strtotime('-1 day'));
-        $where_conditions[] = "DATE(ngaytao) = '$yesterday'";
+        $where_conditions[] = "DATE(ngay_dat) = '$yesterday'";
     } elseif ($time_filter === 'week') {
         $week_start = date('Y-m-d', strtotime('-7 days'));
-        $where_conditions[] = "DATE(ngaytao) >= '$week_start'";
+        $where_conditions[] = "DATE(ngay_dat) >= '$week_start'";
     } elseif ($time_filter === 'month') {
         $month_start = date('Y-m-d', strtotime('-30 days'));
-        $where_conditions[] = "DATE(ngaytao) >= '$month_start'";
+        $where_conditions[] = "DATE(ngay_dat) >= '$month_start'";
     }
 }
 
@@ -56,13 +53,13 @@ if (!empty($where_conditions)) {
     $query .= " WHERE " . implode(" AND ", $where_conditions);
 }
 
-// Sắp xếp và phân trang
-$query .= " ORDER BY id_donhang DESC LIMIT 20"; // Chỉ hiển thị 20 đơn hàng mới nhất
+// Sắp xếp và phân trang - Cập nhật tên cột
+$query .= " ORDER BY id DESC LIMIT $offset, $orders_per_page";
 
 // Thực hiện truy vấn
 $result = $conn->query($query);
 
-// Thêm truy vấn đếm tổng số đơn hàng để tính số trang
+// Thêm truy vấn đếm tổng số đơn hàng để tính số trang - Cập nhật tên bảng
 $count_query = "SELECT COUNT(*) as total FROM donhang";
 if (!empty($where_conditions)) {
     $count_query .= " WHERE " . implode(" AND ", $where_conditions);
@@ -71,19 +68,15 @@ $count_result = $conn->query($count_query);
 $total_orders = $count_result->fetch_assoc()['total'];
 $total_pages = ceil($total_orders / $orders_per_page);
 
-// Mảng trạng thái đơn hàng
+// Mảng trạng thái đơn hàng - Cập nhật mã trạng thái theo schema mới
 $order_statuses = [
     1 => ['name' => 'Chờ xác nhận', 'badge' => 'warning'],
-    2 => ['name' => 'Đang xử lý', 'badge' => 'info'],
+    2 => ['name' => 'Đã xác nhận', 'badge' => 'info'],
     3 => ['name' => 'Đang giao hàng', 'badge' => 'primary'],
     4 => ['name' => 'Đã giao', 'badge' => 'success'],
-    5 => ['name' => 'Đã hủy', 'badge' => 'danger'],
-    6 => ['name' => 'Hoàn trả', 'badge' => 'secondary']
+    5 => ['name' => 'Đã hủy', 'badge' => 'danger']
 ];
 ?>
-
-<!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
@@ -111,7 +104,7 @@ $order_statuses = [
                 <?php if ($status_filter > 0): ?>
                     <input type="hidden" name="status" value="<?php echo $status_filter; ?>">
                 <?php endif; ?>
-                <input type="text" name="search" class="form-control me-2" placeholder="Tìm theo ID, tên, email, SĐT..." value="<?php echo htmlspecialchars($search_keyword); ?>">
+                <input type="text" name="search" class="form-control me-2" placeholder="Tìm theo mã, tên, email, SĐT..." value="<?php echo htmlspecialchars($search_keyword); ?>">
                 <button type="submit" class="btn btn-outline-primary">
                     <i class="bi bi-search"></i> Tìm kiếm
                 </button>
@@ -155,9 +148,9 @@ $order_statuses = [
                     <thead class="table-light">
                         <tr>
                             <th scope="col">ID</th>
+                            <th scope="col">Mã đơn hàng</th>
                             <th scope="col">Khách hàng</th>
                             <th scope="col">Liên hệ</th>
-                            <th scope="col">Địa chỉ</th>
                             <th scope="col">Tổng tiền</th>
                             <th scope="col">Ngày đặt</th>
                             <th scope="col">Trạng thái</th>
@@ -169,30 +162,20 @@ $order_statuses = [
                         <?php if ($result->num_rows > 0): ?>
                             <?php while ($order = $result->fetch_assoc()): ?>
                                 <tr>
-                                    <td><?php echo $order['id_donhang']; ?></td>
-                                    <td><?php echo htmlspecialchars($order['tennguoinhan']); ?></td>
+                                    <td><?php echo $order['id']; ?></td>
+                                    <td><?php echo htmlspecialchars($order['ma_donhang']); ?></td>
+                                    <td><?php echo htmlspecialchars($order['ho_ten']); ?></td>
                                     <td>
                                         <div><?php echo htmlspecialchars($order['sodienthoai']); ?></div>
                                         <?php if (!empty($order['email'])): ?>
                                         <div class="small text-muted"><?php echo htmlspecialchars($order['email']); ?></div>
                                         <?php endif; ?>
                                     </td>
+                                    <td><?php echo number_format($order['tong_tien'], 0, ',', '.'); ?> ₫</td>
+                                    <td><?php echo date('d/m/Y H:i', strtotime($order['ngay_dat'])); ?></td>
                                     <td>
                                         <?php 
-                                        $address_parts = [];
-                                        if (!empty($order['diachi'])) $address_parts[] = htmlspecialchars($order['diachi']);
-                                        if (!empty($order['phuong_xa'])) $address_parts[] = htmlspecialchars($order['phuong_xa']);
-                                        if (!empty($order['quan_huyen'])) $address_parts[] = htmlspecialchars($order['quan_huyen']);
-                                        if (!empty($order['tinh_tp'])) $address_parts[] = htmlspecialchars($order['tinh_tp']);
-                                        
-                                        echo implode(", ", $address_parts);
-                                        ?>
-                                    </td>
-                                    <td><?php echo number_format($order['tongtien'], 0, ',', '.'); ?> ₫</td>
-                                    <td><?php echo date('d/m/Y H:i', strtotime($order['ngaytao'])); ?></td>
-                                    <td>
-                                        <?php 
-                                        $status_id = $order['trangthai'];
+                                        $status_id = $order['trang_thai_don_hang'];
                                         $status = $order_statuses[$status_id] ?? ['name' => 'Không xác định', 'badge' => 'secondary'];
                                         ?>
                                         <span class="badge bg-<?php echo $status['badge']; ?>">
@@ -201,23 +184,20 @@ $order_statuses = [
                                     </td>
                                     <td>
                                         <?php
-                                        $payment_method = $order['phuongthucthanhtoan'];
-                                        if ($payment_method === 'cod') {
-                                            echo '<span class="badge bg-info">Tiền mặt khi nhận hàng</span>';
-                                        } elseif ($payment_method === 'bank_transfer') {
-                                            echo '<span class="badge bg-success">Chuyển khoản ngân hàng</span>';
-                                        } elseif ($payment_method === 'momo') {
-                                            echo '<span class="badge bg-danger">Ví MoMo</span>';
-                                        } elseif ($payment_method === 'vnpay') {
-                                            echo '<span class="badge bg-primary">VNPay</span>';
-                                        } else {
-                                            echo '<span class="badge bg-secondary">Khác</span>';
-                                        }
+                                        $payment_method = $order['phuong_thuc_thanh_toan'];
+                                        $payment_status = $order['trang_thai_thanh_toan'] ? 'Đã thanh toán' : 'Chưa thanh toán';
+                                        $payment_badge = $order['trang_thai_thanh_toan'] ? 'success' : 'warning';
+                                        
+                                        echo '<span class="badge bg-info">' . ($payment_method == 'cod' ? 'Tiền mặt' : 
+                                             ($payment_method == 'bank_transfer' ? 'Chuyển khoản' : 
+                                             ($payment_method == 'momo' ? 'MoMo' : 
+                                             ($payment_method == 'vnpay' ? 'VNPay' : 'Khác')))) . '</span><br>';
+                                        echo '<span class="badge bg-' . $payment_badge . '">' . $payment_status . '</span>';
                                         ?>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="order-detail.php?id=<?php echo $order['id_donhang']; ?>" class="btn btn-outline-primary">
+                                            <a href="order-detail.php?id=<?php echo $order['id']; ?>" class="btn btn-outline-primary">
                                                 <i class="bi bi-eye"></i> Xem
                                             </a>
                                             <button type="button" class="btn btn-outline-dark dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
@@ -226,11 +206,11 @@ $order_statuses = [
                                             <ul class="dropdown-menu">
                                                 <li class="dropdown-header">Cập nhật trạng thái</li>
                                                 <?php foreach ($order_statuses as $status_id => $status): ?>
-                                                    <?php if ($status_id != $order['trangthai']): ?>
+                                                    <?php if ($status_id != $order['trang_thai_don_hang']): ?>
                                                         <li>
                                                             <a class="dropdown-item update-status" 
                                                                href="#" 
-                                                               data-order-id="<?php echo $order['id_donhang']; ?>" 
+                                                               data-order-id="<?php echo $order['id']; ?>" 
                                                                data-status="<?php echo $status_id; ?>">
                                                                 <?php echo $status['name']; ?>
                                                             </a>
@@ -239,7 +219,7 @@ $order_statuses = [
                                                 <?php endforeach; ?>
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
-                                                    <a class="dropdown-item text-primary" href="print-order.php?id=<?php echo $order['id_donhang']; ?>" target="_blank">
+                                                    <a class="dropdown-item text-primary" href="print-order.php?id=<?php echo $order['id']; ?>" target="_blank">
                                                         <i class="bi bi-printer"></i> In đơn hàng
                                                     </a>
                                                 </li>
@@ -261,7 +241,7 @@ $order_statuses = [
         </div>
     </div>
 
-    <!-- Phân trang -->
+    <!-- Phân trang - Cập nhật các tham số URL -->
     <div class="d-flex justify-content-center mt-4">
         <nav aria-label="Phân trang đơn hàng">
             <ul class="pagination">

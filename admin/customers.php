@@ -12,7 +12,7 @@ include('../config/config.php');
 $search_keyword = isset($_GET['search']) ? trim($_GET['search']) : '';
 $status_filter = isset($_GET['status']) ? (int)$_GET['status'] : -1;
 $user_type_filter = isset($_GET['user_type']) ? (int)$_GET['user_type'] : -1;
-$sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'id_user';
+$sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'id';
 $sort_order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
 
 // Build query
@@ -22,7 +22,7 @@ $query = "SELECT u.* FROM users u";
 $where_conditions = [];
 if (!empty($search_keyword)) {
     $search_keyword = $conn->real_escape_string($search_keyword);
-    $where_conditions[] = "(taikhoan LIKE '%$search_keyword%' OR email LIKE '%$search_keyword%' OR sdt LIKE '%$search_keyword%' OR tenuser LIKE '%$search_keyword%')";
+    $where_conditions[] = "(taikhoan LIKE '%$search_keyword%' OR email LIKE '%$search_keyword%' OR sodienthoai LIKE '%$search_keyword%' OR ten LIKE '%$search_keyword%')";
 }
 
 if ($status_filter !== -1) {
@@ -40,9 +40,9 @@ if (!empty($where_conditions)) {
 }
 
 // Add sorting
-$valid_sort_columns = ['id_user', 'taikhoan', 'tenuser', 'email', 'ngay_tao', 'trang_thai'];
+$valid_sort_columns = ['id', 'taikhoan', 'ten', 'email', 'ngay_tao', 'trang_thai'];
 if (!in_array($sort_by, $valid_sort_columns)) {
-    $sort_by = 'id_user';
+    $sort_by = 'id';
 }
 
 $sort_order = ($sort_order === 'ASC') ? 'ASC' : 'DESC';
@@ -68,9 +68,6 @@ $query .= " LIMIT $offset, $per_page";
 // Execute query
 $result = $conn->query($query);
 ?>
-
-<!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
 
 <!-- Thêm vào phần head của trang -->
 <style>
@@ -173,8 +170,8 @@ $result = $conn->query($query);
                 <div class="col-md-3">
                     <label for="sort" class="form-label">Sắp xếp theo</label>
                     <select class="form-select" id="sort" name="sort">
-                        <option value="id_user" <?php echo $sort_by === 'id_user' ? 'selected' : ''; ?>>ID</option>
-                        <option value="tenuser" <?php echo $sort_by === 'tenuser' ? 'selected' : ''; ?>>Tên</option>
+                        <option value="id" <?php echo $sort_by === 'id' ? 'selected' : ''; ?>>ID</option>
+                        <option value="ten" <?php echo $sort_by === 'ten' ? 'selected' : ''; ?>>Tên</option>
                         <option value="email" <?php echo $sort_by === 'email' ? 'selected' : ''; ?>>Email</option>
                         <option value="ngay_tao" <?php echo $sort_by === 'ngay_tao' ? 'selected' : ''; ?>>Ngày đăng ký</option>
                     </select>
@@ -227,12 +224,12 @@ $result = $conn->query($query);
                             <?php if ($result->num_rows > 0): ?>
                             <?php while ($customer = $result->fetch_assoc()): ?>
                                 <tr>
-                                    <td><?php echo $customer['id_user']; ?></td>
+                                    <td><?php echo $customer['id']; ?></td>
                                     <td><?php echo htmlspecialchars($customer['taikhoan']); ?></td>
-                                    <td><?php echo htmlspecialchars($customer['tenuser']); ?></td>
+                                    <td><?php echo htmlspecialchars($customer['ten']); ?></td>
                                     <td>
                                         <div><?php echo htmlspecialchars($customer['email']); ?></div>
-                                        <div><?php echo htmlspecialchars($customer['sdt']); ?></div>
+                                        <div><?php echo htmlspecialchars($customer['sodienthoai']); ?></div>
                                     </td>
                                     <td><?php echo date('d/m/Y', strtotime($customer['ngay_tao'])); ?></td>
                                     <td>
@@ -251,7 +248,7 @@ $result = $conn->query($query);
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="customer-detail.php?id=<?php echo $customer['id_user']; ?>" class="btn btn-outline-primary">
+                                            <a href="customer-detail.php?id=<?php echo $customer['id']; ?>" class="btn btn-outline-primary">
                                                 <i class="bi bi-eye"></i> Xem
                                             </a>
                                             <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -260,7 +257,7 @@ $result = $conn->query($query);
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li>
                                                     <a class="dropdown-item toggle-status" href="#" 
-                                                       data-id="<?php echo $customer['id_user']; ?>"
+                                                       data-id="<?php echo $customer['id']; ?>"
                                                        data-status="<?php echo $customer['trang_thai']; ?>"
                                                        data-username="<?php echo htmlspecialchars($customer['taikhoan']); ?>">
                                                         <?php if ($customer['trang_thai'] == 1): ?>
@@ -273,7 +270,7 @@ $result = $conn->query($query);
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <a class="dropdown-item text-danger delete-customer" href="#" 
-                                                       data-id="<?php echo $customer['id_user']; ?>"
+                                                       data-id="<?php echo $customer['id']; ?>"
                                                        data-username="<?php echo htmlspecialchars($customer['taikhoan']); ?>">
                                                         <i class="bi bi-trash"></i> Xóa tài khoản
                                                     </a>

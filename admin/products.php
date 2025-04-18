@@ -21,19 +21,19 @@ $category = isset($_GET['category']) ? (int)$_GET['category'] : 0;
 $status = isset($_GET['status']) ? $_GET['status'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'id_desc';
 
-// Base query
-$query = "SELECT sp.*, lsp.tenloai FROM sanpham sp 
-          LEFT JOIN loaisanpham lsp ON sp.id_loai = lsp.id_loai 
+// Base query - Sửa để phù hợp với cấu trúc DB mới
+$query = "SELECT sp.*, dm.ten as tendanhmuc FROM sanpham sp 
+          LEFT JOIN danhmuc dm ON sp.id_danhmuc = dm.id 
           WHERE 1=1";
 
 // Apply filters
 if (!empty($search)) {
     $search_term = "%" . $conn->real_escape_string($search) . "%";
-    $query .= " AND (sp.tensanpham LIKE '$search_term' OR sp.id_sanpham LIKE '$search_term')";
+    $query .= " AND (sp.tensanpham LIKE '$search_term' OR sp.id LIKE '$search_term')";
 }
 
 if ($category > 0) {
-    $query .= " AND sp.id_loai = $category";
+    $query .= " AND sp.id_danhmuc = $category";
 }
 
 if ($status !== '') {
@@ -46,16 +46,16 @@ $count_result = $conn->query($query);
 $total_products = $count_result->num_rows;
 $total_pages = ceil($total_products / $products_per_page);
 
-// Apply sorting
+// Apply sorting - Cập nhật tên trường
 $sort_options = [
-    'id_asc' => 'sp.id_sanpham ASC',
-    'id_desc' => 'sp.id_sanpham DESC',
+    'id_asc' => 'sp.id ASC',
+    'id_desc' => 'sp.id DESC',
     'name_asc' => 'sp.tensanpham ASC',
     'name_desc' => 'sp.tensanpham DESC',
     'price_asc' => 'sp.gia ASC',
     'price_desc' => 'sp.gia DESC',
-    'newest' => 'sp.ngaytao DESC',
-    'oldest' => 'sp.ngaytao ASC'
+    'newest' => 'sp.ngay_tao DESC',
+    'oldest' => 'sp.ngay_tao ASC'
 ];
 
 $sort_sql = $sort_options[$sort] ?? $sort_options['id_desc'];
@@ -64,17 +64,14 @@ $query .= " ORDER BY $sort_sql LIMIT $offset, $products_per_page";
 // Execute query
 $products_result = $conn->query($query);
 
-// Get categories for filter
-$categories_query = "SELECT id_loai, tenloai FROM loaisanpham WHERE trangthai = 1";
+// Get categories for filter - Sửa truy vấn danh mục
+$categories_query = "SELECT id, ten FROM danhmuc WHERE trang_thai = 1";
 $categories_result = $conn->query($categories_query);
 $categories = [];
 while ($row = $categories_result->fetch_assoc()) {
-    $categories[$row['id_loai']] = $row['tenloai'];
+    $categories[$row['id']] = $row['ten'];
 }
 ?>
-
-<!-- Include the sidebar -->
-<?php include('includes/sidebar.php'); ?>
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
@@ -171,10 +168,10 @@ while ($row = $categories_result->fetch_assoc()) {
                         <?php if ($products_result->num_rows > 0): ?>
                             <?php while ($product = $products_result->fetch_assoc()): ?>
                                 <tr>
-                                    <td><?php echo $product['id_sanpham']; ?></td>
+                                    <td><?php echo $product['id']; ?></td>
                                     <td>
                                         <?php if (!empty($product['hinhanh'])): ?>
-                                            <img src="../uploads/products/<?php echo $product['hinhanh']; ?>" alt="<?php echo htmlspecialchars($product['tensanpham']); ?>" class="product-image">
+                                            <img src="../<?php echo $product['hinhanh']; ?>" alt="<?php echo htmlspecialchars($product['tensanpham']); ?>" class="product-image" style="width: 50px; height: 50px; object-fit: cover;">
                                         <?php else: ?>
                                             <div class="bg-light text-center p-2">
                                                 <i class="bi bi-image text-muted"></i>
@@ -187,7 +184,7 @@ while ($row = $categories_result->fetch_assoc()) {
                                             <span class="badge bg-warning text-dark">Nổi bật</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo htmlspecialchars($product['tenloai'] ?? 'Không có'); ?></td>
+                                    <td><?php echo htmlspecialchars($product['tendanhmuc'] ?? 'Không có'); ?></td>
                                     <td>
                                         <div class="text-danger"><?php echo number_format($product['gia'], 0, ',', '.'); ?>₫</div>
                                         <?php if (!empty($product['giagoc']) && $product['giagoc'] > $product['gia']): ?>
@@ -195,12 +192,12 @@ while ($row = $categories_result->fetch_assoc()) {
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php if ($product['soluong'] <= 5 && $product['soluong'] > 0): ?>
-                                            <span class="text-warning"><?php echo $product['soluong']; ?></span>
-                                        <?php elseif ($product['soluong'] == 0): ?>
+                                        <?php if ($product['so_luong'] <= 5 && $product['so_luong'] > 0): ?>
+                                            <span class="text-warning"><?php echo $product['so_luong']; ?></span>
+                                        <?php elseif ($product['so_luong'] == 0): ?>
                                             <span class="text-danger">0</span>
                                         <?php else: ?>
-                                            <?php echo $product['soluong']; ?>
+                                            <?php echo $product['so_luong']; ?>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -212,16 +209,16 @@ while ($row = $categories_result->fetch_assoc()) {
                                             <span class="badge bg-secondary">Ngừng kinh doanh</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo date('d/m/Y', strtotime($product['ngaytao'])); ?></td>
+                                    <td><?php echo date('d/m/Y', strtotime($product['ngay_tao'])); ?></td>
                                     <td>
                                         <div class="d-flex gap-2">
-                                            <a href="../product-detail.php?id=<?php echo $product['id_sanpham']; ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Xem trên website">
+                                            <a href="../product-detail.php?id=<?php echo $product['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Xem trên website">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="edit_product.php?id=<?php echo $product['id_sanpham']; ?>" class="btn btn-sm btn-outline-dark" title="Sửa">
+                                            <a href="edit_product.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-outline-dark" title="Sửa">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <button type="button" class="btn btn-sm btn-outline-danger delete-product" title="Xóa" data-id="<?php echo $product['id_sanpham']; ?>" data-name="<?php echo htmlspecialchars($product['tensanpham']); ?>">
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-product" title="Xóa" data-id="<?php echo $product['id']; ?>" data-name="<?php echo htmlspecialchars($product['tensanpham']); ?>">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>

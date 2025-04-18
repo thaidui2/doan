@@ -5,16 +5,16 @@ include('config/config.php');
 // Hàm lấy hoặc tạo giỏ hàng
 function getCart($conn) {
     $session_id = session_id();
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+    $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
     
     // Kiểm tra xem giỏ hàng đã tồn tại chưa
     if ($user_id) {
         // Đã đăng nhập, tìm giỏ hàng theo user_id
-        $stmt = $conn->prepare("SELECT * FROM giohang WHERE id_nguoidung = ?");
+        $stmt = $conn->prepare("SELECT * FROM giohang WHERE id_user = ?");
         $stmt->bind_param("i", $user_id);
     } else {
         // Chưa đăng nhập, tìm giỏ hàng theo session_id
-        $stmt = $conn->prepare("SELECT * FROM giohang WHERE session_id = ? AND id_nguoidung IS NULL");
+        $stmt = $conn->prepare("SELECT * FROM giohang WHERE session_id = ? AND id_user IS NULL");
         $stmt->bind_param("s", $session_id);
     }
     
@@ -27,7 +27,7 @@ function getCart($conn) {
     } else {
         // Tạo giỏ hàng mới
         if ($user_id) {
-            $stmt = $conn->prepare("INSERT INTO giohang (id_nguoidung, session_id) VALUES (?, ?)");
+            $stmt = $conn->prepare("INSERT INTO giohang (id_user, session_id) VALUES (?, ?)");
             $stmt->bind_param("is", $user_id, $session_id);
         } else {
             $stmt = $conn->prepare("INSERT INTO giohang (session_id) VALUES (?)");
@@ -37,7 +37,7 @@ function getCart($conn) {
         $stmt->execute();
         $cart_id = $conn->insert_id;
         
-        $stmt = $conn->prepare("SELECT * FROM giohang WHERE id_giohang = ?");
+        $stmt = $conn->prepare("SELECT * FROM giohang WHERE id = ?");
         $stmt->bind_param("i", $cart_id);
         $stmt->execute();
         
@@ -49,19 +49,21 @@ function getCart($conn) {
 function getCartItems($conn, $cart_id) {
     $stmt = $conn->prepare("
         SELECT gct.*, 
+               sp.id AS id_sanpham,  
                sp.tensanpham, 
                sp.hinhanh, 
-               kt.tenkichthuoc, 
-               ms.tenmau, 
-               ms.mamau,
+               size.gia_tri AS ten_kichthuoc, 
+               color.gia_tri AS ten_mau, 
+               color.ma_mau,
                sp.trangthai,
-               IFNULL((SELECT SUM(soluong) FROM sanpham_chitiet WHERE id_sanpham = sp.id_sanpham), 0) AS tonkho
+               sbt.so_luong AS tonkho
         FROM giohang_chitiet gct
-        JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-        LEFT JOIN kichthuoc kt ON gct.id_kichthuoc = kt.id_kichthuoc
-        LEFT JOIN mausac ms ON gct.id_mausac = ms.id_mausac
+        JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
+        JOIN sanpham sp ON sbt.id_sanpham = sp.id
+        JOIN thuoc_tinh size ON sbt.id_size = size.id
+        JOIN thuoc_tinh color ON sbt.id_mau = color.id
         WHERE gct.id_giohang = ?
-        ORDER BY gct.ngay_them DESC
+        ORDER BY gct.id DESC
     ");
     
     $stmt->bind_param("i", $cart_id);
@@ -70,62 +72,20 @@ function getCartItems($conn, $cart_id) {
     return $stmt->get_result();
 }
 
-// Hàm thêm sản phẩm vào giỏ hàng
-function addToCart($conn, $cart_id, $product_id, $quantity, $price, $size_id = null, $color_id = null) {
-    // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa với cùng kích thước và màu sắc
-    $stmt = $conn->prepare("
-        SELECT * FROM giohang_chitiet
-        WHERE id_giohang = ? AND id_sanpham = ? AND id_kichthuoc = ? AND id_mausac = ?
-    ");
-    $stmt->bind_param("iiii", $cart_id, $product_id, $size_id, $color_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        // Sản phẩm đã tồn tại, cập nhật số lượng
-        $item = $result->fetch_assoc();
-        $new_quantity = $item['soluong'] + $quantity;
-        $new_total = $price * $new_quantity;
-        
-        $update = $conn->prepare("
-            UPDATE giohang_chitiet
-            SET soluong = ?, thanh_tien = ?
-            WHERE id_chitiet = ?
-        ");
-        $update->bind_param("idi", $new_quantity, $new_total, $item['id_chitiet']);
-        $update->execute();
-    } else {
-        // Thêm sản phẩm mới
-        $total = $price * $quantity;
-        $insert = $conn->prepare("
-            INSERT INTO giohang_chitiet (id_giohang, id_sanpham, id_kichthuoc, id_mausac, soluong, gia, thanh_tien)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
-        $insert->bind_param("iiiiidi", $cart_id, $product_id, $size_id, $color_id, $quantity, $price, $total);
-        $insert->execute();
-    }
-    
-    // Cập nhật tổng tiền giỏ hàng
-    updateCartTotal($conn, $cart_id);
-}
-
 // Hàm cập nhật tổng tiền giỏ hàng
 function updateCartTotal($conn, $cart_id) {
     $stmt = $conn->prepare("
         UPDATE giohang
-        SET tong_tien = COALESCE((
-            SELECT SUM(thanh_tien) FROM giohang_chitiet WHERE id_giohang = ?
-        ), 0),
-        ngay_capnhat = NOW()
-        WHERE id_giohang = ?
+        SET ngay_capnhat = NOW()
+        WHERE id = ?
     ");
-    $stmt->bind_param("ii", $cart_id, $cart_id);
+    $stmt->bind_param("i", $cart_id);
     $stmt->execute();
 }
 
 // Lấy thông tin giỏ hàng hiện tại
 $cart = getCart($conn);
-$cart_id = $cart['id_giohang'];
+$cart_id = $cart['id'];
 
 // Cập nhật số lượng sản phẩm trong giỏ hàng
 if (isset($_POST['update_cart'])) {
@@ -134,20 +94,19 @@ if (isset($_POST['update_cart'])) {
         
         if ($qty <= 0) {
             // Xóa sản phẩm khỏi giỏ hàng
-            $delete = $conn->prepare("DELETE FROM giohang_chitiet WHERE id_chitiet = ?");
+            $delete = $conn->prepare("DELETE FROM giohang_chitiet WHERE id = ?");
             $delete->bind_param("i", $item_id);
             $delete->execute();
         } else {
             // Lấy thông tin giá của sản phẩm
-            $price_query = $conn->prepare("SELECT gia FROM giohang_chitiet WHERE id_chitiet = ?");
+            $price_query = $conn->prepare("SELECT gia FROM giohang_chitiet WHERE id = ?");
             $price_query->bind_param("i", $item_id);
             $price_query->execute();
             $price_result = $price_query->get_result()->fetch_assoc();
             
             // Cập nhật số lượng và tổng tiền
-            $new_total = $price_result['gia'] * $qty;
-            $update = $conn->prepare("UPDATE giohang_chitiet SET soluong = ?, thanh_tien = ? WHERE id_chitiet = ?");
-            $update->bind_param("idi", $qty, $new_total, $item_id);
+            $update = $conn->prepare("UPDATE giohang_chitiet SET so_luong = ? WHERE id = ?");
+            $update->bind_param("ii", $qty, $item_id);
             $update->execute();
         }
     }
@@ -164,7 +123,7 @@ if (isset($_POST['update_cart'])) {
 if (isset($_GET['remove_item'])) {
     $item_id = (int)$_GET['remove_item'];
     
-    $delete = $conn->prepare("DELETE FROM giohang_chitiet WHERE id_chitiet = ? AND id_giohang = ?");
+    $delete = $conn->prepare("DELETE FROM giohang_chitiet WHERE id = ? AND id_giohang = ?");
     $delete->bind_param("ii", $item_id, $cart_id);
     $delete->execute();
     
@@ -198,7 +157,7 @@ if (isset($_GET['clear_cart']) || isset($_POST['clear_cart'])) {
         error_log("Đã xóa $affected_rows mục từ giỏ hàng");
         
         // Cập nhật tổng tiền về 0 với prepared statement
-        $update_stmt = $conn->prepare("UPDATE giohang SET tong_tien = 0, ngay_capnhat = NOW() WHERE id_giohang = ?");
+        $update_stmt = $conn->prepare("UPDATE giohang SET ngay_capnhat = NOW() WHERE id = ?");
         $update_stmt->bind_param("i", $cart_id);
         $update_stmt->execute();
         
@@ -227,7 +186,7 @@ if (isset($_POST['delete_selected']) && isset($_POST['selected_items'])) {
     if (!empty($selected_items)) {
         // Tạo câu truy vấn với tham số ràng buộc cho mỗi id
         $placeholders = implode(',', array_fill(0, count($selected_items), '?'));
-        $query = "DELETE FROM giohang_chitiet WHERE id_chitiet IN ($placeholders) AND id_giohang = ?";
+        $query = "DELETE FROM giohang_chitiet WHERE id IN ($placeholders) AND id_giohang = ?";
         
         // Chuẩn bị câu lệnh
         $stmt = $conn->prepare($query);
@@ -259,10 +218,12 @@ if (isset($_POST['delete_selected']) && isset($_POST['selected_items'])) {
 $cart_items_result = getCartItems($conn, $cart_id);
 $cart_items = [];
 $total_items = 0;
+$total_amount = 0;
 
 while ($item = $cart_items_result->fetch_assoc()) {
     $cart_items[] = $item;
-    $total_items += $item['soluong'];
+    $total_items += $item['so_luong'];
+    $total_amount += $item['gia'] * $item['so_luong'];
 }
 ?>
 
@@ -365,11 +326,11 @@ while ($item = $cart_items_result->fetch_assoc()) {
                                     <tr>
                                         <td>
                                         <div class="form-check">
-    <input class="form-check-input item-checkbox" type="checkbox" 
-           name="selected_items[]" value="<?php echo $item['id_chitiet']; ?>"
-           data-price="<?php echo $item['thanh_tien']; ?>"
-           <?php echo $item['trangthai'] == 1 ? '' : 'disabled'; ?>>
-</div>
+                                            <input class="form-check-input item-checkbox" type="checkbox" 
+                                                name="selected_items[]" value="<?php echo $item['id']; ?>"
+                                                data-price="<?php echo $item['gia'] * $item['so_luong']; ?>"
+                                                <?php echo $item['trangthai'] == 1 ? '' : 'disabled'; ?>>
+                                        </div>
                                         </td>
                                         <td>
                                             <img src="<?php echo !empty($item['hinhanh']) ? 'uploads/products/' . $item['hinhanh'] : 'images/no-image.png'; ?>" 
@@ -377,27 +338,51 @@ while ($item = $cart_items_result->fetch_assoc()) {
                                                  alt="<?php echo htmlspecialchars($item['tensanpham']); ?>">
                                         </td>
                                         <td>
+                                            <?php
+                                            // Ensure we have a valid product ID with fallback options
+                                            $product_id = 0;
+                                            if (isset($item['id_sanpham'])) {
+                                                $product_id = (int)$item['id_sanpham'];
+                                            } elseif (isset($item['id_bienthe'])) {
+                                                // If we don't have id_sanpham, try to use id_bienthe as fallback
+                                                $product_id = (int)$item['id_bienthe'];
+                                            }
+                                            
+                                            // Rest of the product info
+                                            $product_name = !empty($item['tensanpham']) ? trim($item['tensanpham']) : 'Sản phẩm không xác định';
+                                            $product_name_safe = htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8');
+                                            $product_url = "product-detail.php?id={$product_id}";
+                                            
+                                            // Size and color info
+                                            $has_size = !empty($item['ten_kichthuoc']);
+                                            $size_text = $has_size ? htmlspecialchars($item['ten_kichthuoc'], ENT_QUOTES, 'UTF-8') : '';
+                                            
+                                            $has_color = !empty($item['ten_mau']);
+                                            $color_text = $has_color ? htmlspecialchars($item['ten_mau'], ENT_QUOTES, 'UTF-8') : '';
+                                            ?>
+                                            
+                                            <!-- Product name with link -->
                                             <div>
-                                                <a href="product-detail.php?id=<?php echo $item['id_sanpham']; ?>" class="text-decoration-none text-dark fw-bold">
-                                                    <?php echo htmlspecialchars($item['tensanpham']); ?>
-                                                </a>
+                                                <a href="<?php echo $product_url; ?>" class="text-decoration-none text-dark fw-bold"><?php echo $product_name_safe; ?></a>
                                             </div>
+                                            
+                                            <!-- Product attributes -->
                                             <div class="small text-muted mt-1">
-                                                <?php if (!empty($item['tenkichthuoc'])): ?>
-                                                    <span class="me-3">Kích thước: <?php echo $item['tenkichthuoc']; ?></span>
+                                                <?php if ($has_size): ?>
+                                                    <span class="me-3">Kích thước: <?php echo $size_text; ?></span>
                                                 <?php endif; ?>
-                                                <?php if (!empty($item['tenmau'])): ?>
-                                                    <span>Màu: <?php echo $item['tenmau']; ?></span>
+                                                <?php if ($has_color): ?>
+                                                    <span>Màu: <?php echo $color_text; ?></span>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
                                         <td><?php echo number_format($item['gia'], 0, ',', '.'); ?>₫</td>
                                         <td>
-                                            <input type="number" name="quantity[<?php echo $item['id_chitiet']; ?>]" 
-                                                  value="<?php echo $item['soluong']; ?>" 
+                                            <input type="number" name="quantity[<?php echo $item['id']; ?>]" 
+                                                  value="<?php echo $item['so_luong']; ?>" 
                                                   min="1" class="form-control quantity-input">
                                         </td>
-                                        <td><?php echo number_format($item['thanh_tien'], 0, ',', '.'); ?>₫</td>
+                                        <td><?php echo number_format($item['gia'] * $item['so_luong'], 0, ',', '.'); ?>₫</td>
                                         <td>
                                             <?php if ($item['trangthai'] == 1): ?>
                                                 <span class="badge bg-success">Còn hàng</span>
@@ -413,7 +398,7 @@ while ($item = $cart_items_result->fetch_assoc()) {
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-link text-danger p-0 remove-item-btn" 
-                                                    data-item-id="<?php echo $item['id_chitiet']; ?>">
+                                                    data-item-id="<?php echo $item['id']; ?>">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </td>
@@ -424,7 +409,7 @@ while ($item = $cart_items_result->fetch_assoc()) {
                                     <tr>
                                         <td colspan="6" class="text-end fw-bold">Tổng tiền:</td>
                                         <td colspan="2" class="fw-bold text-danger">
-                                            <span id="total-full"><?php echo number_format($cart['tong_tien'], 0, ',', '.'); ?>₫</span>
+                                            <span id="total-full"><?php echo number_format($total_amount, 0, ',', '.'); ?>₫</span>
                                             <span id="total-selected" class="d-none"></span>
                                         </td>
                                     </tr>
@@ -463,7 +448,113 @@ while ($item = $cart_items_result->fetch_assoc()) {
     
     <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
     
-    
-    <script src="js/giohang.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle select all checkbox
+        const selectAllCheckbox = document.getElementById('select-all');
+        const itemCheckboxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
+        const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+        const checkoutSelectedBtn = document.getElementById('checkout-selected-btn');
+        const selectedCountDelete = document.getElementById('selected-count-delete');
+        const selectedCount = document.getElementById('selected-count');
+        const totalFullSpan = document.getElementById('total-full');
+        const totalSelectedSpan = document.getElementById('total-selected');
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                itemCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateSelectedCount();
+                updateTotalPrice();
+            });
+        }
+
+        // Handle individual checkboxes
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectedCount();
+                updateTotalPrice();
+                
+                // Check if all checkboxes are selected
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = [...itemCheckboxes].every(cb => cb.checked);
+                }
+            });
+        });
+
+        // Update selected count
+        function updateSelectedCount() {
+            const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+            
+            if (selectedCount) selectedCount.textContent = checkedCount;
+            if (selectedCountDelete) selectedCountDelete.textContent = checkedCount;
+            
+            if (deleteSelectedBtn) {
+                deleteSelectedBtn.disabled = checkedCount === 0;
+            }
+            
+            if (checkoutSelectedBtn) {
+                checkoutSelectedBtn.disabled = checkedCount === 0;
+            }
+        }
+
+        // Update total price based on selection
+        function updateTotalPrice() {
+            const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+            
+            if (checkedBoxes.length > 0) {
+                let totalPrice = 0;
+                checkedBoxes.forEach(box => {
+                    totalPrice += parseFloat(box.dataset.price || 0);
+                });
+                
+                if (totalSelectedSpan) {
+                    totalSelectedSpan.textContent = formatCurrency(totalPrice);
+                    totalSelectedSpan.classList.remove('d-none');
+                }
+                
+                if (totalFullSpan) {
+                    totalFullSpan.classList.add('d-none');
+                }
+            } else {
+                if (totalSelectedSpan) {
+                    totalSelectedSpan.classList.add('d-none');
+                }
+                
+                if (totalFullSpan) {
+                    totalFullSpan.classList.remove('d-none');
+                }
+            }
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(amount);
+        }
+
+        // Handle clear cart button
+        const clearCartBtn = document.getElementById('clear-cart-btn');
+        if (clearCartBtn) {
+            clearCartBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?')) {
+                    window.location.href = 'giohang.php?clear_cart=1';
+                }
+            });
+        }
+
+        // Handle remove item buttons
+        const removeButtons = document.querySelectorAll('.remove-item-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+                    window.location.href = 'giohang.php?remove_item=' + itemId;
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>

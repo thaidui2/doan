@@ -19,18 +19,18 @@ function getCartItemCount($conn) {
     
     if ($user_id) {
         $stmt = $conn->prepare("
-            SELECT SUM(gct.soluong) as total
+            SELECT SUM(gct.so_luong) as total
             FROM giohang g
-            JOIN giohang_chitiet gct ON g.id_giohang = gct.id_giohang
-            WHERE g.id_nguoidung = ?
+            JOIN giohang_chitiet gct ON g.id = gct.id_giohang
+            WHERE g.id_user = ?
         ");
         $stmt->bind_param("i", $user_id);
     } else {
         $stmt = $conn->prepare("
-            SELECT SUM(gct.soluong) as total
+            SELECT SUM(gct.so_luong) as total
             FROM giohang g
-            JOIN giohang_chitiet gct ON g.id_giohang = gct.id_giohang
-            WHERE g.session_id = ? AND g.id_nguoidung IS NULL
+            JOIN giohang_chitiet gct ON g.id = gct.id_giohang
+            WHERE g.session_id = ? AND g.id_user IS NULL
         ");
         $stmt->bind_param("s", $session_id);
     }
@@ -48,23 +48,25 @@ function getCartPreviewItems($conn) {
     
     if ($user_id) {
         $stmt = $conn->prepare("
-            SELECT gct.*, sp.tensanpham, sp.hinhanh, sp.trangthai, g.id_giohang
+            SELECT gct.*, sp.tensanpham, sp.hinhanh, sp.trangthai, g.id as id_giohang, gct.so_luong as soluong
             FROM giohang g
-            JOIN giohang_chitiet gct ON g.id_giohang = gct.id_giohang
-            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-            WHERE g.id_nguoidung = ?
-            ORDER BY gct.ngay_them DESC
+            JOIN giohang_chitiet gct ON g.id = gct.id_giohang
+            JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
+            JOIN sanpham sp ON sbt.id_sanpham = sp.id
+            WHERE g.id_user = ?
+            ORDER BY gct.id DESC
             LIMIT 5
         ");
         $stmt->bind_param("i", $user_id);
     } else {
         $stmt = $conn->prepare("
-            SELECT gct.*, sp.tensanpham, sp.hinhanh, sp.trangthai, g.id_giohang
+            SELECT gct.*, sp.tensanpham, sp.hinhanh, sp.trangthai, g.id as id_giohang, gct.so_luong as soluong
             FROM giohang g
-            JOIN giohang_chitiet gct ON g.id_giohang = gct.id_giohang
-            JOIN sanpham sp ON gct.id_sanpham = sp.id_sanpham
-            WHERE g.session_id = ? AND g.id_nguoidung IS NULL
-            ORDER BY gct.ngay_them DESC
+            JOIN giohang_chitiet gct ON g.id = gct.id_giohang
+            JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
+            JOIN sanpham sp ON sbt.id_sanpham = sp.id
+            WHERE g.session_id = ? AND g.id_user IS NULL
+            ORDER BY gct.id DESC
             LIMIT 5
         ");
         $stmt->bind_param("s", $session_id);
@@ -77,10 +79,10 @@ function getCartPreviewItems($conn) {
 // Lấy danh mục sản phẩm cho menu
 function getCategories($conn) {
     $stmt = $conn->prepare("
-        SELECT id_loai, tenloai, hinhanh 
-        FROM loaisanpham 
-        WHERE trangthai = 1 
-        ORDER BY tenloai
+        SELECT id, ten as tenloai, hinhanh 
+        FROM danhmuc 
+        WHERE trang_thai = 1 
+        ORDER BY thu_tu ASC, ten ASC
     ");
     $stmt->execute();
     return $stmt->get_result();
@@ -103,10 +105,12 @@ $session_id = session_id();
 $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
 if ($user_id) {
-    $cart_stmt = $conn->prepare("SELECT id_giohang, tong_tien FROM giohang WHERE id_nguoidung = ?");
+    // Sửa: Chỉ lấy ID giỏ hàng, không lấy tong_tien vì cột này không tồn tại
+    $cart_stmt = $conn->prepare("SELECT id FROM giohang WHERE id_user = ?");
     $cart_stmt->bind_param("i", $user_id);
 } else {
-    $cart_stmt = $conn->prepare("SELECT id_giohang, tong_tien FROM giohang WHERE session_id = ? AND id_nguoidung IS NULL");
+    // Sửa: Chỉ lấy ID giỏ hàng, không lấy tong_tien vì cột này không tồn tại
+    $cart_stmt = $conn->prepare("SELECT id FROM giohang WHERE session_id = ? AND id_user IS NULL");
     $cart_stmt->bind_param("s", $session_id);
 }
 
@@ -115,8 +119,22 @@ $cart_result = $cart_stmt->get_result();
 
 if ($cart_result->num_rows > 0) {
     $cart_info = $cart_result->fetch_assoc();
-    $cart_id = $cart_info['id_giohang'];
-    $cart_total = $cart_info['tong_tien'];
+    $cart_id = $cart_info['id'];
+    
+    // Tính tổng tiền từ các mục trong giỏ hàng thay vì lấy từ cột tong_tien
+    $total_stmt = $conn->prepare("
+        SELECT SUM(gct.gia * gct.so_luong) as total 
+        FROM giohang_chitiet gct 
+        WHERE gct.id_giohang = ?
+    ");
+    $total_stmt->bind_param("i", $cart_id);
+    $total_stmt->execute();
+    $total_result = $total_stmt->get_result();
+    
+    if ($total_result->num_rows > 0) {
+        $total_row = $total_result->fetch_assoc();
+        $cart_total = $total_row['total'] ?? 0;
+    }
 }
 
 // Sau khi lấy được cart_id, mới lấy các items
@@ -184,14 +202,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                 <?php while($category = $categories->fetch_assoc()): ?>
                                 <div class="col-6">
                                     <a class="dropdown-item category-item d-flex align-items-center" 
-                                       href="sanpham.php?loai=<?php echo $category['id_loai']; ?>">
+                                       href="sanpham.php?loai=<?php echo $category['id']; ?>">
                                         <?php if(!empty($category['hinhanh'])): ?>
                                         <img src="uploads/categories/<?php echo $category['hinhanh']; ?>" 
-                                             class="category-thumbnail me-2" alt="<?php echo $category['tenloai']; ?>">
+                                             class="category-thumbnail me-2" alt="<?php echo htmlspecialchars($category['tenloai']); ?>">
                                         <?php else: ?>
                                         <i class="bi bi-tag me-2"></i>
                                         <?php endif; ?>
-                                        <?php echo $category['tenloai']; ?>
+                                        <?php echo htmlspecialchars($category['tenloai']); ?>
                                     </a>
                                 </div>
                                 <?php endwhile; ?>
@@ -235,60 +253,52 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <?php endif; ?>
                         </a>
                         
-                        <div class="dropdown-menu dropdown-menu-end cart-dropdown p-0" aria-labelledby="cartDropdown" style="width: 320px;">
+                        <!-- Cart dropdown items container -->
+                        <div class="dropdown-menu dropdown-menu-end p-0 border-0 shadow-lg rounded-3" id="cartDropdownMenu" aria-labelledby="cartDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
                             <div class="p-3 border-bottom">
-                                <h6 class="mb-0">Giỏ hàng của bạn (<?php echo $cart_count; ?>)</h6>
+                                <h6 class="mb-0">Giỏ hàng của bạn</h6>
                             </div>
                             
-                            <div class="cart-items overflow-auto" style="max-height: 320px;">
-                                <?php if ($cart_count > 0): ?>
-                                    <?php while($item = $cart_items->fetch_assoc()): ?>
-                                    <a href="product-detail.php?id=<?php echo $item['id_sanpham']; ?>" class="dropdown-item p-3 border-bottom cart-item">
-                                        <div class="d-flex align-items-center">
-                                            <img src="<?php echo !empty($item['hinhanh']) ? 'uploads/products/' . $item['hinhanh'] : 'images/no-image.png'; ?>" 
-                                                 alt="<?php echo $item['tensanpham']; ?>" 
-                                                 class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
-                                            <div class="ms-3 flex-grow-1">
-                                                <h6 class="mb-0 text-truncate" style="max-width: 150px;"><?php echo $item['tensanpham']; ?></h6>
-                                                <div class="small text-muted">
-                                                    <?php echo number_format($item['gia'], 0, ',', '.'); ?>₫ × <?php echo $item['soluong']; ?>
+                            <div id="cart-items-container">
+                                <?php if (isset($cart_items) && !empty($cart_items)): ?>
+                                    <?php foreach ($cart_items as $item): ?>
+                                        <?php 
+                                            $product_id = isset($item['id_sanpham']) ? (int)$item['id_sanpham'] : 0;
+                                            $item_name = isset($item['tensanpham']) ? htmlspecialchars($item['tensanpham'], ENT_QUOTES, 'UTF-8') : 'Sản phẩm';
+                                            $item_image = !empty($item['hinhanh']) ? htmlspecialchars($item['hinhanh'], ENT_QUOTES, 'UTF-8') : 'images/no-image.png';
+                                            $item_qty = isset($item['so_luong']) ? (int)$item['so_luong'] : 0;
+                                            $item_price = isset($item['gia']) ? (float)$item['gia'] : 0;
+                                        ?>
+                                        <a href="product-detail.php?id=<?php echo $product_id; ?>" class="dropdown-item p-3 border-bottom cart-item">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0">
+                                                    <img src="<?php echo $item_image; ?>" alt="<?php echo $item_name; ?>" class="img-fluid cart-item-img" width="50">
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <h6 class="mb-0 text-truncate"><?php echo $item_name; ?></h6>
+                                                    <p class="small mb-0">
+                                                        <?php echo $item_qty; ?> x <?php echo number_format($item_price, 0, ',', '.'); ?>₫
+                                                    </p>
                                                 </div>
                                             </div>
-                                            <div class="text-end">
-                                                <div class="fw-bold text-success"><?php echo number_format($item['thanh_tien'], 0, ',', '.'); ?>₫</div>
-                                            </div>
+                                        </a>
+                                    <?php endforeach; ?>
+                                    
+                                    <div class="p-3 border-top">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Tổng tiền:</span>
+                                            <span class="fw-bold text-danger"><?php echo isset($cart_total) ? number_format($cart_total, 0, ',', '.') : '0'; ?>₫</span>
                                         </div>
-                                    </a>
-                                    <?php endwhile; ?>
+                                        <div class="d-grid gap-2">
+                                            <a href="giohang.php" class="btn btn-outline-dark btn-sm">Xem giỏ hàng</a>
+                                            <a href="thanhtoan.php" class="btn btn-primary btn-sm">Thanh toán</a>
+                                        </div>
+                                    </div>
                                 <?php else: ?>
                                     <div class="p-4 text-center">
-                                        <i class="bi bi-cart-x fs-1 text-muted"></i>
-                                        <p class="mt-2 mb-0">Giỏ hàng trống</p>
+                                        <p class="mb-0 text-muted">Giỏ hàng trống</p>
                                     </div>
                                 <?php endif; ?>
-                            </div>
-                            
-                            <div class="p-3 border-top bg-light">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="fw-bold">Tổng tiền:</span>
-                                    <span class="fw-bold text-danger">
-                                        <?php echo number_format($cart_total, 0, ',', '.'); ?>₫
-                                    </span>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <a href="giohang.php" class="btn btn-primary btn-sm">
-                                        <i class="bi bi-cart"></i> Xem giỏ hàng
-                                    </a>
-                                    <?php if ($cart_count > 0): ?>
-                                    <a href="thanhtoan.php" class="btn btn-success btn-sm">
-                                        <i class="bi bi-credit-card"></i> Thanh toán
-                                    </a>
-                                    <?php else: ?>
-                                    <button class="btn btn-success btn-sm" disabled>
-                                        <i class="bi bi-credit-card"></i> Thanh toán
-                                    </button>
-                                    <?php endif; ?>
-                                </div>
                             </div>
                         </div>
                     </div>

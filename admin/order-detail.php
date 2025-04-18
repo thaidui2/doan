@@ -18,13 +18,13 @@ if ($order_id <= 0) {
     exit();
 }
 
-// Lấy thông tin đơn hàng
+// Lấy thông tin đơn hàng - Cập nhật tên bảng và cột
 $order_stmt = $conn->prepare("
     SELECT dh.*, 
-           IFNULL(u.tenuser, 'Khách vãng lai') as tenkhachhang
+           IFNULL(u.ten, 'Khách vãng lai') as tenkhachhang
     FROM donhang dh
-    LEFT JOIN users u ON dh.id_nguoidung = u.id_user
-    WHERE dh.id_donhang = ?
+    LEFT JOIN users u ON dh.id_user = u.id
+    WHERE dh.id = ?
 ");
 $order_stmt->bind_param("i", $order_id);
 $order_stmt->execute();
@@ -39,16 +39,17 @@ if ($order_result->num_rows === 0) {
 
 $order = $order_result->fetch_assoc();
 
-// Lấy chi tiết đơn hàng
+// Lấy chi tiết đơn hàng - Cập nhật truy vấn cho schema mới
 $items_stmt = $conn->prepare("
     SELECT dct.*, 
            sp.tensanpham, sp.hinhanh,
-           kt.tenkichthuoc, 
-           ms.tenmau, ms.mamau
+           size.gia_tri as ten_kichthuoc, 
+           color.gia_tri as ten_mau, color.ma_mau
     FROM donhang_chitiet dct
-    LEFT JOIN sanpham sp ON dct.id_sanpham = sp.id_sanpham
-    LEFT JOIN kichthuoc kt ON dct.id_kichthuoc = kt.id_kichthuoc
-    LEFT JOIN mausac ms ON dct.id_mausac = ms.id_mausac
+    JOIN sanpham sp ON dct.id_sanpham = sp.id
+    LEFT JOIN sanpham_bien_the sbt ON dct.id_bienthe = sbt.id
+    LEFT JOIN thuoc_tinh size ON sbt.id_size = size.id AND size.loai = 'size'
+    LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
     WHERE dct.id_donhang = ?
 ");
 $items_stmt->bind_param("i", $order_id);
@@ -58,11 +59,10 @@ $items_result = $items_stmt->get_result();
 // Mảng trạng thái đơn hàng
 $order_statuses = [
     1 => ['name' => 'Chờ xác nhận', 'badge' => 'warning text-dark'],
-    2 => ['name' => 'Đang xử lý', 'badge' => 'info'],
+    2 => ['name' => 'Đã xác nhận', 'badge' => 'info'],
     3 => ['name' => 'Đang giao hàng', 'badge' => 'primary'],
     4 => ['name' => 'Đã giao', 'badge' => 'success'],
-    5 => ['name' => 'Đã hủy', 'badge' => 'danger'],
-    6 => ['name' => 'Hoàn trả', 'badge' => 'secondary']
+    5 => ['name' => 'Đã hủy', 'badge' => 'danger']
 ];
 
 // Phương thức thanh toán
@@ -79,7 +79,8 @@ if (isset($_POST['update_status'])) {
     $new_status = (int)$_POST['status'];
     
     if (array_key_exists($new_status, $order_statuses)) {
-        $update_stmt = $conn->prepare("UPDATE donhang SET trangthai = ?, ngaycapnhat = NOW() WHERE id_donhang = ?");
+        // Cập nhật cột trang_thai_don_hang thay vì trangthai
+        $update_stmt = $conn->prepare("UPDATE donhang SET trang_thai_don_hang = ?, ngay_capnhat = NOW() WHERE id = ?");
         $update_stmt->bind_param("ii", $new_status, $order_id);
         
         if ($update_stmt->execute()) {
@@ -87,12 +88,12 @@ if (isset($_POST['update_status'])) {
             $update_message = '<div class="alert alert-success">Cập nhật trạng thái đơn hàng thành công!</div>';
             
             // Cập nhật lại dữ liệu đơn hàng
-            $order['trangthai'] = $new_status;
-            $order['ngaycapnhat'] = date('Y-m-d H:i:s');
+            $order['trang_thai_don_hang'] = $new_status;
+            $order['ngay_capnhat'] = date('Y-m-d H:i:s');
             
             // Thêm đoạn code ghi lịch sử thay đổi trạng thái
             $admin_name = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
-            $trang_thai_cu = $order_statuses[$order['trangthai']]['name'];
+            $trang_thai_cu = $order_statuses[$order['trang_thai_don_hang']]['name'];
             $trang_thai_moi = $order_statuses[$new_status]['name'];
             $ghi_chu = "Thay đổi trạng thái từ \"$trang_thai_cu\" sang \"$trang_thai_moi\"";
             
@@ -135,15 +136,17 @@ if (isset($_POST['update_status'])) {
 
 // Lấy lịch sử đơn hàng (nếu có)
 $history = [];
-$history_query = $conn->prepare("
-    SELECT * FROM donhang_lichsu 
-    WHERE id_donhang = ? 
-    ORDER BY ngay_thaydoi DESC
-");
 
-// Kiểm tra nếu bảng lịch sử tồn tại
+// Kiểm tra nếu bảng lịch sử tồn tại BEFORE attempting to query it
 $table_exists = $conn->query("SHOW TABLES LIKE 'donhang_lichsu'")->num_rows > 0;
+
 if ($table_exists) {
+    $history_query = $conn->prepare("
+        SELECT * FROM donhang_lichsu 
+        WHERE id_donhang = ? 
+        ORDER BY ngay_thaydoi DESC
+    ");
+    
     $history_query->bind_param("i", $order_id);
     $history_query->execute();
     $history_result = $history_query->get_result();
@@ -155,6 +158,7 @@ if ($table_exists) {
 
 /**
  * Cập nhật số lượng sản phẩm sau khi đơn hàng hoàn thành
+ * Đã cập nhật để sử dụng với schema mới
  * 
  * @param int $order_id ID đơn hàng đã hoàn thành
  */
@@ -163,7 +167,7 @@ function updateProductQuantity($order_id) {
     
     // Lấy tất cả sản phẩm trong đơn hàng
     $order_items_query = $conn->prepare("
-        SELECT id_sanpham, id_kichthuoc, id_mausac, soluong 
+        SELECT id_sanpham, id_bienthe, soluong 
         FROM donhang_chitiet 
         WHERE id_donhang = ?
     ");
@@ -172,25 +176,24 @@ function updateProductQuantity($order_id) {
     $result = $order_items_query->get_result();
     
     while($item = $result->fetch_assoc()) {
-        // Giảm số lượng trong bảng chi tiết sản phẩm (biến thể)
-        if($item['id_kichthuoc'] && $item['id_mausac']) {
+        // Giảm số lượng trong bảng sanpham_bien_the
+        if($item['id_bienthe']) {
             $update_variant = $conn->prepare("
-                UPDATE sanpham_chitiet 
-                SET soluong = GREATEST(0, soluong - ?) 
-                WHERE id_sanpham = ? AND id_kichthuoc = ? AND id_mausac = ?
+                UPDATE sanpham_bien_the 
+                SET so_luong = GREATEST(0, so_luong - ?) 
+                WHERE id = ?
             ");
-            $update_variant->bind_param("iiii", $item['soluong'], $item['id_sanpham'], 
-                                              $item['id_kichthuoc'], $item['id_mausac']);
+            $update_variant->bind_param("ii", $item['soluong'], $item['id_bienthe']);
             $update_variant->execute();
         }
         
         // Cập nhật tổng số lượng trong bảng sản phẩm
         $update_total = $conn->prepare("
-            UPDATE sanpham SET soluong = (
-                SELECT COALESCE(SUM(soluong), 0) 
-                FROM sanpham_chitiet 
+            UPDATE sanpham SET so_luong = (
+                SELECT COALESCE(SUM(so_luong), 0) 
+                FROM sanpham_bien_the 
                 WHERE id_sanpham = ?
-            ) WHERE id_sanpham = ?
+            ) WHERE id = ?
         ");
         $update_total->bind_param("ii", $item['id_sanpham'], $item['id_sanpham']);
         $update_total->execute();
@@ -203,21 +206,18 @@ function updateProductQuantity($order_id) {
 }
 ?>
 
-<!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
-
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php">Trang chủ</a></li>
             <li class="breadcrumb-item"><a href="orders.php">Quản lý đơn hàng</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Đơn hàng #<?php echo $order_id; ?></li>
+            <li class="breadcrumb-item active" aria-current="page">Đơn hàng #<?php echo $order['ma_donhang']; ?></li>
         </ol>
     </nav>
     
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Chi tiết đơn hàng #<?php echo $order_id; ?></h1>
+        <h1 class="h2">Chi tiết đơn hàng #<?php echo $order['ma_donhang']; ?></h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
                 <a href="print-order.php?id=<?php echo $order_id; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
@@ -237,29 +237,32 @@ function updateProductQuantity($order_id) {
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Thông tin đơn hàng</h5>
-                    <span class="badge bg-<?php echo $order_statuses[$order['trangthai']]['badge']; ?>">
-                        <?php echo $order_statuses[$order['trangthai']]['name']; ?>
+                    <span class="badge bg-<?php echo $order_statuses[$order['trang_thai_don_hang']]['badge']; ?>">
+                        <?php echo $order_statuses[$order['trang_thai_don_hang']]['name']; ?>
                     </span>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <p><strong>Mã đơn hàng:</strong> #<?php echo $order_id; ?></p>
-                            <p><strong>Ngày đặt:</strong> <?php echo date('d/m/Y H:i', strtotime($order['ngaytao'])); ?></p>
-                            <p><strong>Cập nhật lần cuối:</strong> <?php echo date('d/m/Y H:i', strtotime($order['ngaycapnhat'])); ?></p>
+                            <p><strong>Mã đơn hàng:</strong> <?php echo $order['ma_donhang']; ?></p>
+                            <p><strong>Ngày đặt:</strong> <?php echo date('d/m/Y H:i', strtotime($order['ngay_dat'])); ?></p>
+                            <p><strong>Cập nhật lần cuối:</strong> <?php echo date('d/m/Y H:i', strtotime($order['ngay_capnhat'] ?? $order['ngay_dat'])); ?></p>
                             <p>
                                 <strong>Phương thức thanh toán:</strong> 
                                 <?php 
-                                    echo isset($payment_methods[$order['phuongthucthanhtoan']]) ? 
-                                         $payment_methods[$order['phuongthucthanhtoan']] : 
-                                         $order['phuongthucthanhtoan']; 
+                                    echo isset($payment_methods[$order['phuong_thuc_thanh_toan']]) ? 
+                                         $payment_methods[$order['phuong_thuc_thanh_toan']] : 
+                                         $order['phuong_thuc_thanh_toan']; 
                                 ?>
                             </p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Tổng tiền hàng:</strong> <?php echo number_format($order['tongtien'] - $order['phivanchuyen'], 0, ',', '.'); ?>₫</p>
-                            <p><strong>Phí vận chuyển:</strong> <?php echo number_format($order['phivanchuyen'], 0, ',', '.'); ?>₫</p>
-                            <p><strong>Tổng thanh toán:</strong> <span class="fw-bold text-danger"><?php echo number_format($order['tongtien'], 0, ',', '.'); ?>₫</span></p>
+                            <p><strong>Tổng tiền hàng:</strong> <?php echo number_format($order['tong_tien'] - $order['phi_vanchuyen'], 0, ',', '.'); ?>₫</p>
+                            <p><strong>Phí vận chuyển:</strong> <?php echo number_format($order['phi_vanchuyen'], 0, ',', '.'); ?>₫</p>
+                            <?php if ($order['giam_gia'] > 0): ?>
+                                <p><strong>Giảm giá:</strong> <?php echo number_format($order['giam_gia'], 0, ',', '.'); ?>₫</p>
+                            <?php endif; ?>
+                            <p><strong>Tổng thanh toán:</strong> <span class="fw-bold text-danger"><?php echo number_format($order['thanh_tien'], 0, ',', '.'); ?>₫</span></p>
                         </div>
                     </div>
                     
@@ -269,7 +272,7 @@ function updateProductQuantity($order_id) {
                             <div class="d-flex">
                                 <select class="form-select" id="orderStatus" name="status">
                                     <?php foreach ($order_statuses as $status_id => $status): ?>
-                                        <option value="<?php echo $status_id; ?>" <?php echo ($status_id == $order['trangthai']) ? 'selected' : ''; ?>>
+                                        <option value="<?php echo $status_id; ?>" <?php echo ($status_id == $order['trang_thai_don_hang']) ? 'selected' : ''; ?>>
                                             <?php echo $status['name']; ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -279,10 +282,10 @@ function updateProductQuantity($order_id) {
                         </div>
                     </form>
                     
-                    <?php if (!empty($order['ghichu'])): ?>
+                    <?php if (!empty($order['ghi_chu'])): ?>
                     <div class="alert alert-info mt-3">
                         <h6 class="alert-heading">Ghi chú từ khách hàng:</h6>
-                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($order['ghichu'])); ?></p>
+                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($order['ghi_chu'])); ?></p>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -295,7 +298,7 @@ function updateProductQuantity($order_id) {
                     <h5 class="card-title mb-0">Thông tin khách hàng</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>Họ tên:</strong> <?php echo htmlspecialchars($order['tennguoinhan']); ?></p>
+                    <p><strong>Họ tên:</strong> <?php echo htmlspecialchars($order['ho_ten']); ?></p>
                     <p><strong>Điện thoại:</strong> <?php echo htmlspecialchars($order['sodienthoai']); ?></p>
                     <?php if (!empty($order['email'])): ?>
                     <p><strong>Email:</strong> <?php echo htmlspecialchars($order['email']); ?></p>
@@ -313,14 +316,15 @@ function updateProductQuantity($order_id) {
                         ?>
                     </p>
                     
-                    <?php if ($order['id_nguoidung']): ?>
+                    <?php if ($order['id_user']): ?>
                     <hr>
                     <div class="d-flex align-items-center">
-                        <img src="<?php echo !empty($order['anh_dai_dien']) ? '../uploads/users/' . $order['anh_dai_dien'] : '../images/avatar-default.png'; ?>" 
-                             class="rounded-circle me-2" width="40" height="40">
+                        <div class="rounded-circle me-2 bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-person"></i>
+                        </div>
                         <div>
                             <div class="fw-bold"><?php echo htmlspecialchars($order['tenkhachhang']); ?></div>
-                            <a href="customer-detail.php?id=<?php echo $order['id_nguoidung']; ?>" class="btn btn-sm btn-outline-primary mt-1">
+                            <a href="customer-detail.php?id=<?php echo $order['id_user']; ?>" class="btn btn-sm btn-outline-primary mt-1">
                                 <i class="bi bi-person"></i> Xem hồ sơ
                             </a>
                         </div>
@@ -344,7 +348,7 @@ function updateProductQuantity($order_id) {
                             <th width="5%">#</th>
                             <th width="10%">Hình ảnh</th>
                             <th width="35%">Tên sản phẩm</th>
-                            <th width="15%">Kích thước & Màu sắc</th>
+                            <th width="15%">Thuộc tính</th>
                             <th width="10%">Đơn giá</th>
                             <th width="10%">Số lượng</th>
                             <th width="15%">Thành tiền</th>
@@ -359,7 +363,7 @@ function updateProductQuantity($order_id) {
                             <td><?php echo $counter++; ?></td>
                             <td>
                                 <?php if (!empty($item['hinhanh'])): ?>
-                                <img src="../uploads/products/<?php echo $item['hinhanh']; ?>" alt="<?php echo htmlspecialchars($item['tensanpham']); ?>" class="product-image">
+                                <img src="../uploads/products/<?php echo $item['hinhanh']; ?>" alt="<?php echo htmlspecialchars($item['tensanpham']); ?>" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
                                 <?php else: ?>
                                 <div class="bg-light text-center p-2">
                                     <i class="bi bi-image text-muted"></i>
@@ -368,22 +372,26 @@ function updateProductQuantity($order_id) {
                             </td>
                             <td>
                                 <a href="../product-detail.php?id=<?php echo $item['id_sanpham']; ?>" target="_blank" class="text-decoration-none">
-                                    <?php echo htmlspecialchars($item['tensanpham'] ?: 'Sản phẩm không tồn tại'); ?>
+                                    <?php echo htmlspecialchars($item['tensp'] ?: $item['tensanpham'] ?: 'Sản phẩm không tồn tại'); ?>
                                 </a>
                             </td>
                             <td>
-                                <?php if (!empty($item['tenkichthuoc'])): ?>
-                                <div><strong>Size:</strong> <?php echo htmlspecialchars($item['tenkichthuoc']); ?></div>
-                                <?php endif; ?>
-                                
-                                <?php if (!empty($item['tenmau'])): ?>
-                                <div>
-                                    <strong>Màu:</strong>
-                                    <?php if (!empty($item['mamau'])): ?>
-                                    <span class="color-swatch d-inline-block me-1" style="background-color: <?php echo $item['mamau']; ?>"></span>
+                                <?php if (!empty($item['thuoc_tinh'])): ?>
+                                    <?php echo htmlspecialchars($item['thuoc_tinh']); ?>
+                                <?php else: ?>
+                                    <?php if (!empty($item['ten_kichthuoc'])): ?>
+                                    <div><strong>Size:</strong> <?php echo htmlspecialchars($item['ten_kichthuoc']); ?></div>
                                     <?php endif; ?>
-                                    <?php echo htmlspecialchars($item['tenmau']); ?>
-                                </div>
+                                    
+                                    <?php if (!empty($item['ten_mau'])): ?>
+                                    <div>
+                                        <strong>Màu:</strong>
+                                        <?php if (!empty($item['ma_mau'])): ?>
+                                        <span class="color-swatch d-inline-block me-1" style="width:14px;height:14px;background-color:<?php echo $item['ma_mau']; ?>;border-radius:50%;border:1px solid #ddd"></span>
+                                        <?php endif; ?>
+                                        <?php echo htmlspecialchars($item['ten_mau']); ?>
+                                    </div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo number_format($item['gia'], 0, ',', '.'); ?>₫</td>
@@ -401,15 +409,21 @@ function updateProductQuantity($order_id) {
                     <tfoot class="table-light">
                         <tr>
                             <td colspan="6" class="text-end"><strong>Tổng tiền hàng:</strong></td>
-                            <td><?php echo number_format($order['tongtien'] - $order['phivanchuyen'], 0, ',', '.'); ?>₫</td>
+                            <td><?php echo number_format($order['tong_tien'] - $order['phi_vanchuyen'], 0, ',', '.'); ?>₫</td>
                         </tr>
                         <tr>
                             <td colspan="6" class="text-end"><strong>Phí vận chuyển:</strong></td>
-                            <td><?php echo number_format($order['phivanchuyen'], 0, ',', '.'); ?>₫</td>
+                            <td><?php echo number_format($order['phi_vanchuyen'], 0, ',', '.'); ?>₫</td>
                         </tr>
+                        <?php if ($order['giam_gia'] > 0): ?>
+                        <tr>
+                            <td colspan="6" class="text-end"><strong>Giảm giá:</strong></td>
+                            <td><?php echo number_format($order['giam_gia'], 0, ',', '.'); ?>₫</td>
+                        </tr>
+                        <?php endif; ?>
                         <tr>
                             <td colspan="6" class="text-end"><strong>Tổng thanh toán:</strong></td>
-                            <td class="fw-bold text-danger"><?php echo number_format($order['tongtien'], 0, ',', '.'); ?>₫</td>
+                            <td class="fw-bold text-danger"><?php echo number_format($order['thanh_tien'], 0, ',', '.'); ?>₫</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -476,7 +490,7 @@ function updateProductQuantity($order_id) {
                 <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#sendEmailModal">
                     <i class="bi bi-envelope"></i> Gửi email
                 </button>
-                <?php if ($order['trangthai'] != 5): // Nếu chưa hủy ?>
+                <?php if ($order['trang_thai_don_hang'] != 5): // Nếu chưa hủy ?>
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
                     <i class="bi bi-x-circle"></i> Hủy đơn hàng
                 </button>
@@ -557,7 +571,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Alert before status change if needed
     document.querySelector("form[name=update-status]")?.addEventListener("submit", function(e) {
         const newStatus = document.getElementById("orderStatus").value;
-        const originalStatus = "' . $order['trangthai'] . '";
+        const originalStatus = "' . $order['trang_thai_don_hang'] . '";
         
         // Add any specific validation or confirmation here if needed
     });

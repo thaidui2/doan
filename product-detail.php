@@ -1,29 +1,6 @@
 <?php
 session_start();
 include('config/config.php');
-if (empty($color_images)) {
-    echo "<!-- DEBUG: Không tìm thấy ảnh màu nào cho sản phẩm này trong bảng mausac_hinhanh -->";
-}
-// Kiểm tra và tạo bảng mausac_hinhanh nếu chưa tồn tại
-$check_table = $conn->query("SHOW TABLES LIKE 'mausac_hinhanh'");
-if ($check_table->num_rows == 0) {
-    $create_table = "CREATE TABLE IF NOT EXISTS `mausac_hinhanh` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `id_sanpham` int(11) NOT NULL,
-      `id_mausac` int(11) NOT NULL,
-      `hinhanh` varchar(255) NOT NULL,
-      PRIMARY KEY (`id`),
-      KEY `id_sanpham` (`id_sanpham`),
-      KEY `id_mausac` (`id_mausac`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-    $conn->query($create_table);
-}
-// Kiểm tra và tự động thêm cột hinhanh_mau nếu chưa tồn tại
-$check_column = $conn->query("SHOW COLUMNS FROM sanpham_chitiet LIKE 'hinhanh_mau'");
-if ($check_column->num_rows == 0) {
-    $alter_table = "ALTER TABLE sanpham_chitiet ADD hinhanh_mau VARCHAR(255) NULL AFTER soluong";
-    $conn->query($alter_table);
-}
 
 // Lấy ID sản phẩm từ URL
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -34,18 +11,20 @@ if ($product_id <= 0) {
     exit();
 }
 
-// Cập nhật lượt xem sản phẩm
-$update_view = $conn->prepare("UPDATE sanpham SET luotxem = luotxem + 1 WHERE id_sanpham = ?");
-$update_view->bind_param("i", $product_id);
-$update_view->execute();
+// Cập nhật lượt xem sản phẩm (nếu cột tồn tại)
+$check_column = $conn->query("SHOW COLUMNS FROM sanpham LIKE 'luotxem'");
+if ($check_column->num_rows > 0) {
+    $update_view = $conn->prepare("UPDATE sanpham SET luotxem = luotxem + 1 WHERE id = ?");
+    $update_view->bind_param("i", $product_id);
+    $update_view->execute();
+}
 
-// Modify query to remove references to seller information (id_nguoiban)
+// Cập nhật truy vấn để phù hợp với cấu trúc bảng mới
 $product_stmt = $conn->prepare("
-    SELECT sp.*, lsp.tenloai, th.tenthuonghieu, th.logo AS thuonghieu_logo
+    SELECT sp.*, dm.ten as ten_danhmuc
     FROM sanpham sp
-    LEFT JOIN loaisanpham lsp ON sp.id_loai = lsp.id_loai
-    LEFT JOIN thuonghieu th ON sp.id_thuonghieu = th.id_thuonghieu
-    WHERE sp.id_sanpham = ? AND sp.trangthai = 1
+    LEFT JOIN danhmuc dm ON sp.id_danhmuc = dm.id
+    WHERE sp.id = ? AND sp.trangthai = 1
 ");
 $product_stmt->bind_param("i", $product_id);
 $product_stmt->execute();
@@ -59,16 +38,17 @@ if ($result->num_rows === 0) {
 
 $product = $result->fetch_assoc();
 
-// Thêm vào file product-detail.php sau khi lấy thông tin sản phẩm
-
-// Lấy các biến thể sản phẩm (kích thước, màu sắc, hình ảnh)
+// Lấy các biến thể sản phẩm (kích thước, màu sắc)
 $variants_stmt = $conn->prepare("
-    SELECT spct.*, kt.tenkichthuoc, ms.tenmau, ms.mamau
-    FROM sanpham_chitiet spct
-    JOIN kichthuoc kt ON spct.id_kichthuoc = kt.id_kichthuoc
-    JOIN mausac ms ON spct.id_mausac = ms.id_mausac
-    WHERE spct.id_sanpham = ?
-    ORDER BY kt.tenkichthuoc, ms.tenmau
+    SELECT sbt.*, 
+           kt.gia_tri as ten_kichthuoc, 
+           ms.gia_tri as ten_mau, 
+           ms.ma_mau as ma_mau
+    FROM sanpham_bien_the sbt
+    JOIN thuoc_tinh kt ON sbt.id_size = kt.id AND kt.loai = 'size'
+    JOIN thuoc_tinh ms ON sbt.id_mau = ms.id AND ms.loai = 'color'
+    WHERE sbt.id_sanpham = ?
+    ORDER BY kt.gia_tri, ms.gia_tri
 ");
 $variants_stmt->bind_param("i", $product_id);
 $variants_stmt->execute();
@@ -76,30 +56,31 @@ $variants_result = $variants_stmt->get_result();
 
 $product_variants = [];
 $available_sizes_by_color = []; // Lưu trữ sizes có sẵn cho từng màu
-$color_images = []; // Lưu trữ hình ảnh cho từng màu
 $color_info = []; // Thông tin về màu sắc (tên, mã màu)
 
 while ($variant = $variants_result->fetch_assoc()) {
     $product_variants[] = $variant;
     
     // Lưu size có sẵn cho từng màu
-    if (!isset($available_sizes_by_color[$variant['id_mausac']])) {
-        $available_sizes_by_color[$variant['id_mausac']] = [];
+    if (!isset($available_sizes_by_color[$variant['id_mau']])) {
+        $available_sizes_by_color[$variant['id_mau']] = [];
     }
-    $available_sizes_by_color[$variant['id_mausac']][] = $variant['id_kichthuoc'];
+    $available_sizes_by_color[$variant['id_mau']][] = $variant['id_size'];
     
     // Lưu thông tin màu
-    $color_info[$variant['id_mausac']] = [
-        'name' => $variant['tenmau'],
-        'code' => $variant['mamau']
+    $color_info[$variant['id_mau']] = [
+        'name' => $variant['ten_mau'],
+        'code' => $variant['ma_mau']
     ];
 }
 
-// Truy vấn bảng mausac_hinhanh để lấy ảnh màu
+// Lấy hình ảnh theo màu từ bảng sanpham_hinhanh
+$color_images = [];
 $color_images_stmt = $conn->prepare("
-    SELECT id_mausac, hinhanh 
-    FROM mausac_hinhanh 
-    WHERE id_sanpham = ?
+    SELECT sh.id_bienthe, sh.hinhanh, sbt.id_mau
+    FROM sanpham_hinhanh sh
+    JOIN sanpham_bien_the sbt ON sh.id_bienthe = sbt.id
+    WHERE sh.id_sanpham = ?
 ");
 $color_images_stmt->bind_param("i", $product_id);
 $color_images_stmt->execute();
@@ -107,16 +88,16 @@ $color_images_result = $color_images_stmt->get_result();
 
 // Đọc dữ liệu ảnh màu
 while ($color_image = $color_images_result->fetch_assoc()) {
-    $color_images[$color_image['id_mausac']] = $color_image['hinhanh'];
+    $color_images[$color_image['id_mau']] = $color_image['hinhanh'];
 }
 
 // Lấy các kích thước có sẵn
 $sizes_stmt = $conn->prepare("
-    SELECT DISTINCT kt.id_kichthuoc, kt.tenkichthuoc
-    FROM sanpham_chitiet spct
-    JOIN kichthuoc kt ON spct.id_kichthuoc = kt.id_kichthuoc
-    WHERE spct.id_sanpham = ? AND spct.soluong > 0
-    ORDER BY kt.tenkichthuoc
+    SELECT DISTINCT tt.id, tt.gia_tri as ten_kichthuoc
+    FROM sanpham_bien_the sbt
+    JOIN thuoc_tinh tt ON sbt.id_size = tt.id
+    WHERE sbt.id_sanpham = ? AND sbt.so_luong > 0 AND tt.loai = 'size'
+    ORDER BY tt.gia_tri
 ");
 $sizes_stmt->bind_param("i", $product_id);
 $sizes_stmt->execute();
@@ -124,11 +105,11 @@ $sizes_result = $sizes_stmt->get_result();
 
 // Lấy các màu có sẵn
 $colors_stmt = $conn->prepare("
-    SELECT DISTINCT ms.id_mausac, ms.tenmau, ms.mamau
-    FROM sanpham_chitiet spct
-    JOIN mausac ms ON spct.id_mausac = ms.id_mausac
-    WHERE spct.id_sanpham = ? AND spct.soluong > 0
-    ORDER BY ms.tenmau
+    SELECT DISTINCT tt.id, tt.gia_tri as ten_mau, tt.ma_mau
+    FROM sanpham_bien_the sbt
+    JOIN thuoc_tinh tt ON sbt.id_mau = tt.id
+    WHERE sbt.id_sanpham = ? AND sbt.so_luong > 0 AND tt.loai = 'color'
+    ORDER BY tt.gia_tri
 ");
 $colors_stmt->bind_param("i", $product_id);
 $colors_stmt->execute();
@@ -136,11 +117,11 @@ $colors_result = $colors_stmt->get_result();
 
 // Lấy đánh giá sản phẩm
 $reviews_stmt = $conn->prepare("
-    SELECT dg.*, u.tenuser, u.anh_dai_dien
+    SELECT dg.*, u.ten as ten_user, u.anh_dai_dien
     FROM danhgia dg
-    JOIN users u ON dg.id_user = u.id_user
-    WHERE dg.id_sanpham = ? AND dg.trangthai = 1
-    ORDER BY dg.ngaydanhgia DESC
+    JOIN users u ON dg.id_user = u.id
+    WHERE dg.id_sanpham = ? AND dg.trang_thai = 1
+    ORDER BY dg.ngay_danhgia DESC
     LIMIT 10
 ");
 $reviews_stmt->bind_param("i", $product_id);
@@ -150,45 +131,111 @@ $reviews_result = $reviews_stmt->get_result();
 // Lấy số lượng đánh giá theo số sao
 $rating_counts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
 $rating_stmt = $conn->prepare("
-    SELECT diemdanhgia, COUNT(*) as count
+    SELECT diem, COUNT(*) as count
     FROM danhgia
-    WHERE id_sanpham = ? AND trangthai = 1
-    GROUP BY diemdanhgia
+    WHERE id_sanpham = ? AND trang_thai = 1
+    GROUP BY diem
 ");
 $rating_stmt->bind_param("i", $product_id);
 $rating_stmt->execute();
 $rating_result = $rating_stmt->get_result();
 
 while ($row = $rating_result->fetch_assoc()) {
-    $rating_counts[$row['diemdanhgia']] = $row['count'];
+    $rating_counts[$row['diem']] = $row['count'];
 }
 
 $total_ratings = array_sum($rating_counts);
 
 // Lấy sản phẩm liên quan (cùng danh mục)
 $related_stmt = $conn->prepare("
-    SELECT id_sanpham, tensanpham, gia, giagoc, hinhanh, diemdanhgia_tb
+    SELECT id, tensanpham, gia, giagoc, hinhanh
     FROM sanpham
-    WHERE id_loai = ? AND id_sanpham != ? AND trangthai = 1
+    WHERE id_danhmuc = ? AND id != ? AND trangthai = 1
     ORDER BY RAND()
     LIMIT 4
 ");
-$related_stmt->bind_param("ii", $product['id_loai'], $product_id);
+$related_stmt->bind_param("ii", $product['id_danhmuc'], $product_id);
 $related_stmt->execute();
 $related_result = $related_stmt->get_result();
 
 // Xử lý các hình ảnh phụ
 $images = [];
-if (!empty($product['hinhanh'])) {
+$images_stmt = $conn->prepare("
+    SELECT hinhanh, la_anh_chinh
+    FROM sanpham_hinhanh
+    WHERE id_sanpham = ? AND id_bienthe IS NULL
+    ORDER BY la_anh_chinh DESC
+");
+$images_stmt->bind_param("i", $product_id);
+$images_stmt->execute();
+$images_result = $images_stmt->get_result();
+
+while ($img = $images_result->fetch_assoc()) {
+    $images[] = $img['hinhanh'];
+}
+
+// Thêm hình ảnh chính vào đầu mảng nếu chưa có ảnh nào
+if (empty($images) && !empty($product['hinhanh'])) {
     $images[] = $product['hinhanh'];
 }
-if (!empty($product['hinhanh_phu'])) {
-    $additional_images = explode('|', $product['hinhanh_phu']);
-    foreach ($additional_images as $img) {
-        if (!empty(trim($img))) {
-            $images[] = trim($img);
-        }
+
+// Tính điểm đánh giá trung bình nếu không có sẵn trong sản phẩm
+if (!isset($product['diemdanhgia_tb'])) {
+    $avg_rating_query = $conn->prepare("
+        SELECT AVG(diem) as avg_rating, COUNT(*) as rating_count
+        FROM danhgia 
+        WHERE id_sanpham = ? AND trang_thai = 1
+    ");
+    $avg_rating_query->bind_param("i", $product_id);
+    $avg_rating_query->execute();
+    $avg_result = $avg_rating_query->get_result()->fetch_assoc();
+    
+    $avg_rating = $avg_result['avg_rating'] ?? 0;
+    $review_count = $avg_result['rating_count'] ?? 0;
+} else {
+    $avg_rating = $product['diemdanhgia_tb'];
+    $review_count = $product['soluong_danhgia'] ?? 0;
+}
+
+// Lấy tổng số lượng của sản phẩm từ các biến thể
+if (!isset($product['so_luong'])) {
+    $total_stock_query = $conn->prepare("
+        SELECT SUM(so_luong) as total_stock
+        FROM sanpham_bien_the
+        WHERE id_sanpham = ?
+    ");
+    $total_stock_query->bind_param("i", $product_id);
+    $total_stock_query->execute();
+    $total_stock_result = $total_stock_query->get_result()->fetch_assoc();
+    $total_stock = $total_stock_result['total_stock'] ?? 0;
+} else {
+    $total_stock = $product['so_luong'];
+}
+
+// Get product rating data - calculate if not available in product array
+$avg_rating = 0;
+$rating_count = 0;
+
+// Check if we need to calculate the average rating
+if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
+    // Query to get average rating and count from danhgia table
+    $rating_query = $conn->prepare("
+        SELECT AVG(diem) AS avg_rating, COUNT(*) AS rating_count 
+        FROM danhgia 
+        WHERE id_sanpham = ? AND trang_thai = 1
+    ");
+    $rating_query->bind_param("i", $product_id);
+    $rating_query->execute();
+    $rating_result = $rating_query->get_result();
+    
+    if ($rating_result && $rating_data = $rating_result->fetch_assoc()) {
+        $avg_rating = round($rating_data['avg_rating'] ?? 0, 1);
+        $rating_count = $rating_data['rating_count'] ?? 0;
     }
+} else {
+    // Use values from product if available
+    $avg_rating = round($product['diemdanhgia_tb'] ?? 0, 1);
+    $rating_count = $product['soluong_danhgia'] ?? 0;
 }
 ?>
 
@@ -232,8 +279,7 @@ if (!empty($product['hinhanh_phu'])) {
 <?php 
     require_once('includes/head.php');
     require_once('includes/header.php');
-    
-    ?>
+?>
     
     <!-- Data để JavaScript có thể sử dụng -->
     <script type="application/json" id="available-sizes-data">
@@ -250,7 +296,7 @@ if (!empty($product['hinhanh_phu'])) {
             $variant_stock = [];
             $variants_result->data_seek(0);
             while ($variant = $variants_result->fetch_assoc()) {
-                $variant_stock[$variant['id_kichthuoc']][$variant['id_mausac']] = $variant['soluong'];
+                $variant_stock[$variant['id_size']][$variant['id_mau']] = $variant['so_luong'];
             }
             echo json_encode($variant_stock);
         ?>
@@ -262,7 +308,7 @@ if (!empty($product['hinhanh_phu'])) {
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="index.php">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="sanpham.php">Sản phẩm</a></li>
-                <li class="breadcrumb-item"><a href="sanpham.php?category=<?php echo $product['id_loai']; ?>"><?php echo htmlspecialchars($product['tenloai']); ?></a></li>
+                <li class="breadcrumb-item"><a href="sanpham.php?category=<?php echo $product['id_danhmuc']; ?>"><?php echo htmlspecialchars($product['ten_danhmuc']); ?></a></li>
                 <li class="breadcrumb-item active" aria-current="page"><?php echo htmlspecialchars($product['tensanpham']); ?></li>
             </ol>
         </nav>
@@ -370,7 +416,7 @@ if (!empty($product['hinhanh_phu'])) {
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <?php if ($product['noibat'] == 1): ?>
+                        <?php if (isset($product['noibat']) && $product['noibat'] == 1): ?>
                             <div class="mb-2">
                                 <span class="badge bg-warning text-dark">Sản phẩm nổi bật</span>
                             </div>
@@ -380,7 +426,7 @@ if (!empty($product['hinhanh_phu'])) {
                         
                         <!-- Category and Brand -->
                         <div class="mb-3">
-                            <span class="text-muted">Danh mục: <a href="sanpham.php?category=<?php echo $product['id_loai']; ?>"><?php echo htmlspecialchars($product['tenloai']); ?></a></span>
+                            <span class="text-muted">Danh mục: <a href="sanpham.php?category=<?php echo $product['id_danhmuc']; ?>"><?php echo htmlspecialchars($product['ten_danhmuc']); ?></a></span>
                             
                             <?php if (!empty($product['tenthuonghieu'])): ?>
                             <span class="mx-2">|</span>
@@ -392,11 +438,10 @@ if (!empty($product['hinhanh_phu'])) {
                         <div class="mb-3 d-flex align-items-center">
                             <div class="rating">
                                 <?php
-                                $rating = $product['diemdanhgia_tb'];
                                 for ($i = 1; $i <= 5; $i++) {
-                                    if ($i <= $rating) {
+                                    if ($i <= $avg_rating) {
                                         echo '<i class="bi bi-star-fill"></i>';
-                                    } elseif ($i - $rating < 1 && $i - $rating > 0) {
+                                    } elseif ($i - $avg_rating < 1 && $i - $avg_rating > 0) {
                                         echo '<i class="bi bi-star-half"></i>';
                                     } else {
                                         echo '<i class="bi bi-star"></i>';
@@ -404,15 +449,15 @@ if (!empty($product['hinhanh_phu'])) {
                                 }
                                 ?>
                             </div>
-                            <span class="ms-2"><?php echo number_format($rating, 1); ?>/5</span>
-                            <span class="ms-2 text-muted">(<?php echo $product['soluong_danhgia']; ?> đánh giá)</span>
+                            <span class="ms-2"><?php echo number_format($avg_rating, 1); ?>/5</span>
+                            <span class="ms-2 text-muted">(<?php echo $review_count; ?> đánh giá)</span>
                         </div>
                         
                         <!-- Stock Status -->
                         <div class="mb-3">
-                            <?php if ($product['soluong'] > 0): ?>
+                            <?php if ($total_stock > 0): ?>
                                 <span class="badge bg-success">Còn hàng</span>
-                                <span class="ms-2 text-muted">Còn <strong><?php echo $product['soluong']; ?></strong> sản phẩm</span>
+                                <span class="ms-2 text-muted">Còn <strong><?php echo $total_stock; ?></strong> sản phẩm</span>
                             <?php else: ?>
                                 <span class="badge bg-danger">Hết hàng</span>
                             <?php endif; ?>
@@ -421,8 +466,8 @@ if (!empty($product['hinhanh_phu'])) {
                             $sold_query = $conn->prepare("
                                 SELECT COALESCE(SUM(dc.soluong), 0) as total_sold
                                 FROM donhang_chitiet dc
-                                JOIN donhang d ON dc.id_donhang = d.id_donhang
-                                WHERE dc.id_sanpham = ? AND d.trangthai = 4
+                                JOIN donhang d ON dc.id_donhang = d.id
+                                WHERE dc.id_sanpham = ? AND d.trang_thai_don_hang = 4
                             ");
                             $sold_query->bind_param("i", $product_id);
                             $sold_query->execute();
@@ -458,9 +503,9 @@ if (!empty($product['hinhanh_phu'])) {
                                 ?>
                                     <button type="button" 
                                             class="btn btn-outline-dark size-btn" 
-                                            data-size-id="<?php echo $size['id_kichthuoc']; ?>"
-                                            data-size-name="<?php echo htmlspecialchars($size['tenkichthuoc']); ?>">
-                                        <?php echo htmlspecialchars($size['tenkichthuoc']); ?>
+                                            data-size-id="<?php echo $size['id']; ?>"
+                                            data-size-name="<?php echo htmlspecialchars($size['ten_kichthuoc']); ?>">
+                                        <?php echo htmlspecialchars($size['ten_kichthuoc']); ?>
                                     </button>
                                 <?php endwhile; ?>
                             </div>
@@ -475,14 +520,14 @@ if (!empty($product['hinhanh_phu'])) {
                                 <?php $colors_result->data_seek(0); ?>
                                 <?php while ($color = $colors_result->fetch_assoc()): ?>
                                     <div class="color-option" 
-                                         data-color-id="<?php echo $color['id_mausac']; ?>"
-                                         data-color-name="<?php echo htmlspecialchars($color['tenmau']); ?>"
-                                         data-color-code="<?php echo htmlspecialchars($color['mamau']); ?>"
-                                         <?php if (!isset($available_sizes_by_color[$color['id_mausac']])): ?>
+                                         data-color-id="<?php echo $color['id']; ?>"
+                                         data-color-name="<?php echo htmlspecialchars($color['ten_mau']); ?>"
+                                         data-color-code="<?php echo htmlspecialchars($color['ma_mau']); ?>"
+                                         <?php if (!isset($available_sizes_by_color[$color['id']])): ?>
                                          data-disabled="true"
                                          <?php endif; ?>>
-                                        <div class="color-circle" style="background-color: <?php echo htmlspecialchars($color['mamau']); ?>"></div>
-                                        <span class="color-name"><?php echo htmlspecialchars($color['tenmau']); ?></span>
+                                        <div class="color-circle" style="background-color: <?php echo htmlspecialchars($color['ma_mau']); ?>"></div>
+                                        <span class="color-name"><?php echo htmlspecialchars($color['ten_mau']); ?></span>
                                     </div>
                                 <?php endwhile; ?>
                             </div>
@@ -494,12 +539,85 @@ if (!empty($product['hinhanh_phu'])) {
                         </div>
                         <?php endif; ?>
                         
+                        <!-- Material Information -->
+                        <?php
+                        $material_info = '';
+                        // Get material info from product's common attributes if available
+                        if (!empty($product['thuoc_tinh_chung'])) {
+                            $common_attrs = json_decode($product['thuoc_tinh_chung'], true);
+                            if (is_array($common_attrs) && isset($common_attrs['chat_lieu'])) {
+                                $material_info = $common_attrs['chat_lieu'];
+                            }
+                        }
+                        
+                        // Alternative: Try to get material from thuoc_tinh table
+                        if (empty($material_info)) {
+                            // Fixed query that doesn't rely on id_material column
+                            $material_query = $conn->prepare("
+                                SELECT tt.gia_tri 
+                                FROM thuoc_tinh tt
+                                WHERE tt.loai = 'material'
+                                LIMIT 1
+                            ");
+                            
+                            if ($material_query) {
+                                $material_query->execute();
+                                $material_result = $material_query->get_result();
+                                if ($material_result && $material_result->num_rows > 0) {
+                                    $material_info = $material_result->fetch_assoc()['gia_tri'];
+                                }
+                            }
+                        }
+                        
+                        if (!empty($material_info)):
+                        ?>
+                        <div class="mb-4">
+                            <h5 class="mb-2">Chất liệu:</h5>
+                            <p class="mb-0"><?php echo htmlspecialchars($material_info); ?></p>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <!-- Brand Information -->
+                        <?php if (!empty($product['tenthuonghieu']) || !empty($product['id_thuonghieu'])): ?>
+                        <div class="mb-4">
+                            <h5 class="mb-2">Thương hiệu:</h5>
+                            <?php if (!empty($product['tenthuonghieu'])): ?>
+                                <p class="mb-0">
+                                    <?php if (!empty($product['id_thuonghieu'])): ?>
+                                        <a href="sanpham.php?brand=<?php echo $product['id_thuonghieu']; ?>" class="text-decoration-none">
+                                            <?php echo htmlspecialchars($product['tenthuonghieu']); ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <?php echo htmlspecialchars($product['tenthuonghieu']); ?>
+                                    <?php endif; ?>
+                                </p>
+                            <?php else: ?>
+                                <?php
+                                // Try to get brand info if not already loaded
+                                $brand_query = $conn->prepare("
+                                    SELECT ten FROM thuong_hieu WHERE id = ? LIMIT 1
+                                ");
+                                if ($brand_query) {
+                                    $brand_query->bind_param("i", $product['id_thuonghieu']);
+                                    $brand_query->execute();
+                                    $brand_result = $brand_query->get_result();
+                                    if ($brand_result && $brand_result->num_rows > 0) {
+                                        $brand_name = $brand_result->fetch_assoc()['ten'];
+                                        echo '<p class="mb-0"><a href="sanpham.php?brand=' . $product['id_thuonghieu'] . '" class="text-decoration-none">' . 
+                                             htmlspecialchars($brand_name) . '</a></p>';
+                                    }
+                                }
+                                ?>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                        
                         <!-- Quantity -->
                         <div class="mb-4">
                             <h5 class="mb-2">Số lượng:</h5>
                             <div class="quantity-control">
                                 <div class="quantity-btn" id="decreaseBtn">-</div>
-                                <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="<?php echo $product['soluong']; ?>">
+                                <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="<?php echo $total_stock; ?>">
                                 <div class="quantity-btn" id="increaseBtn">+</div>
                             </div>
                         </div>
@@ -541,7 +659,7 @@ if (!empty($product['hinhanh_phu'])) {
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
-                                    Đánh giá (<?php echo $product['soluong_danhgia']; ?>)
+                                    Đánh giá (<?php echo $review_count; ?>)
                                 </button>
                             </li>
                         </ul>
@@ -563,13 +681,13 @@ if (!empty($product['hinhanh_phu'])) {
                                 <div class="row mb-4">
                                     <div class="col-md-4">
                                         <div class="text-center mb-4">
-                                            <div class="display-4 fw-bold"><?php echo number_format($rating, 1); ?></div>
+                                            <div class="display-4 fw-bold"><?php echo number_format($avg_rating, 1); ?></div>
                                             <div class="rating mt-2">
                                                 <?php
                                                 for ($i = 1; $i <= 5; $i++) {
-                                                    if ($i <= $rating) {
+                                                    if ($i <= $avg_rating) {
                                                         echo '<i class="bi bi-star-fill"></i>';
-                                                    } elseif ($i - $rating < 1 && $i - $rating > 0) {
+                                                    } elseif ($i - $avg_rating < 1 && $i - $avg_rating > 0) {
                                                         echo '<i class="bi bi-star-half"></i>';
                                                     } else {
                                                         echo '<i class="bi bi-star"></i>';
@@ -606,7 +724,7 @@ if (!empty($product['hinhanh_phu'])) {
                                                 <div class="d-flex mb-3">
                                                     <div class="me-3">
                                                         <?php if (!empty($review['anh_dai_dien'])): ?>
-                                                            <img src="uploads/users/<?php echo $review['anh_dai_dien']; ?>" alt="<?php echo htmlspecialchars($review['tenuser']); ?>" class="rounded-circle" width="50" height="50">
+                                                            <img src="uploads/users/<?php echo $review['anh_dai_dien']; ?>" alt="<?php echo htmlspecialchars($review['ten_user']); ?>" class="rounded-circle" width="50" height="50">
                                                         <?php else: ?>
                                                             <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px">
                                                                 <i class="bi bi-person fs-4"></i>
@@ -614,25 +732,25 @@ if (!empty($product['hinhanh_phu'])) {
                                                         <?php endif; ?>
                                                     </div>
                                                     <div>
-                                                        <h6 class="mb-1"><?php echo htmlspecialchars($review['tenuser']); ?></h6>
+                                                        <h6 class="mb-1"><?php echo htmlspecialchars($review['ten_user']); ?></h6>
                                                         <div class="d-flex align-items-center small">
                                                             <div class="rating">
                                                                 <?php
                                                                 for ($i = 1; $i <= 5; $i++) {
-                                                                    echo $i <= $review['diemdanhgia'] ? '<i class="bi bi-star-fill"></i>' : '<i class="bi bi-star"></i>';
+                                                                    echo $i <= $review['diem'] ? '<i class="bi bi-star-fill"></i>' : '<i class="bi bi-star"></i>';
                                                                 }
                                                                 ?>
                                                             </div>
-                                                            <span class="text-muted ms-2"><?php echo date('d/m/Y', strtotime($review['ngaydanhgia'])); ?></span>
+                                                            <span class="text-muted ms-2"><?php echo date('d/m/Y', strtotime($review['ngay_danhgia'])); ?></span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 
-                                                <p><?php echo nl2br(htmlspecialchars($review['noidung'])); ?></p>
+                                                <p><?php echo nl2br(htmlspecialchars($review['noi_dung'])); ?></p>
                                                 
-                                                <?php if (!empty($review['hinhanh'])): ?>
+                                                <?php if (!empty($review['hinh_anh'])): ?>
                                                 <div class="mt-2">
-                                                    <img src="uploads/reviews/<?php echo $review['hinhanh']; ?>" alt="Review Image" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="uploads/reviews/<?php echo $review['hinh_anh']; ?>" alt="Review Image" class="img-thumbnail" style="max-height: 150px;">
                                                 </div>
                                                 <?php endif; ?>
                                             </div>
@@ -670,19 +788,41 @@ if (!empty($product['hinhanh_phu'])) {
                     <?php while ($related = $related_result->fetch_assoc()): ?>
                     <div class="col-md-3 mb-4">
                         <div class="card related-product-card h-100">
-                            <a href="product-detail.php?id=<?php echo $related['id_sanpham']; ?>" class="text-decoration-none">
+                            <a href="product-detail.php?id=<?php echo $related['id']; ?>" class="text-decoration-none">
                                 <img src="<?php echo !empty($related['hinhanh']) ? 'uploads/products/' . $related['hinhanh'] : 'images/no-image.png'; ?>" class="card-img-top" alt="<?php echo htmlspecialchars($related['tensanpham']); ?>">
                             </a>
                             <div class="card-body">
                                 <h6 class="card-title">
-                                    <a href="product-detail.php?id=<?php echo $related['id_sanpham']; ?>" class="text-decoration-none text-dark">
+                                    <a href="product-detail.php?id=<?php echo $related['id']; ?>" class="text-decoration-none text-dark">
                                         <?php echo htmlspecialchars($related['tensanpham']); ?>
                                     </a>
                                 </h6>
                                 <div class="small mb-2">
                                     <div class="rating">
                                         <?php
-                                        $rel_rating = $related['diemdanhgia_tb'];
+                                        // Fix for undefined diemdanhgia_tb array key
+                                        $rel_rating = 0;
+                                        
+                                        // Try to get the rating from the database if not in product array
+                                        if (!isset($related['diemdanhgia_tb'])) {
+                                            // Query to get average rating for this related product
+                                            $rel_rating_query = $conn->prepare("
+                                                SELECT AVG(diem) as avg_rating 
+                                                FROM danhgia 
+                                                WHERE id_sanpham = ? AND trang_thai = 1
+                                            ");
+                                            $rel_rating_query->bind_param("i", $related['id']);
+                                            $rel_rating_query->execute();
+                                            $rel_rating_result = $rel_rating_query->get_result();
+                                            
+                                            if ($rel_rating_result && $rel_rating_data = $rel_rating_result->fetch_assoc()) {
+                                                $rel_rating = round($rel_rating_data['avg_rating'] ?? 0, 1);
+                                            }
+                                        } else {
+                                            $rel_rating = $related['diemdanhgia_tb'];
+                                        }
+                                        
+                                        // Generate the stars based on rating
                                         for ($i = 1; $i <= 5; $i++) {
                                             if ($i <= $rel_rating) {
                                                 echo '<i class="bi bi-star-fill"></i>';
@@ -695,6 +835,7 @@ if (!empty($product['hinhanh_phu'])) {
                                         ?>
                                     </div>
                                 </div>
+                                
                                 <div class="d-flex justify-content-between align-items-center">
                                     <strong class="text-danger"><?php echo number_format($related['gia'], 0, ',', '.'); ?>₫</strong>
                                     <?php if (!empty($related['giagoc']) && $related['giagoc'] > $related['gia']): ?>
@@ -703,7 +844,7 @@ if (!empty($product['hinhanh_phu'])) {
                                 </div>
                             </div>
                             <div class="card-footer bg-white border-top-0">
-                                <button class="btn btn-sm btn-outline-dark w-100 add-to-cart-btn" data-product-id="<?php echo $related['id_sanpham']; ?>">
+                                <button class="btn btn-sm btn-outline-dark w-100 add-to-cart-btn" data-product-id="<?php echo $related['id']; ?>">
                                     <i class="bi bi-cart-plus"></i> Thêm vào giỏ
                                 </button>
                             </div>

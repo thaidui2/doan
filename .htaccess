@@ -1,0 +1,12 @@
+# Điều hướng các URL cũ sang URL mới tương thích với cấu trúc database mới
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /bug_shop/
+
+    # Chuyển các URL sản phẩm từ id_loai sang id_danhmuc
+    RewriteCond %{QUERY_STRING} ^(.*)id_loai=([0-9]+)(.*)$
+    RewriteRule ^sanpham\.php$ sanpham.php?id_danhmuc=%2 [QSA,L]
+
+    # Các quy tắc điều hướng khác có thể được thêm vào đây
+</IfModule>

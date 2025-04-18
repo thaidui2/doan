@@ -29,8 +29,8 @@ if(isset($_POST['login'])) {
     if(empty($username) || empty($password)) {
         $error = "Vui lòng điền đầy đủ thông tin đăng nhập!";
     } else {
-        // Kiểm tra thông tin đăng nhập trong database
-        $stmt = $conn->prepare("SELECT * FROM admin WHERE taikhoan = ?");
+        // Kiểm tra thông tin đăng nhập trong database - Sử dụng bảng users thay vì admin
+        $stmt = $conn->prepare("SELECT * FROM users WHERE taikhoan = ? AND (loai_user = 1 OR loai_user = 2)");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -42,14 +42,14 @@ if(isset($_POST['login'])) {
             if(password_verify($password, $admin['matkhau'])) {
                 // Đăng nhập thành công
                 $_SESSION['admin_logged_in'] = true;
-                $_SESSION['admin_id'] = $admin['id_admin'];
-                $_SESSION['admin_username'] = $admin['taikhoan'];  // thay vì ten_dang_nhap
-                $_SESSION['admin_name'] = $admin['ten_admin'];  // thay vì ho_ten
-                $_SESSION['admin_level'] = $admin['cap_bac'];
+                $_SESSION['admin_id'] = $admin['id']; // Thay đổi: id_admin -> id
+                $_SESSION['admin_username'] = $admin['taikhoan'];
+                $_SESSION['admin_name'] = $admin['ten']; // Thay đổi: ten_admin -> ten
+                $_SESSION['admin_level'] = $admin['loai_user']; // Thay đổi: cap_bac -> loai_user
                 
                 // Cập nhật thời gian đăng nhập cuối
-                $update_stmt = $conn->prepare("UPDATE admin SET lan_dang_nhap_cuoi = NOW() WHERE id_admin = ?");
-                $update_stmt->bind_param("i", $admin['id_admin']);
+                $update_stmt = $conn->prepare("UPDATE users SET lan_dang_nhap_cuoi = NOW() WHERE id = ?"); // Thay đổi: admin -> users, id_admin -> id
+                $update_stmt->bind_param("i", $admin['id']); // Thay đổi: id_admin -> id
                 $update_stmt->execute();
                 
                 // Redirect to the intended page or to the dashboard

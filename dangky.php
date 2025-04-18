@@ -9,16 +9,16 @@ if (!isset($conn) || $conn->connect_error) {
 session_start();
 
 // Nếu người dùng đã đăng nhập, chuyển hướng về trang chủ
-if(isset($_SESSION['user_id'])) {
+if(isset($_SESSION['user']['id'])) { // Cập nhật theo cấu trúc session mới
     header("Location: index.php");
     exit();
 }
 
 // Khởi tạo biến
 $taikhoan = "";
-$tenuser = "";
-$sdt="";
-$diachi="";
+$ten = ""; // Đổi tenuser thành ten
+$sodienthoai = ""; // Đổi sdt thành sodienthoai
+$diachi = "";
 $email = "";
 $error = "";
 $success = "";
@@ -27,15 +27,15 @@ $success = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Lấy và làm sạch dữ liệu
     $taikhoan = trim($_POST['taikhoan']);
-    $tenuser = trim($_POST['tenuser']);
-    $sdt = trim($_POST['sdt']);
+    $ten = trim($_POST['tenuser']); // Vẫn giữ tên field form là tenuser
+    $sodienthoai = trim($_POST['sdt']); // Vẫn giữ tên field form là sdt
     $diachi = trim($_POST['diachi']);
     $email = !empty($_POST['email']) ? trim($_POST['email']) : null;
     $matkhau = trim($_POST['matkhau']);
     $confirm_password = trim($_POST['confirm_password']);
 
     // Kiểm tra các trường
-    if(empty($taikhoan) || empty($tenuser) || empty($matkhau) || empty($confirm_password) || empty($sdt) || empty($diachi)) {
+    if(empty($taikhoan) || empty($ten) || empty($matkhau) || empty($confirm_password) || empty($sodienthoai) || empty($diachi)) {
         $error = "Vui lòng điền đầy đủ thông tin.";
     } elseif(empty($email)) {
         $error = "Email không được để trống.";
@@ -43,13 +43,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Mật khẩu xác nhận không khớp.";
     } elseif(strlen($matkhau) < 6) {
         $error = "Mật khẩu phải có ít nhất 6 ký tự.";
-    } elseif(!preg_match('/^[0-9]{10}$/', $sdt)) {
+    } elseif(!preg_match('/^[0-9]{10}$/', $sodienthoai)) {
         $error = "Số điện thoại phải gồm 10 chữ số.";
     } elseif($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Định dạng email không hợp lệ.";
     } else {
         // Kiểm tra taikhoan đã tồn tại chưa
-        $check_user = $conn->prepare("SELECT id_user FROM users WHERE taikhoan = ?");
+        $check_user = $conn->prepare("SELECT id FROM users WHERE taikhoan = ?"); // Đổi id_user thành id
         $check_user->bind_param("s", $taikhoan);
         $check_user->execute();
         $result = $check_user->get_result();
@@ -57,9 +57,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if($result->num_rows > 0) {
             $error = "Tên tài khoản đã được sử dụng.";
         } else {
-            // Kiểm tra sdt đã tồn tại chưa (nên kiểm tra trước email vì sdt là bắt buộc)
-            $check_sdt = $conn->prepare("SELECT id_user FROM users WHERE sdt = ?");
-            $check_sdt->bind_param("s", $sdt);
+            // Kiểm tra sodienthoai đã tồn tại chưa
+            $check_sdt = $conn->prepare("SELECT id FROM users WHERE sodienthoai = ?"); // Đổi sdt thành sodienthoai
+            $check_sdt->bind_param("s", $sodienthoai);
             $check_sdt->execute();
             $result = $check_sdt->get_result();
             
@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $error = "Số điện thoại đã được sử dụng.";
             } else if($email) {
                 // Kiểm tra email đã tồn tại chưa (nếu có)
-                $check_email = $conn->prepare("SELECT id_user FROM users WHERE email = ?");
+                $check_email = $conn->prepare("SELECT id FROM users WHERE email = ?"); // Đổi id_user thành id
                 $check_email->bind_param("s", $email);
                 $check_email->execute();
                 $result = $check_email->get_result();
@@ -78,15 +78,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // Mã hóa mật khẩu
                     $hashed_password = password_hash($matkhau, PASSWORD_DEFAULT);
                     
-                    // Thêm người dùng vào database
-                    $insert = $conn->prepare("INSERT INTO users (taikhoan, matkhau, email, sdt, diachi, tenuser, loai_user) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    // Thêm người dùng vào database - Cập nhật tên cột
+                    $insert = $conn->prepare("INSERT INTO users (taikhoan, matkhau, email, sodienthoai, diachi, ten, loai_user) VALUES (?, ?, ?, ?, ?, ?, ?)");
                     $loai_user = 0; // Mặc định là người mua
-                    $insert->bind_param("ssssssi", $taikhoan, $hashed_password, $email, $sdt, $diachi, $tenuser, $loai_user);
+                    $insert->bind_param("ssssssi", $taikhoan, $hashed_password, $email, $sodienthoai, $diachi, $ten, $loai_user);
                     
                     if($insert->execute()) {
                         $success = "Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.";
                         // Làm trống dữ liệu form
-                        $taikhoan = $tenuser = $sdt = $diachi = $email = "";
+                        $taikhoan = $ten = $sodienthoai = $diachi = $email = "";
                     } else {
                         $error = "Đã xảy ra lỗi: " . $insert->error . " (Mã lỗi: " . $insert->errno . ")";
                     }
@@ -133,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="mb-3">
                                 <label for="sdt" class="form-label">Số điện thoại</label>
                                 <input type="tel" class="form-control" id="sdt" name="sdt" 
-                                       value="<?php echo htmlspecialchars($sdt ?? ''); ?>" required>
+                                       value="<?php echo htmlspecialchars($sodienthoai ?? ''); ?>" required>
                             </div>
                             
                             <div class="mb-3">
@@ -145,7 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="mb-3">
                                 <label for="tenuser" class="form-label">Họ và tên</label>
                                 <input type="text" class="form-control" id="tenuser" name="tenuser" 
-                                       value="<?php echo htmlspecialchars($tenuser ?? ''); ?>" required>
+                                       value="<?php echo htmlspecialchars($ten ?? ''); ?>" required>
                             </div>
                             
                             <div class="mb-3">
