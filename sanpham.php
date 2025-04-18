@@ -4,6 +4,8 @@ include('config/config.php');
 
 // Xử lý tìm kiếm và lọc
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$min_price = isset($_GET['min_price']) && is_numeric($_GET['min_price']) ? (float)$_GET['min_price'] : null;
+$max_price = isset($_GET['max_price']) && is_numeric($_GET['max_price']) ? (float)$_GET['max_price'] : null;
 
 // Xây dựng câu truy vấn SQL với điều kiện lọc
 $sql_conditions = ["sp.trangthai = 1"]; // Chỉ lấy sản phẩm đang bán
@@ -32,9 +34,22 @@ elseif (isset($_GET['id_loai'])) {
     $category_id = (int)$_GET['id_loai'];
 }
 
+// Lọc theo khoảng giá
+if ($min_price !== null) {
+    $sql_conditions[] = "sp.gia >= ?";
+    $params[] = $min_price;
+    $param_types .= "d";
+}
+
+if ($max_price !== null) {
+    $sql_conditions[] = "sp.gia <= ?";
+    $params[] = $max_price;
+    $param_types .= "d";
+}
+
 // Nếu có category_id, thêm điều kiện vào câu truy vấn
 if ($category_id) {
-    // Thêm điều kiện WHERE vào câu SQL của bạn
+    // Thêm điều kiện WHERE vào câu SQL
     $sql_conditions[] = "sp.id_danhmuc = ?";
     $param_types .= "i";
     $params[] = $category_id;
@@ -53,12 +68,12 @@ if ($category_id) {
 $brand = isset($_GET['brand']) ? (int)$_GET['brand'] : 0;
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 
-// Comment out brand filter since thuonghieu table doesn't exist
-/* if($brand > 0) {
-    $sql_conditions[] = "sp.id_thuonghieu = ?";
+// Lọc theo thương hiệu
+if($brand > 0) {
+    $sql_conditions[] = "sp.thuonghieu = ?";
     $params[] = $brand;
     $param_types .= "i";
-} */
+}
 
 // Cập nhật câu truy vấn SQL để lấy thêm thông tin đánh giá
 $sql = "SELECT sp.*, dm.ten as tendanhmuc, 
@@ -125,6 +140,7 @@ $count_result = $count_stmt->get_result();
 $row = $count_result->fetch_assoc();
 $total_items = $row['total'];
 $total_pages = ceil($total_items / $items_per_page);
+
 // Truy vấn lấy sản phẩm với phân trang
 $sql .= " LIMIT ? OFFSET ?";
 $params[] = $items_per_page;
@@ -136,9 +152,10 @@ if(!empty($params)) {
 }
 $stmt->execute();
 $products = $stmt->get_result();
+
 // Lấy danh sách danh mục
 $categories = $conn->query("SELECT * FROM danhmuc WHERE trang_thai = 1 ORDER BY ten");
-// Lấy danh sách thương hiệu
+// Lấy danh sách thương hiệu từ bảng thuong_hieu thay vì thuonghieu
 /* $brands = $conn->query("SELECT * FROM thuonghieu WHERE trangthai = 1 ORDER BY tenthuonghieu"); */
 if (!isset($category)) {
     $category = [];
@@ -175,11 +192,10 @@ if (!isset($category)) {
     <link rel="stylesheet" href="css/sanpham.css">
 </head>
 <body>
-<?php 
+<?php
     require_once('includes/head.php');
     require_once('includes/header.php');
     ?>
-    
     <!-- Thay đổi phần container chính -->
     <div class="container mt-4">
         <!-- Breadcrumb cải tiến -->
@@ -255,11 +271,15 @@ if (!isset($category)) {
                                 <div class="price-range-inputs">
                                     <div class="price-input">
                                         <label class="form-label small">Từ</label>
-                                        <input type="number" class="form-control form-control-sm" name="min_price" value="" min="0" placeholder="0 ₫">
+                                        <input type="number" class="form-control form-control-sm" name="min_price" 
+                                               value="<?php echo $min_price !== null ? $min_price : ''; ?>" 
+                                               min="0" placeholder="0 ₫">
                                     </div>
                                     <div class="price-input">
                                         <label class="form-label small">Đến</label>
-                                        <input type="number" class="form-control form-control-sm" name="max_price" value="" placeholder="1.000.000 ₫">
+                                        <input type="number" class="form-control form-control-sm" name="max_price" 
+                                               value="<?php echo $max_price !== null ? $max_price : ''; ?>" 
+                                               placeholder="1.000.000 ₫">
                                     </div>
                                 </div>
                             </div>
@@ -271,10 +291,10 @@ if (!isset($category)) {
                                         <input class="form-check-input" type="radio" name="category" id="cat-all" value="0" <?php echo $category_id == 0 ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="cat-all">Tất cả danh mục</label>
                                     </div>
-                                    <?php 
+                                    <?php
                                     // Reset con trỏ kết quả về vị trí đầu tiên
                                     if ($categories && $categories->num_rows > 0) {
-                                        $categories->data_seek(0); 
+                                        $categories->data_seek(0);
                                         while($cat = $categories->fetch_assoc()): 
                                             $cat_name = isset($cat['ten']) ? $cat['ten'] : (isset($cat['tenloai']) ? $cat['tenloai'] : 'Unknown');
                                     ?>
@@ -294,31 +314,28 @@ if (!isset($category)) {
                                 <label class="form-label">Thương hiệu</label>
                                 <div class="scrollable-list">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="brand" id="brand-all" value="0" checked>
+                                        <input class="form-check-input" type="radio" name="brand" id="brand-all" value="0" <?php echo $brand == 0 ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="brand-all">Tất cả thương hiệu</label>
                                     </div>
-                                    <?php 
-                                    // Brand iteration is commented out since thuonghieu table doesn't exist
-                                    // We previously tried to use $brands which is undefined
-                                    /*
-                                    if (isset($brands) && $brands->num_rows > 0) {
-                                        $brands->data_seek(0);
+                                    <?php
+                                    // Get brands from thuong_hieu table
+                                    $brands = $conn->query("SELECT id, ten FROM thuong_hieu ORDER BY ten");
+                                    if ($brands && $brands->num_rows > 0) {
                                         while($brand_item = $brands->fetch_assoc()): 
                                     ?>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="brand" id="brand-<?php echo $brand_item['id_thuonghieu']; ?>" value="<?php echo $brand_item['id_thuonghieu']; ?>" <?php echo $brand == $brand_item['id_thuonghieu'] ? 'checked' : ''; ?>>
-                                        <label class="form-check-label" for="brand-<?php echo $brand_item['id_thuonghieu']; ?>">
-                                            <?php echo htmlspecialchars($brand_item['tenthuonghieu']); ?>
+                                        <input class="form-check-input" type="radio" name="brand" id="brand-<?php echo $brand_item['id']; ?>" 
+                                               value="<?php echo $brand_item['id']; ?>" <?php echo $brand == $brand_item['id'] ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="brand-<?php echo $brand_item['id']; ?>">
+                                            <?php echo htmlspecialchars($brand_item['ten']); ?>
                                         </label>
                                     </div>
                                     <?php 
-                                        endwhile;
+                                        endwhile; 
                                     }
-                                    */
                                     ?>
                                 </div>
                             </div>
-                            
                             <!-- Sort (Hidden on desktop, shown on mobile) -->
                             <div class="mb-3 d-md-none">
                                 <label for="sort-mobile" class="form-label">Sắp xếp theo</label>
@@ -332,10 +349,8 @@ if (!isset($category)) {
                                     <option value="popular" <?php echo $sort == 'popular' ? 'selected' : ''; ?>>Phổ biến nhất</option>
                                 </select>
                             </div>
-                            
                             <!-- Hidden sort for desktop -->
                             <input type="hidden" id="sort-hidden" name="sort" value="<?php echo $sort; ?>">
-                            
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-filter me-1"></i> Lọc sản phẩm
@@ -348,14 +363,12 @@ if (!isset($category)) {
                     </div>
                 </div>
             </div>
-            
             <!-- Product Grid -->
             <div class="col-lg-9">
                 <?php if($products->num_rows > 0): ?>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <p class="m-0 text-muted">Hiển thị <?php echo $products->num_rows; ?> / <?php echo $total_items; ?> sản phẩm</p>
                     </div>
-                    
                     <div class="row g-3 grid-view" id="products-container">
                         <?php while($product = $products->fetch_assoc()): ?>
     <?php
@@ -364,10 +377,8 @@ if (!isset($category)) {
     if ($product['giagoc'] > 0 && $product['giagoc'] > $product['gia']) {
         $discount_percent = round(100 - ($product['gia'] / $product['giagoc'] * 100));
     }
-    
     // Xử lý đường dẫn hình ảnh - FIX IMAGE DISPLAY
     $img_path = 'images/no-image.jpg'; // Default image path
-    
     if (!empty($product['hinhanh'])) {
         // Check if path already contains 'uploads/'
         if (strpos($product['hinhanh'], 'uploads/') === 0) {
@@ -381,14 +392,12 @@ if (!isset($category)) {
             }
         }
     }
-    
     // If still no valid image, try to get from sanpham_hinhanh table
     if ($img_path === 'images/no-image.jpg') {
         $img_stmt = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? AND la_anh_chinh = 1 LIMIT 1");
         $img_stmt->bind_param("i", $product['id']);
         $img_stmt->execute();
         $img_result = $img_stmt->get_result();
-        
         if ($img_result->num_rows === 0) {
             // If no main image, get any image
             $img_stmt = $conn->prepare("SELECT hinhanh FROM sanpham_hinhanh WHERE id_sanpham = ? LIMIT 1");
@@ -396,7 +405,6 @@ if (!isset($category)) {
             $img_stmt->execute();
             $img_result = $img_stmt->get_result();
         }
-        
         if ($img_result->num_rows > 0) {
             $img_row = $img_result->fetch_assoc();
             if (!empty($img_row['hinhanh'])) {
@@ -413,82 +421,79 @@ if (!isset($category)) {
     }
     ?>
     <div class="col-6 col-md-4">
-    <div class="card product-card h-100">
-        <div class="product-badge-container">
-            <?php if ($discount_percent > 0): ?>
-            <div class="product-badge bg-danger text-white">
-                <i class="bi bi-tags-fill me-1"></i>-<?php echo $discount_percent; ?>%
-            </div>
-            <?php endif; ?>
-            <?php if ($product['da_ban'] > 10): ?>
-            <div class="product-badge bg-primary text-white">
-                <i class="bi bi-star-fill me-1"></i>HOT
-            </div>
-            <?php endif; ?>
-        </div>
-        <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="product-img-container">
-            <img src="<?php echo $img_path; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($product['tensanpham']); ?>" 
-                 onerror="this.onerror=null; this.src='images/no-image.jpg';">
-            <div class="overlay-effect"></div>
-        </a>
-        <div class="product-action">
-            <button class="btn btn-light btn-sm rounded-circle wishlist-button" 
-                    data-product-id="<?php echo $product['id']; ?>" 
-                    title="Thêm vào yêu thích">
-                <i class="bi bi-heart"></i>
-            </button>
-        </div>
-        <div class="card-body">
-            <div class="product-category"><?php echo htmlspecialchars($product['tendanhmuc']); ?></div>
-            <h5 class="card-title product-title">
-                <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="text-decoration-none text-dark">
-                    <?php echo htmlspecialchars($product['tensanpham']); ?>
-                </a>
-            </h5>
-            <div class="rating">
-                <?php 
-                // Lấy điểm rating nếu có
-                $rating = isset($product['diem_trung_binh']) ? round($product['diem_trung_binh']) : 0;
-                for ($i = 1; $i <= 5; $i++): 
-                ?>
-                    <i class="bi bi-star<?php echo ($i <= $rating) ? '-fill' : ''; ?> text-warning"></i>
-                <?php endfor; ?>
-                <span class="ms-1 text-muted small">(<?php echo $product['soluong_danhgia'] ?? 0; ?>)</span>
-            </div>
-            <div class="price-wrapper">
-                <span class="text-danger fw-bold"><?php echo number_format($product['gia'], 0, ',', '.'); ?>₫</span>
-                <?php if ($product['giagoc'] > 0 && $product['giagoc'] > $product['gia']): ?>
-                <small class="text-decoration-line-through text-muted ms-2"><?php echo number_format($product['giagoc'], 0, ',', '.'); ?>₫</small>
+        <div class="card product-card h-100">
+            <div class="product-badge-container">
+                <?php if ($discount_percent > 0): ?>
+                <div class="product-badge bg-danger text-white">
+                    <i class="bi bi-tags-fill me-1"></i>-<?php echo $discount_percent; ?>%
+                </div>
                 <?php endif; ?>
+                <?php if ($product['da_ban'] > 10): ?>
+                <div class="product-badge bg-primary text-white">
+                    <i class="bi bi-star-fill me-1"></i>HOT
+                </div>
+                <?php endif; ?>
+            </div>
+            <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="product-img-container">
+                <img src="<?php echo $img_path; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($product['tensanpham']); ?>" 
+                     onerror="this.onerror=null; this.src='images/no-image.jpg';">
+                <div class="overlay-effect"></div>
+            </a>
+            <div class="product-action">
+                <button class="btn btn-light btn-sm rounded-circle wishlist-button" 
+                        data-product-id="<?php echo $product['id']; ?>" 
+                        title="Thêm vào yêu thích">
+                    <i class="bi bi-heart"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="product-category"><?php echo htmlspecialchars($product['tendanhmuc']); ?></div>
+                <h5 class="card-title product-title">
+                    <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="text-decoration-none text-dark">
+                        <?php echo htmlspecialchars($product['tensanpham']); ?>
+                    </a>
+                </h5>
+                <div class="rating">
+                    <?php 
+                    // Lấy điểm rating nếu có
+                    $rating = isset($product['diem_trung_binh']) ? round($product['diem_trung_binh']) : 0;
+                    for ($i = 1; $i <= 5; $i++): 
+                    ?>
+                    <i class="bi bi-star<?php echo ($i <= $rating) ? '-fill' : ''; ?> text-warning"></i>
+                    <?php endfor; ?>
+                    <span class="ms-1 text-muted small">(<?php echo $product['soluong_danhgia'] ?? 0; ?>)</span>
+                </div>
+                <div class="price-wrapper">
+                    <span class="text-danger fw-bold"><?php echo number_format($product['gia'], 0, ',', '.'); ?>₫</span>
+                    <?php if ($product['giagoc'] > 0 && $product['giagoc'] > $product['gia']): ?>
+                    <small class="text-decoration-line-through text-muted ms-2"><?php echo number_format($product['giagoc'], 0, ',', '.'); ?>₫</small>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
-</div>
                         <?php endwhile; ?>
                     </div>
-                    
                     <!-- Phân trang cải tiến -->
                     <?php if($total_pages > 1): ?>
                     <nav class="mt-4" aria-label="Page navigation">
                         <ul class="pagination justify-content-center">
                             <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
-                                <a class="page-link" href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category_id; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?>" aria-label="Previous">
+                                <a class="page-link" href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category_id; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?><?php echo $min_price !== null ? '&min_price=' . $min_price : ''; ?><?php echo $max_price !== null ? '&max_price=' . $max_price : ''; ?>" aria-label="Previous">
                                     <i class="bi bi-chevron-left"></i>
                                 </a>
                             </li>
-                            
                             <?php
                             $max_pages_show = 5; // Số trang hiển thị tối đa
                             $pages_to_show = min($total_pages, $max_pages_show);
                             $half_max = floor($pages_to_show / 2);
-                            
                             // Tính start và end page
                             $start_page = max(1, $page - $half_max);
                             $end_page = min($total_pages, $start_page + $pages_to_show - 1);
-                            
                             // Điều chỉnh lại start_page nếu cần
-                            $start_page = max(1, $end_page - $pages_to_show + 1);
-                            
+                            if ($start_page > 1) {
+                                $start_page = max(1, $end_page - $pages_to_show + 1);
+                            }
                             // Hiển thị "..." và trang đầu tiên nếu cần
                             if ($start_page > 1) {
                                 echo '<li class="page-item"><a class="page-link" href="?page=1&search=' . urlencode($search) . '&category=' . $category_id . '&brand=' . $brand . '&sort=' . $sort . '">1</a></li>';
@@ -496,12 +501,13 @@ if (!isset($category)) {
                                     echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
                                 }
                             }
-                            
                             // Hiển thị các trang giữa
                             for ($i = $start_page; $i <= $end_page; $i++) {
-                                echo '<li class="page-item ' . ($i == $page ? 'active' : '') . '"><a class="page-link" href="?page=' . $i . '&search=' . urlencode($search) . '&category=' . $category_id . '&brand=' . $brand . '&sort=' . $sort . '">' . $i . '</a></li>';
+                                $price_params = '';
+                                if ($min_price !== null) $price_params .= '&min_price=' . $min_price;
+                                if ($max_price !== null) $price_params .= '&max_price=' . $max_price;
+                                echo '<li class="page-item ' . ($i == $page ? 'active' : '') . '"><a class="page-link" href="?page=' . $i . '&search=' . urlencode($search) . '&category=' . $category_id . '&brand=' . $brand . '&sort=' . $sort . $price_params . '">' . $i . '</a></li>';
                             }
-                            
                             // Hiển thị "..." và trang cuối cùng nếu cần
                             if ($end_page < $total_pages) {
                                 if ($end_page < $total_pages - 1) {
@@ -510,16 +516,14 @@ if (!isset($category)) {
                                 echo '<li class="page-item"><a class="page-link" href="?page=' . $total_pages . '&search=' . urlencode($search) . '&category=' . $category_id . '&brand=' . $brand . '&sort=' . $sort . '">' . $total_pages . '</a></li>';
                             }
                             ?>
-                            
                             <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
-                                <a class="page-link" href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category_id; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?>" aria-label="Next">
+                                <a class="page-link" href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo $category_id; ?>&brand=<?php echo $brand; ?>&sort=<?php echo $sort; ?><?php echo $min_price !== null ? '&min_price=' . $min_price : ''; ?><?php echo $max_price !== null ? '&max_price=' . $max_price : ''; ?>" aria-label="Next">
                                     <i class="bi bi-chevron-right"></i>
                                 </a>
                             </li>
                         </ul>
                     </nav>
                     <?php endif; ?>
-                    
                 <?php else: ?>
                     <!-- Empty state -->
                     <div class="alert alert-info text-center py-5">
@@ -531,7 +535,6 @@ if (!isset($category)) {
             </div>
         </div>
     </div>
-
     <!-- Modal Quick View -->
     <div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -551,7 +554,6 @@ if (!isset($category)) {
             </div>
         </div>
     </div>
-
     <script src="js\sanpham.js"></script>
     <?php include('includes/footer.php'); ?>
 </body>

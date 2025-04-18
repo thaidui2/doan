@@ -1,88 +1,80 @@
 <?php
 session_start();
-include('config/config.php');
-include('config/vnpay_config.php');
+include 'config/config.php';
+include 'config/vnpay_config.php';
 
-if (!isset($_SESSION['payment_info']) || !is_array($_SESSION['payment_info'])) {
-    $_SESSION['error_message'] = 'Không tìm thấy thông tin thanh toán!';
+// Check if payment info exists in session
+if (!isset($_SESSION['payment_info'])) {
+    $_SESSION['error_message'] = 'Không tìm thấy thông tin thanh toán';
     header('Location: thanhtoan.php');
     exit();
 }
 
 $payment_info = $_SESSION['payment_info'];
 
-// Updated to use ma_donhang instead of order_id for compatibility
-$order_id = isset($payment_info['ma_donhang']) ? $payment_info['ma_donhang'] : 'BUG' . time(); 
-$amount = $payment_info['amount']; // Số tiền thanh toán
-$order_desc = isset($payment_info['order_desc']) ? $payment_info['order_desc'] : 'Thanh toan don hang Bug Shop';
-$bank_code = ''; // Để trống để hiển thị tất cả ngân hàng
-$language = 'vn';
+// Get order information
+$order_id = $payment_info['id'];
+$order_code = $payment_info['ma_donhang'];
+$amount = $payment_info['amount'];
+$order_desc = $payment_info['order_desc'] ?? 'Thanh toán đơn hàng';
 
-// Log payment information for debugging
-error_log("VNPAY Payment Request: " . json_encode($payment_info));
+// Allow guest checkout - don't require user to be logged in
+$user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
-// Tạo tham số cho VNPAY
-$vnp_Params = array(
+// Create VNPAY payment URL
+$vnp_TxnRef = $order_code; // Mã đơn hàng
+$vnp_OrderInfo = 'Thanh toan don hang ' . $order_code . ' tai Bug Shop';
+$vnp_OrderType = 'billpayment';
+$vnp_Amount = $amount * 100; // Amount in VND, converted to smallest unit
+$vnp_Locale = 'vn';
+$vnp_BankCode = '';
+$vnp_IpAddr = $_SERVER['REMOTE_ADDR'];
+
+// Create the payment parameter array with correct values
+$inputData = array(
     "vnp_Version" => "2.1.0",
-    "vnp_Command" => "pay",
     "vnp_TmnCode" => $vnp_TmnCode,
-    "vnp_Amount" => $amount * 100, // VNPAY yêu cầu số tiền * 100 (để xử lý 2 số thập phân)
+    "vnp_Amount" => $vnp_Amount,
+    "vnp_Command" => "pay",
     "vnp_CreateDate" => date('YmdHis'),
     "vnp_CurrCode" => "VND",
-    "vnp_IpAddr" => $_SERVER['REMOTE_ADDR'],
-    "vnp_Locale" => $language,
-    "vnp_OrderInfo" => $order_desc,
-    "vnp_OrderType" => "other",
-    "vnp_ReturnUrl" => $vnp_Returnurl,
-    "vnp_TxnRef" => $order_id,
+    "vnp_IpAddr" => $vnp_IpAddr,
+    "vnp_Locale" => $vnp_Locale,
+    "vnp_OrderInfo" => $vnp_OrderInfo,
+    "vnp_OrderType" => $vnp_OrderType,
+    "vnp_ReturnUrl" => $vnp_ReturnUrl,
+    "vnp_TxnRef" => $vnp_TxnRef,
 );
 
-if (!empty($bank_code)) {
-    $vnp_Params["vnp_BankCode"] = $bank_code;
+// Add bank code if specified
+if (isset($vnp_BankCode) && $vnp_BankCode != "") {
+    $inputData['vnp_BankCode'] = $vnp_BankCode;
 }
 
-// Sắp xếp các tham số theo thứ tự a-z
-ksort($vnp_Params);
+// Log the payment data for debugging
+error_log("VNPAY Payment Data: " . json_encode($inputData));
 
-// Tạo chuỗi query từ mảng params
-$query = "";
-$i = 0;
-$hashdata = "";
+// Create the payment URL using the helper function
+$vnp_Url = vnpay_create_payment_url($inputData, $vnp_HashSecret, $vnp_Url);
 
-foreach ($vnp_Params as $key => $value) {
-    if ($i == 1) {
-        $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
-    } else {
-        $hashdata .= urlencode($key) . "=" . urlencode($value);
-        $i = 1;
-    }
-    $query .= urlencode($key) . "=" . urlencode($value) . '&';
+// Save payment attempt to database for tracking
+try {
+    $savePayment = $conn->prepare("
+        INSERT INTO payment_logs (order_id, user_id, payment_method, amount, payment_data, status, created_at)
+        VALUES (?, ?, 'vnpay', ?, ?, 'pending', NOW())
+    ");
+    $paymentData = json_encode($inputData);
+    $savePayment->bind_param("iids", $order_id, $user_id, $amount, $paymentData);
+    $savePayment->execute();
+} catch (Exception $e) {
+    error_log("Error saving payment log: " . $e->getMessage());
+    // Continue anyway - this is just for logging
 }
 
-// Xóa dấu & cuối cùng
-$query = substr($query, 0, strlen($query) - 1);
+// Debug the final URL
+error_log("VNPAY Final URL: " . $vnp_Url);
 
-// Tạo checksum
-$vnp_SecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
-$vnpUrl = $vnp_Url . "?" . $query . '&vnp_SecureHash=' . $vnp_SecureHash;
-
-// Lưu thông tin thanh toán vào SESSION để kiểm tra khi VNPAY callback
-$_SESSION['vnpay_payment'] = [
-    'order_id' => $payment_info['id'] ?? null, // Database ID
-    'ma_donhang' => $order_id,                 // Order reference code
-    'amount' => $amount,
-    'created_at' => time()
-];
-
-// Ghi log
-$log_dir = __DIR__ . '/logs';
-if (!is_dir($log_dir)) {
-    mkdir($log_dir, 0755, true);
-}
-$log_file = $log_dir . '/vnpay_request_' . date('Y-m-d') . '.log';
-$log_data = date('Y-m-d H:i:s') . " | Order ID: $order_id | Amount: $amount | URL: $vnpUrl\n";
-file_put_contents($log_file, $log_data, FILE_APPEND);
-
-// Chuyển hướng đến trang thanh toán VNPAY
-header('Location: ' . $vnpUrl);
+// Redirect to VNPAY payment page
+header('Location: ' . $vnp_Url);
 exit();
+?>

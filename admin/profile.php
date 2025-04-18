@@ -8,9 +8,9 @@ include('includes/header.php');
 // Include database connection
 include('../config/config.php');
 
-// Get admin information
+// Get admin information - Updated to use users table instead of admin table
 $admin_id = $_SESSION['admin_id'];
-$stmt = $conn->prepare("SELECT * FROM admin WHERE id_admin = ?");
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ? AND (loai_user = 1 OR loai_user = 2)");
 $stmt->bind_param("i", $admin_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -29,21 +29,23 @@ $error_message = '';
 
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
-    $ten_admin = trim($_POST['ten_admin']);
+    // Updated column names to match users table
+    $ten = trim($_POST['ten']);
     $email = trim($_POST['email']);
 
-    if (empty($ten_admin)) {
-        $error_message = 'Tên admin không được để trống';
+    if (empty($ten)) {
+        $error_message = 'Tên không được để trống';
     } else {
-        $update_stmt = $conn->prepare("UPDATE admin SET ten_admin = ?, email = ? WHERE id_admin = ?");
-        $update_stmt->bind_param("ssi", $ten_admin, $email, $admin_id);
+        // Updated table and column names
+        $update_stmt = $conn->prepare("UPDATE users SET ten = ?, email = ? WHERE id = ?");
+        $update_stmt->bind_param("ssi", $ten, $email, $admin_id);
         
         if ($update_stmt->execute()) {
             $success_message = 'Thông tin đã được cập nhật thành công';
             
-            // Log action
+            // Log action using nhat_ky table instead of admin_actions
             $log_query = $conn->prepare("
-                INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details, ip_address) 
+                INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) 
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
             $action_type = 'edit_profile';
@@ -81,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
             // Hash new password
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
             
-            // Update password
-            $pwd_stmt = $conn->prepare("UPDATE admin SET matkhau = ? WHERE id_admin = ?");
+            // Update password in users table
+            $pwd_stmt = $conn->prepare("UPDATE users SET matkhau = ? WHERE id = ?");
             $pwd_stmt->bind_param("si", $hashed_password, $admin_id);
             
             if ($pwd_stmt->execute()) {
@@ -90,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
                 
                 // Log password change action
                 $log_query = $conn->prepare("
-                    INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details, ip_address) 
+                    INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) 
                     VALUES (?, ?, ?, ?, ?, ?)
                 ");
                 $action_type = 'change_password';
@@ -145,8 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_avatar'])) {
             
             // Upload new avatar
             if (move_uploaded_file($file_tmp, $upload_path)) {
-                // Update avatar in database
-                $avatar_stmt = $conn->prepare("UPDATE admin SET anh_dai_dien = ? WHERE id_admin = ?");
+                // Update avatar in database - now using users table
+                $avatar_stmt = $conn->prepare("UPDATE users SET anh_dai_dien = ? WHERE id = ?");
                 $avatar_stmt->bind_param("si", $new_filename, $admin_id);
                 
                 if ($avatar_stmt->execute()) {
@@ -154,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_avatar'])) {
                     
                     // Log avatar update
                     $log_query = $conn->prepare("
-                        INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details, ip_address) 
+                        INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) 
                         VALUES (?, ?, ?, ?, ?, ?)
                     ");
                     $action_type = 'update_avatar';
@@ -180,13 +182,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_avatar'])) {
     }
 }
 
-// Replace login history logic
+// Replace login history logic with nhat_ky table queries
 $login_history = false;
-$table_exists = false;
 ?>
 
 <!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
+
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
@@ -238,13 +239,13 @@ $table_exists = false;
                         </button>
                     </div>
                     
-                    <h5 class="mb-1"><?php echo htmlspecialchars($admin['ten_admin']); ?></h5>
+                    <h5 class="mb-1"><?php echo htmlspecialchars($admin['ten']); ?></h5>
                     <p class="text-muted"><?php echo htmlspecialchars($admin['taikhoan']); ?></p>
                     
-                    <!-- Role badge -->
-                    <?php if ($admin['cap_bac'] >= 2): ?>
+                    <!-- Role badge - Updated to use loai_user column -->
+                    <?php if ($admin['loai_user'] == 2): ?>
                         <span class="badge bg-danger">Super Admin</span>
-                    <?php elseif ($admin['cap_bac'] == 1): ?>
+                    <?php elseif ($admin['loai_user'] == 1): ?>
                         <span class="badge bg-primary">Admin</span>
                     <?php else: ?>
                         <span class="badge bg-secondary">Nhân viên</span>
@@ -261,7 +262,7 @@ $table_exists = false;
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <span>Đăng nhập gần đây:</span>
-                        <span><?php echo date('d/m/Y H:i', strtotime($admin['lan_dang_nhap_cuoi'])); ?></span>
+                        <span><?php echo date('d/m/Y H:i', strtotime($admin['lan_dang_nhap_cuoi'] ?? $admin['ngay_tao'])); ?></span>
                     </li>
                 </ul>
             </div>
@@ -285,13 +286,13 @@ $table_exists = false;
                 </div>
                 <div class="card-body">
                     <div class="tab-content">
-                        <!-- Edit Profile Tab -->
+                        <!-- Edit Profile Tab - Updated field names -->
                         <div class="tab-pane fade show active" id="edit">
                             <form method="post" action="" class="mb-3 mt-3">
                                 <div class="mb-3">
-                                    <label for="ten_admin" class="form-label">Tên hiển thị</label>
-                                    <input type="text" class="form-control" id="ten_admin" name="ten_admin" 
-                                           value="<?php echo htmlspecialchars($admin['ten_admin']); ?>" required>
+                                    <label for="ten" class="form-label">Tên hiển thị</label>
+                                    <input type="text" class="form-control" id="ten" name="ten" 
+                                           value="<?php echo htmlspecialchars($admin['ten']); ?>" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="email" class="form-label">Email</label>
@@ -337,15 +338,15 @@ $table_exists = false;
                             </form>
                         </div>
                         
-                        <!-- Activity Tab -->
+                        <!-- Activity Tab - Updated to use nhat_ky table -->
                         <div class="tab-pane fade" id="activity">
                             <h5 class="mt-3 mb-4">Lịch sử hoạt động</h5>
                             <?php
-                            // Lấy lịch sử hoạt động từ bảng admin_actions
+                            // Lấy lịch sử hoạt động từ bảng nhat_ky
                             $activities_stmt = $conn->prepare("
-                                SELECT * FROM admin_actions 
-                                WHERE admin_id = ? 
-                                ORDER BY created_at DESC 
+                                SELECT * FROM nhat_ky 
+                                WHERE id_user = ? 
+                                ORDER BY ngay_tao DESC 
                                 LIMIT 15
                             ");
                             $activities_stmt->bind_param("i", $admin_id);
@@ -367,10 +368,10 @@ $table_exists = false;
                                     <tbody>
                                         <?php while ($activity = $activities->fetch_assoc()): ?>
                                         <tr>
-                                            <td><?php echo date('d/m/Y H:i:s', strtotime($activity['created_at'])); ?></td>
-                                            <td><?php echo htmlspecialchars($activity['action_type']); ?></td>
-                                            <td><?php echo htmlspecialchars($activity['target_type']); ?></td>
-                                            <td><?php echo htmlspecialchars($activity['details']); ?></td>
+                                            <td><?php echo date('d/m/Y H:i:s', strtotime($activity['ngay_tao'])); ?></td>
+                                            <td><?php echo htmlspecialchars($activity['hanh_dong']); ?></td>
+                                            <td><?php echo htmlspecialchars($activity['doi_tuong_loai']); ?></td>
+                                            <td><?php echo htmlspecialchars($activity['chi_tiet']); ?></td>
                                         </tr>
                                         <?php endwhile; ?>
                                     </tbody>

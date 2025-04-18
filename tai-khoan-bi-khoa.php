@@ -10,8 +10,8 @@ if (!isset($_SESSION['account_locked']) || !isset($_SESSION['locked_user_id'])) 
 
 $user_id = $_SESSION['locked_user_id'];
 
-// Lấy thông tin về lý do khóa tài khoản
-$stmt = $conn->prepare("SELECT taikhoan, tenuser, ly_do_khoa FROM users WHERE id_user = ?");
+// Lấy thông tin về tài khoản bị khóa - Updated for new DB schema
+$stmt = $conn->prepare("SELECT taikhoan, ten, trang_thai FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -22,6 +22,12 @@ if ($result->num_rows === 0) {
 }
 
 $user = $result->fetch_assoc();
+
+// Kiểm tra trạng thái tài khoản
+if ($user['trang_thai'] != 0) { // 0 means locked in the new schema
+    header('Location: index.php');
+    exit;
+}
 
 // Sau khi hiển thị thông báo, xóa thông tin phiên hiện tại
 session_destroy();
@@ -56,14 +62,12 @@ $page_title = "Tài khoản bị khóa";
                         <i class="bi bi-lock-fill text-danger" style="font-size: 4rem;"></i>
                     </div>
                     <h2 class="mb-3">Tài khoản đã bị khóa</h2>
-                    <p class="text-muted">Chào <strong><?php echo htmlspecialchars($user['tenuser']); ?></strong>, tài khoản của bạn đã bị khóa bởi quản trị viên.</p>
+                    <p class="text-muted">Chào <strong><?php echo htmlspecialchars($user['ten']); ?></strong>, tài khoản của bạn đã bị khóa bởi quản trị viên.</p>
                     
-                    <?php if (!empty($user['ly_do_khoa'])): ?>
                     <div class="alert alert-danger my-4">
                         <h5 class="mb-2">Lý do:</h5>
-                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($user['ly_do_khoa'])); ?></p>
+                        <p class="mb-0">Tài khoản của bạn đã bị khóa do vi phạm điều khoản sử dụng hoặc vì lý do bảo mật. Vui lòng liên hệ với bộ phận hỗ trợ để biết thêm chi tiết.</p>
                     </div>
-                    <?php endif; ?>
                     
                     <p class="mb-4">Nếu bạn cho rằng đây là sự nhầm lẫn hoặc cần biết thêm thông tin, vui lòng liên hệ với bộ phận hỗ trợ khách hàng của chúng tôi.</p>
                     

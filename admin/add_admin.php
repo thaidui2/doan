@@ -1,4 +1,7 @@
 <?php
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
 // Set page title
 $page_title = 'Thêm nhân viên mới';
 
@@ -13,11 +16,11 @@ checkPermissionRedirect('admin_add');
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $taikhoan = trim($_POST['taikhoan']);
-    $ten_admin = trim($_POST['ten_admin']);
-    $email = trim($_POST['email']);
-    $matkhau = $_POST['matkhau'];
-    $cap_bac = (int)$_POST['cap_bac'];
+    $taikhoan = trim($_POST['taikhoan'] ?? '');
+    $ten = trim($_POST['ten'] ?? ''); // Added null coalescing operator
+    $email = trim($_POST['email'] ?? '');
+    $matkhau = $_POST['matkhau'] ?? '';
+    $loai_user = (int)($_POST['loai_user'] ?? 0); // Added null coalescing operator
     $trang_thai = isset($_POST['trang_thai']) ? 1 : 0;
     
     // Basic validation
@@ -29,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Tên đăng nhập không được chứa khoảng trắng.';
     }
     
-    if (empty($ten_admin)) {
+    if (empty($ten)) {
         $errors[] = 'Vui lòng nhập họ tên.';
     }
     
@@ -43,17 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Email không hợp lệ.';
     }
     
-    // Check if username already exists
-    $check_username = $conn->prepare("SELECT id_admin FROM admin WHERE taikhoan = ?");
+    // Check if username already exists - Updated to use users table
+    $check_username = $conn->prepare("SELECT id FROM users WHERE taikhoan = ?");
     $check_username->bind_param("s", $taikhoan);
     $check_username->execute();
     if ($check_username->get_result()->num_rows > 0) {
         $errors[] = 'Tên đăng nhập đã tồn tại.';
     }
     
-    // Check if email already exists (if provided)
+    // Check if email already exists (if provided) - Updated to use users table
     if (!empty($email)) {
-        $check_email = $conn->prepare("SELECT id_admin FROM admin WHERE email = ?");
+        $check_email = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $check_email->bind_param("s", $email);
         $check_email->execute();
         if ($check_email->get_result()->num_rows > 0) {
@@ -61,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // Validate cap_bac (only accept valid values)
-    if ($cap_bac < 1 || $cap_bac > 2) {
+    // Validate loai_user (only accept valid values)
+    if ($loai_user < 1 || $loai_user > 2) {
         $errors[] = 'Cấp bậc không hợp lệ.';
     }
     
@@ -74,18 +77,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Hash the password
             $hashed_password = password_hash($matkhau, PASSWORD_DEFAULT);
             
-            // Insert new admin
+            // Insert new admin into users table
             $insert_stmt = $conn->prepare("
-                INSERT INTO admin (taikhoan, matkhau, ten_admin, email, cap_bac, trang_thai) 
+                INSERT INTO users (taikhoan, matkhau, ten, email, loai_user, trang_thai) 
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
-            $insert_stmt->bind_param("ssssis", $taikhoan, $hashed_password, $ten_admin, $email, $cap_bac, $trang_thai);
+            $insert_stmt->bind_param("ssssis", $taikhoan, $hashed_password, $ten, $email, $loai_user, $trang_thai);
             $insert_stmt->execute();
             $admin_id = $conn->insert_id;
             
             // Commit transaction
             $conn->commit();
             $_SESSION['success_message'] = 'Thêm nhân viên mới thành công!';
+            
+            // Make sure to flush output buffer before redirecting
+            ob_end_clean();
             header("Location: admins.php");
             exit();
         } catch (Exception $e) {
@@ -100,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!-- Include sidebar -->
-<?php include('includes/sidebar.php'); ?>
+
 
 <!-- Main content -->
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
@@ -144,8 +150,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div class="mb-3">
-                            <label for="ten_admin" class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ten_admin" name="ten_admin" required>
+                            <label for="ten" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ten" name="ten" required>
                         </div>
                         
                         <div class="mb-3">
@@ -170,8 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div class="mb-3">
-                            <label for="cap_bac" class="form-label">Cấp bậc <span class="text-danger">*</span></label>
-                            <select class="form-select" id="cap_bac" name="cap_bac" required>
+                            <label for="loai_user" class="form-label">Cấp bậc <span class="text-danger">*</span></label>
+                            <select class="form-select" id="loai_user" name="loai_user" required>
                                 <option value="1">Quản lý</option>
                                 <option value="2">Admin cấp cao</option>
                             </select>

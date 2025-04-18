@@ -2,8 +2,11 @@
 session_start();
 include('config/config.php');
 
-// Lấy ID sản phẩm từ URL
+// Lấy ID sản phẩm từ URL - Fix the parsing
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+// Debug the product ID to verify it's correct
+error_log("Product ID from URL: " . $product_id);
 
 // Kiểm tra nếu ID không hợp lệ
 if ($product_id <= 0) {
@@ -19,11 +22,12 @@ if ($check_column->num_rows > 0) {
     $update_view->execute();
 }
 
-// Cập nhật truy vấn để phù hợp với cấu trúc bảng mới
+// Cập nhật truy vấn để phù hợp với cấu trúc bảng mới và lấy thông tin thương hiệu
 $product_stmt = $conn->prepare("
-    SELECT sp.*, dm.ten as ten_danhmuc
+    SELECT sp.*, dm.ten as ten_danhmuc, th.ten as tenthuonghieu, th.id as id_thuonghieu
     FROM sanpham sp
     LEFT JOIN danhmuc dm ON sp.id_danhmuc = dm.id
+    LEFT JOIN thuong_hieu th ON sp.thuonghieu = th.id
     WHERE sp.id = ? AND sp.trangthai = 1
 ");
 $product_stmt->bind_param("i", $product_id);
@@ -274,6 +278,8 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
             background-color: #fff5f5;
         }
     </style>
+    <script src="js/product-debug.js" defer></script>
+    <script src="js/cart-debug.js" defer></script>
 </head>
 <body>
 <?php 
@@ -491,7 +497,7 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                         <div class="mb-3">
                             <span class="text-muted">Danh mục: <a href="sanpham.php?category=<?php echo $product['id_danhmuc']; ?>"><?php echo htmlspecialchars($product['ten_danhmuc']); ?></a></span>
                             
-                            <?php if (!empty($product['tenthuonghieu'])): ?>
+                            <?php if (!empty($product['tenthuonghieu']) || !empty($product['id_thuonghieu'])): ?>
                             <span class="mx-2">|</span>
                             <span class="text-muted">Thương hiệu: <a href="sanpham.php?brand=<?php echo $product['id_thuonghieu']; ?>"><?php echo htmlspecialchars($product['tenthuonghieu']); ?></a></span>
                             <?php endif; ?>
@@ -554,6 +560,19 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                         <hr>
 
                         <hr>
+                        
+                        <!-- Hidden field for product ID - Fix the value -->
+                        <input type="hidden" id="current-product-id" value="<?php echo (int)$product_id; ?>">
+                        
+                        <!-- Quantity -->
+                        <div class="mb-4">
+                            <h5 class="mb-2">Số lượng:</h5>
+                            <div class="quantity-control">
+                                <div class="quantity-btn" id="decreaseBtn">-</div>
+                                <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="<?php echo $total_stock; ?>">
+                                <div class="quantity-btn" id="increaseBtn">+</div>
+                            </div>
+                        </div>
                         
                         <!-- Size Selection -->
                         <?php if ($sizes_result->num_rows > 0): ?>
@@ -675,16 +694,6 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                         </div>
                         <?php endif; ?>
                         
-                        <!-- Quantity -->
-                        <div class="mb-4">
-                            <h5 class="mb-2">Số lượng:</h5>
-                            <div class="quantity-control">
-                                <div class="quantity-btn" id="decreaseBtn">-</div>
-                                <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="<?php echo $total_stock; ?>">
-                                <div class="quantity-btn" id="increaseBtn">+</div>
-                            </div>
-                        </div>
-                        
                         <!-- Hiển thị số lượng tồn kho cho biến thể đã chọn -->
                         <div id="variant-stock-info" class="stock-info d-none mt-3">
                             <i class="bi bi-box-seam me-2"></i>
@@ -701,8 +710,6 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                                 Mua ngay
                             </button>
                         </div>
-                        
-                        <!-- Thêm vào phần thông tin sản phẩm -->
                         
                     </div>
                 </div>
@@ -763,19 +770,18 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                                     </div>
                                     <div class="col-md-8">
                                         <?php for ($i = 5; $i >= 1; $i--): ?>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="me-2"><?php echo $i; ?> <i class="bi bi-star-fill"></i></div>
-                                            <div class="flex-grow-1 me-3">
-                                                <div class="rating-bar">
-                                                    <div class="rating-bar-fill" style="width: <?php echo $total_ratings > 0 ? ($rating_counts[$i] / $total_ratings * 100) : 0; ?>%"></div>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="me-2"><?php echo $i; ?> <i class="bi bi-star-fill"></i></div>
+                                                <div class="flex-grow-1 me-3">
+                                                    <div class="rating-bar">
+                                                        <div class="rating-bar-fill" style="width: <?php echo $total_ratings > 0 ? ($rating_counts[$i] / $total_ratings * 100) : 0; ?>%"></div>
+                                                    </div>
                                                 </div>
+                                                <div><?php echo $rating_counts[$i]; ?></div>
                                             </div>
-                                            <div><?php echo $rating_counts[$i]; ?></div>
-                                        </div>
                                         <?php endfor; ?>
                                     </div>
                                 </div>
-                                
                                 <hr>
                                 
                                 <!-- Review List -->
@@ -852,7 +858,28 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                     <div class="col-md-3 mb-4">
                         <div class="card related-product-card h-100">
                             <a href="product-detail.php?id=<?php echo $related['id']; ?>" class="text-decoration-none">
-                                <img src="<?php echo !empty($related['hinhanh']) ? 'uploads/products/' . $related['hinhanh'] : 'images/no-image.png'; ?>" class="card-img-top" alt="<?php echo htmlspecialchars($related['tensanpham']); ?>">
+                                <?php 
+                                // Fix for related product image paths
+                                $related_image_path = 'images/no-image.png'; // Default image
+                                
+                                if (!empty($related['hinhanh'])) {
+                                    // Check if path already includes directory prefix
+                                    if (strpos($related['hinhanh'], 'uploads/') === 0) {
+                                        $related_image_path = $related['hinhanh'];
+                                    } else {
+                                        // Check if file exists in uploads/products directory
+                                        if (file_exists('uploads/products/' . $related['hinhanh'])) {
+                                            $related_image_path = 'uploads/products/' . $related['hinhanh'];
+                                        } elseif (file_exists($related['hinhanh'])) {
+                                            $related_image_path = $related['hinhanh'];
+                                        }
+                                    }
+                                }
+                                ?>
+                                <img src="<?php echo $related_image_path; ?>" 
+                                     class="card-img-top" 
+                                     alt="<?php echo htmlspecialchars($related['tensanpham']); ?>"
+                                     onerror="this.onerror=null; this.src='images/no-image.png';">
                             </a>
                             <div class="card-body">
                                 <h6 class="card-title">
@@ -898,7 +925,6 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                                         ?>
                                     </div>
                                 </div>
-                                
                                 <div class="d-flex justify-content-between align-items-center">
                                     <strong class="text-danger"><?php echo number_format($related['gia'], 0, ',', '.'); ?>₫</strong>
                                     <?php if (!empty($related['giagoc']) && $related['giagoc'] > $related['gia']): ?>
@@ -922,14 +948,13 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
             </div>
         </div>
     </div>
-     
+    
     <?php include('includes/footer.php'); ?>
     
     
     <script>
-    // Image zoom functionality
     document.addEventListener('DOMContentLoaded', function() {
-        // Lấy các phần tử DOM
+        // Image zoom functionality
         const zoomContainer = document.getElementById('image-zoom-container');
         const mainImage = document.getElementById('main-product-image');
         const zoomLens = document.getElementById('zoom-lens');
@@ -1021,7 +1046,6 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
             const lensHalfWidth = zoomLens.offsetWidth / 2;
             const lensHalfHeight = zoomLens.offsetHeight / 2;
             
-            // Đảm bảo lens không vượt ra ngoài ảnh
             if (x < lensHalfWidth) x = lensHalfWidth;
             if (x > rect.width - lensHalfWidth) x = rect.width - lensHalfWidth;
             if (y < lensHalfHeight) y = lensHalfHeight;
@@ -1041,8 +1065,8 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
             
             // Cập nhật kết quả zoom
             zoomResult.style.backgroundImage = `url(${mainImage.src})`;
-            zoomResult.style.backgroundSize = `${rect.width * cx / zoomScale}px ${rect.height * cy / zoomScale}px`;
             zoomResult.style.backgroundPosition = `${backgroundPositionX}px ${backgroundPositionY}px`;
+            zoomResult.style.backgroundSize = `${rect.width * cx / zoomScale}px ${rect.height * cy / zoomScale}px`;
         });
         
         // Xử lý nút zoom in
@@ -1127,296 +1151,411 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
         updateZoomIndicator();
     });
     </script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Xử lý chuyển đổi hình ảnh khi click vào ảnh nhỏ
-    const thumbnails = document.querySelectorAll('.thumbnail-image');
-    const mainImage = document.getElementById('main-product-image');
     
-    if (thumbnails.length > 0 && mainImage) {
-        thumbnails.forEach(thumbnail => {
-            thumbnail.addEventListener('click', function() {
-                // Đổi ảnh chính
-                mainImage.src = this.src;
-                
-                // Đánh dấu thumbnail đang active
-                thumbnails.forEach(thumb => {
-                    thumb.parentElement.classList.remove('active');
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Xử lý chuyển đổi hình ảnh khi click vào ảnh nhỏ
+        const mainImage = document.getElementById('main-product-image');
+        const thumbnails = document.querySelectorAll('.thumbnail-image');
+    
+        if (thumbnails.length > 0 && mainImage) {
+            thumbnails.forEach(thumbnail => {
+                thumbnail.addEventListener('click', function() {
+                    // Đổi ảnh chính
+                    mainImage.src = this.src;
+                    
+                    // Đánh dấu thumbnail đang active
+                    thumbnails.forEach(thumb => thumb.parentElement.classList.remove('active'));
+                    this.parentElement.classList.add('active');
                 });
-                this.parentElement.classList.add('active');
             });
-        });
-    }
-    
-    // Xử lý chuyển ảnh theo màu sắc
-    const colorOptions = document.querySelectorAll('.color-option');
-    if (colorOptions.length > 0) {
-        colorOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                if (this.dataset.disabled === 'true') return;
-                
-                // Đánh dấu màu đang chọn
-                colorOptions.forEach(opt => opt.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Hiển thị tên màu đã chọn
-                const selectedColorValue = document.querySelector('.selected-color-value');
-                if (selectedColorValue) {
-                    selectedColorValue.textContent = this.dataset.colorName || 'Chưa chọn';
-                    if (this.dataset.colorCode) {
-                        selectedColorValue.innerHTML += ` <span class="color-preview" style="background-color: ${this.dataset.colorCode}"></span>`;
-                    }
-                }
-                
-                // Cập nhật thông tin tồn kho nếu cả size và màu đã được chọn
-                updateStockInfo();
-            });
-        });
-    }
-    
-    // Xử lý nút kích thước
-    const sizeButtons = document.querySelectorAll('.size-btn');
-    if (sizeButtons.length > 0) {
-        sizeButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Đánh dấu kích thước đang chọn
-                sizeButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Hiển thị tên kích thước đã chọn
-                const selectedSizeValue = document.querySelector('.selected-size-value');
-                if (selectedSizeValue) {
-                    selectedSizeValue.textContent = this.dataset.sizeName || 'Chưa chọn';
-                }
-                
-                // Cập nhật thông tin tồn kho nếu cả size và màu đã được chọn
-                updateStockInfo();
-            });
-        });
-    }
-
-    // Hàm cập nhật thông tin tồn kho
-    function updateStockInfo() {
-        const selectedSize = document.querySelector('.size-btn.active');
-        const selectedColor = document.querySelector('.color-option.active');
-        const stockInfo = document.getElementById('variant-stock-info');
-        
-        if (selectedSize && selectedColor && stockInfo) {
-            const sizeId = selectedSize.dataset.sizeId;
-            const colorId = selectedColor.dataset.colorId;
-            
-            // Lấy dữ liệu tồn kho từ dataset
-            const variantStockData = JSON.parse(document.getElementById('variant-stock-data').textContent);
-            
-            if (variantStockData[sizeId] && variantStockData[sizeId][colorId] !== undefined) {
-                const stock = variantStockData[sizeId][colorId];
-                stockInfo.classList.remove('d-none', 'stock-high', 'stock-medium', 'stock-low');
-                
-                if (stock > 10) {
-                    stockInfo.classList.add('stock-high');
-                    stockInfo.innerHTML = `<i class="bi bi-check-circle-fill text-success me-2"></i> Còn hàng (${stock} sản phẩm)`;
-                } else if (stock > 5) {
-                    stockInfo.classList.add('stock-medium');
-                    stockInfo.innerHTML = `<i class="bi bi-info-circle-fill text-warning me-2"></i> Còn ${stock} sản phẩm`;
-                } else if (stock > 0) {
-                    stockInfo.classList.add('stock-low');
-                    stockInfo.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Chỉ còn ${stock} sản phẩm`;
-                } else {
-                    stockInfo.classList.add('stock-low');
-                    stockInfo.innerHTML = `<i class="bi bi-x-circle-fill text-danger me-2"></i> Hết hàng`;
-                }
-                
-                // Cập nhật số lượng tối đa có thể mua
-                const quantityInput = document.getElementById('quantity');
-                if (quantityInput) {
-                    quantityInput.max = stock;
-                    if (parseInt(quantityInput.value) > stock) {
-                        quantityInput.value = stock > 0 ? stock : 1;
-                    }
-                }
-            }
-        }
-    }
-    
-    // Xử lý nút tăng/giảm số lượng
-    const decreaseBtn = document.getElementById('decreaseBtn');
-    const increaseBtn = document.getElementById('increaseBtn');
-    const quantityInput = document.getElementById('quantity');
-    
-    if (decreaseBtn && increaseBtn && quantityInput) {
-        decreaseBtn.addEventListener('click', function() {
-            const currentValue = parseInt(quantityInput.value);
-            if (currentValue > 1) {
-                quantityInput.value = currentValue - 1;
-            }
-        });
-        
-        increaseBtn.addEventListener('click', function() {
-            const currentValue = parseInt(quantityInput.value);
-            const maxValue = parseInt(quantityInput.max);
-            if (currentValue < maxValue) {
-                quantityInput.value = currentValue + 1;
-            }
-        });
-    }
-    
-    // Thêm vào cuối script để đảm bảo chức năng Mua ngay vẫn hoạt động
-    const buyNowBtn = document.getElementById('buyNowBtn');
-    
-    if (buyNowBtn) {
-        buyNowBtn.addEventListener('click', function() {
-            // Kiểm tra các lựa chọn mà không cần kiểm tra đăng nhập
-            const selection = validateSelection();
-            if (!selection) return;
-            
-            // Tạo form ẩn để submit dữ liệu
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = 'ajax/mua_ngay.php';
-            
-            // Thêm các trường dữ liệu vào form
-            for (const key in selection) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = selection[key];
-                form.appendChild(input);
-            }
-            
-            // Thêm form vào body và submit
-            document.body.appendChild(form);
-            form.submit();
-        });
-    }
-
-    // Hàm kiểm tra lựa chọn
-    function validateSelection() {
-        const selectedSize = document.querySelector('.size-btn.active');
-        const selectedColor = document.querySelector('.color-option.active');
-        const quantity = document.getElementById('quantity').value;
-        
-        // Kiểm tra đã chọn size chưa
-        if (!selectedSize) {
-            showToast('Vui lòng chọn kích thước', 'warning');
-            return null;
         }
         
-        // Kiểm tra đã chọn màu chưa
-        if (!selectedColor) {
-            showToast('Vui lòng chọn màu sắc', 'warning');
-            return null;
-        }
-        
-        // Kiểm tra số lượng hợp lệ
-        if (!quantity || parseInt(quantity) < 1) {
-            showToast('Vui lòng chọn số lượng hợp lệ', 'warning');
-            return null;
-        }
-        
-        // Trả về đối tượng với các thông tin đã chọn
-        return {
-            productId: <?php echo $product_id; ?>,
-            quantity: quantity,
-            sizeId: selectedSize.dataset.sizeId,
-            colorId: selectedColor.dataset.colorId
-        };
-    }
-
-    // Thêm đoạn sau trong phần <script> hiện có
-    const addToCartBtn = document.getElementById('addToCartBtn');
-    if (addToCartBtn) {
-        addToCartBtn.addEventListener('click', function() {
-            console.log('Add to cart button clicked');
-            const selection = validateSelection();
-            if (!selection) {
-                return; // Hàm validateSelection đã hiển thị thông báo lỗi
-            }
-            
-            // Hiển thị spinner hoặc thông báo đang xử lý
-            addToCartBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
-            addToCartBtn.disabled = true;
-            
-            // Gửi dữ liệu tới server
-            fetch('ajax/them_vao_gio.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(selection)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Response:', data);
-                
-                // Khôi phục nút
-                addToCartBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
-                addToCartBtn.disabled = false;
-                
-                if (data.success) {
-                    // Cập nhật số lượng trong giỏ hàng hiển thị trên header
-                    const cartCountElement = document.getElementById('cartCount');
-                    if (cartCountElement && data.cartCount) {
-                        cartCountElement.textContent = data.cartCount;
-                        // Hiệu ứng nhấp nháy
-                        cartCountElement.classList.add('cart-update-animation');
-                        setTimeout(() => {
-                            cartCountElement.classList.remove('cart-update-animation');
-                        }, 1000);
+        // Xử lý chuyển ảnh theo màu sắc
+        const colorOptions = document.querySelectorAll('.color-option');
+        if (colorOptions.length > 0) {
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    if (this.dataset.disabled === 'true') return;
+                    
+                    // Đánh dấu màu đang chọn
+                    colorOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Hiển thị tên màu đã chọn
+                    const selectedColorValue = document.querySelector('.selected-color-value');
+                    if (selectedColorValue) {
+                        selectedColorValue.textContent = this.dataset.colorName || 'Chưa chọn';
+                        if (this.dataset.colorCode) {
+                            selectedColorValue.innerHTML += ` <span class="color-preview" style="background-color: ${this.dataset.colorCode}"></span>`;
+                        }
                     }
                     
-                    // Hiển thị thông báo thành công
-                    showToast(data.message, 'success');
-                } else {
-                    // Hiển thị thông báo lỗi
-                    showToast(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng', 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                addToCartBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
-                addToCartBtn.disabled = false;
-                showToast('Lỗi kết nối đến máy chủ', 'danger');
+                    // Cập nhật thông tin tồn kho nếu cả size và màu đã được chọn
+                    updateStockInfo();
+                });
             });
-        });
-    }
-});
-
-// Kiểm tra nếu chưa có hàm showToast
-if (typeof showToast !== 'function') {
-    function showToast(message, type = 'info') {
-        // Kiểm tra nếu chưa có container
-        let toastContainer = document.getElementById('toastContainer');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.id = 'toastContainer';
-            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            toastContainer.style.zIndex = '1050';
-            document.body.appendChild(toastContainer);
         }
         
-        const toastId = 'toast-' + Date.now();
-        const toastHTML = `
-            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}">
-                <div class="toast-header">
-                    <strong class="me-auto">Thông báo</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body ${type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info'} text-white">
-                    ${message}
-                </div>
-            </div>
-        `;
+        // Xử lý nút kích thước
+        const sizeButtons = document.querySelectorAll('.size-btn');
+        if (sizeButtons.length > 0) {
+            sizeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Đánh dấu kích thước đang chọn
+                    sizeButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Hiển thị tên kích thước đã chọn
+                    const selectedSizeValue = document.querySelector('.selected-size-value');
+                    if (selectedSizeValue) {
+                        selectedSizeValue.textContent = this.dataset.sizeName || 'Chưa chọn';
+                    }
+                    
+                    // Cập nhật thông tin tồn kho nếu cả size và màu đã được chọn
+                    updateStockInfo();
+                });
+            });
+        }
         
-        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
-        toast.show();
-    }
-}
-</script>
+        // Hàm cập nhật thông tin tồn kho
+        function updateStockInfo() {
+            const selectedSize = document.querySelector('.size-btn.active');
+            const selectedColor = document.querySelector('.color-option.active');
+            const stockInfo = document.getElementById('variant-stock-info');
+        
+            if (selectedSize && selectedColor && stockInfo) {
+                const sizeId = selectedSize.dataset.sizeId;
+                const colorId = selectedColor.dataset.colorId;
+                
+                // Lấy dữ liệu tồn kho từ dataset
+                const variantStockData = JSON.parse(document.getElementById('variant-stock-data').textContent);
+                
+                if (variantStockData[sizeId] && variantStockData[sizeId][colorId] !== undefined) {
+                    const stock = variantStockData[sizeId][colorId];
+                    stockInfo.classList.remove('d-none', 'stock-high', 'stock-medium', 'stock-low');
+                    
+                    if (stock > 10) {
+                        stockInfo.classList.add('stock-high');
+                        stockInfo.innerHTML = `<i class="bi bi-check-circle-fill text-success me-2"></i> Còn hàng (${stock} sản phẩm)`;
+                    } else if (stock > 5) {
+                        stockInfo.classList.add('stock-medium');
+                        stockInfo.innerHTML = `<i class="bi bi-info-circle-fill text-warning me-2"></i> Còn ${stock} sản phẩm`;
+                    } else if (stock > 0) {
+                        stockInfo.classList.add('stock-low');
+                        stockInfo.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Chỉ còn ${stock} sản phẩm`;
+                    } else {
+                        stockInfo.classList.add('stock-low');
+                        stockInfo.innerHTML = `<i class="bi bi-x-circle-fill text-danger me-2"></i> Hết hàng`;
+                    }
+                    
+                    // Cập nhật số lượng tối đa có thể mua
+                    const quantityInput = document.getElementById('quantity');
+                    if (quantityInput) {
+                        quantityInput.max = stock;
+                        if (parseInt(quantityInput.value) > stock) {
+                            quantityInput.value = stock > 0 ? stock : 1;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Xử lý nút tăng/giảm số lượng
+        const decreaseBtn = document.getElementById('decreaseBtn');
+        const increaseBtn = document.getElementById('increaseBtn');
+        const quantityInput = document.getElementById('quantity');
+        
+        if (decreaseBtn && increaseBtn && quantityInput) {
+            decreaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                }
+            });
+            
+            increaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(quantityInput.value);
+                const maxValue = parseInt(quantityInput.max);
+                if (currentValue < maxValue) {
+                    quantityInput.value = currentValue + 1;
+                }
+            });
+        }
+        
+        // Thêm vào cuối script để đảm bảo chức năng Mua ngay vẫn hoạt động
+        const buyNowBtn = document.getElementById('buyNowBtn');
+        if (buyNowBtn) {
+            buyNowBtn.addEventListener('click', function() {
+                console.log('Buy Now button clicked'); // Debug logging
+                const selection = validateSelection();
+                if (!selection) return;
+                console.log('Selection validated:', selection); // Debug the selection values
+                
+                // Visual feedback - show loading state
+                buyNowBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+                buyNowBtn.disabled = true;
+                
+                // Tạo form ẩn để submit dữ liệu - Cách tiếp cận mới, đơn giản hơn
+                let formHtml = `
+                <form id="buyNowForm" action="ajax/mua_ngay.php" method="POST" style="display:none">
+                    <input type="hidden" name="productId" value="${selection.productId}">
+                    <input type="hidden" name="quantity" value="${selection.quantity}">
+                    <input type="hidden" name="sizeId" value="${selection.sizeId || ''}">
+                    <input type="hidden" name="colorId" value="${selection.colorId || ''}">
+                </form>
+                `;
+                // Thêm form vào body
+                document.body.insertAdjacentHTML('beforeend', formHtml);
+                // Lấy và gửi form
+                const form = document.getElementById('buyNowForm');
+                // Thêm delay nhỏ để đảm bảo DOM được cập nhật
+                setTimeout(() => {
+                    try {
+                        form.submit();
+                    } catch (error) {
+                        console.error('Form submission error:', error);
+                        buyNowBtn.innerHTML = 'Mua ngay';
+                        buyNowBtn.disabled = false;
+                        showToast('Có lỗi xảy ra khi xử lý yêu cầu', 'danger');
+                    }
+                }, 100);
+            });
+        }
+        
+        // Hàm kiểm tra lựa chọn - Enhanced validation with better product ID handling
+        function validateSelection() {
+            const selectedSize = document.querySelector('.size-btn.active');
+            const selectedColor = document.querySelector('.color-option.active');
+            const quantity = document.getElementById('quantity').value;
+            
+            // Kiểm tra đã chọn size chưa nếu có size để chọn
+            const sizeOptions = document.getElementById('size-options');
+            if (sizeOptions && sizeOptions.children.length > 0 && !selectedSize) {
+                showToast('Vui lòng chọn kích thước', 'warning');
+                return null;
+            }
+            
+            // Kiểm tra đã chọn màu chưa nếu có màu để chọn
+            const colorSelector = document.querySelector('.color-selector');
+            if (colorSelector && colorSelector.children.length > 0 && !selectedColor) {
+                showToast('Vui lòng chọn màu sắc', 'warning');
+                return null;
+            }
+            
+            // Kiểm tra số lượng hợp lệ
+            if (!quantity || parseInt(quantity) < 1) {
+                showToast('Vui lòng chọn số lượng hợp lệ', 'warning');
+                return null;
+            }
+            
+            // Try multiple ways to get the product ID
+            // 1. First try to get from hidden input
+            let productId = parseInt(document.getElementById('current-product-id')?.value, 10);
+            
+            // 2. If that fails, try to get from URL
+            if (!productId || isNaN(productId) || productId <= 0) {
+                console.log("Invalid product ID from hidden field, trying URL");
+                productId = getProductIdFromUrl();
+            }
+            
+            console.log("Final product ID to be sent:", productId);
+            
+            if (!productId || productId <= 0) {
+                console.error("Could not determine valid product ID");
+                showToast('ID sản phẩm không hợp lệ', 'danger');
+                return null;
+            }
+            
+            // Create properly formatted JSON data
+            return {
+                productId: productId,
+                quantity: parseInt(quantity),
+                sizeId: selectedSize ? parseInt(selectedSize.dataset.sizeId) : null,
+                colorId: selectedColor ? parseInt(selectedColor.dataset.colorId) : null
+            };
+        }
 
-<!-- Thêm container cho hiển thị toast message -->
-<div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+        // Add a JavaScript function to get product ID from URL as fallback
+        function getProductIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const idFromUrl = parseInt(urlParams.get('id'), 10);
+            return !isNaN(idFromUrl) && idFromUrl > 0 ? idFromUrl : null;
+        }
+        
+        // Rest of your existing code...
+        // ...existing code...
+        
+        // Thêm đoạn sau trong phần <script> hiện có
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', function() {
+                console.log('Add to cart button clicked');
+                
+                // Enhanced debugging
+                const urlId = getProductIdFromUrl();
+                console.log('Product ID from URL:', urlId);
+                
+                const productIdEl = document.getElementById('current-product-id');
+                console.log('Product ID element:', productIdEl);
+                console.log('Product ID value from element:', productIdEl ? productIdEl.value : 'not found');
+                
+                const selection = validateSelection();
+                if (!selection) {
+                    return; // Hàm validateSelection đã hiển thị thông báo lỗi
+                }
+                
+                console.log('Sending data to server:', selection); // Debug log
+                
+                // Hiển thị spinner hoặc thông báo đang xử lý
+                addToCartBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+                addToCartBtn.disabled = true;
+                
+                // Gửi dữ liệu tới server
+                fetch('ajax/them_vao_gio.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(selection)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response:', data);
+                    
+                    // Khôi phục nút
+                    addToCartBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
+                    addToCartBtn.disabled = false;
+                    
+                    if (data.success) {
+                        // Cập nhật số lượng trong giỏ hàng hiển thị trên header
+                        updateCartCountDisplay(data.cartCount);
+                        // Hiển thị thông báo thành công
+                        showToast(data.message, 'success');
+                    } else {
+                        // Hiển thị thông báo lỗi
+                        showToast(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addToCartBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
+                    addToCartBtn.disabled = false;
+                    showToast('Lỗi kết nối đến máy chủ', 'danger');
+                });
+            });
+        }
+        
+        // Thêm xử lý cho các nút "Thêm vào giỏ" của sản phẩm liên quan
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            // Bỏ qua nút chính vì đã xử lý bên trên
+            if (button.id === 'addToCartBtn') return;
+            
+            button.addEventListener('click', function() {
+                // Lấy ID sản phẩm từ data attribute
+                const productId = this.getAttribute('data-product-id');
+                if (!productId) {
+                    showToast('Không tìm thấy thông tin sản phẩm', 'danger');
+                    return;
+                }
+                
+                console.log('Adding related product to cart:', productId);
+                
+                // Hiển thị spinner
+                const originalText = this.innerHTML;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Đang xử lý...';
+                this.disabled = true;
+                
+                // Gửi request thêm vào giỏ hàng
+                fetch('ajax/them_vao_gio.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId: parseInt(productId),
+                        quantity: 1,
+                        sizeId: null,
+                        colorId: null
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Khôi phục nút
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                    
+                    if (data.success) {
+                        // Cập nhật số lượng trong giỏ hàng
+                        updateCartCountDisplay(data.cartCount);
+                        showToast('Đã thêm sản phẩm vào giỏ hàng!', 'success');
+                    } else {
+                        showToast(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                    showToast('Lỗi kết nối đến máy chủ', 'danger');
+                });
+            });
+        });
+        
+        // Hàm tiện ích để cập nhật số lượng giỏ hàng trên giao diện
+        function updateCartCountDisplay(count) {
+            const cartCountElement = document.getElementById('cartCount');
+            if (cartCountElement && count !== undefined) {
+                cartCountElement.textContent = count;
+                // Hiệu ứng nhấp nháy
+                cartCountElement.classList.add('cart-update-animation');
+                setTimeout(() => {
+                    cartCountElement.classList.remove('cart-update-animation');
+                }, 1000);
+            }
+        }
+    });
+    
+    // Kiểm tra nếu chưa có hàm showToast
+    if (typeof showToast !== 'function') {
+        function showToast(message, type = 'info') {
+            // Kiểm tra nếu chưa có container
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                toastContainer.style.zIndex = '1050';
+                document.body.appendChild(toastContainer);
+            }
+            
+            const toastId = 'toast-' + Date.now();
+            const toastHTML = `
+                <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}">
+                    <div class="toast-header">
+                        <strong class="me-auto">Thông báo</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body ${type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info'} text-white">
+                        ${message}
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
+            toast.show();
+        }
+    }
+    </script>
+    
+    <!-- Thêm container cho hiển thị toast message -->
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 </body>
 </html>

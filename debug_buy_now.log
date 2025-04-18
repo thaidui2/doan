@@ -1,0 +1,208 @@
+2025-04-18 14:36:40 - POST data: Array
+(
+    [productId] => 0
+    [quantity] => 1
+    [sizeId] => 5
+    [colorId] => 12
+)
+
+2025-04-18 14:37:22 - POST data: Array
+(
+    [productId] => 0
+    [quantity] => 1
+    [sizeId] => 5
+    [colorId] => 12
+)
+
+2025-04-18 14:41:21 - POST data: Array
+(
+    [productId] => 0
+    [quantity] => 1
+    [sizeId] => 5
+    [colorId] => 12
+)
+
+2025-04-18 15:05:47 - Buy Now request received - Array
+(
+    [productId] => 0
+    [quantity] => 1
+    [sizeId] => 5
+    [colorId] => 12
+)
+
+2025-04-18 15:05:47 - Extracted data - Array
+(
+    [product_id] => 0
+    [quantity] => 1
+    [size_id] => 5
+    [color_id] => 12
+)
+
+2025-04-18 15:05:47 - Invalid product ID
+2025-04-18 15:06:25 - Buy Now request received - Array
+(
+    [productId] => 0
+    [quantity] => 1
+    [sizeId] => 5
+    [colorId] => 12
+)
+
+2025-04-18 15:06:25 - Extracted data - Array
+(
+    [product_id] => 0
+    [quantity] => 1
+    [size_id] => 5
+    [color_id] => 12
+)
+
+2025-04-18 15:06:25 - Invalid product ID
+2025-04-18 17:18:58 - Buy Now request received - Array
+(
+    [productId] => 24
+    [quantity] => 1
+    [sizeId] => 3
+    [colorId] => 12
+)
+
+2025-04-18 17:18:58 - Extracted data - Array
+(
+    [product_id] => 24
+    [quantity] => 1
+    [size_id] => 3
+    [color_id] => 12
+)
+
+2025-04-18 17:18:58 - Executing query with params - Array
+(
+    [0] => 24
+    [1] => 3
+    [2] => 12
+)
+
+2025-04-18 17:18:58 - Product variant found - Array
+(
+    [variant_id] => 78
+    [id] => 24
+    [tensanpham] => Giày VANS SKATE OLD SKOOL BLACK/WHITE
+    [gia] => 1980000.00
+    [hinhanh] => uploads/products/1744982540_giay-vans-skate-old-skool-black-white-vn0a5fcby28-1-36e25e47-68e3-4fda-acb4-8ed0def6e7cd.webp
+    [ten_size] => 37
+    [ten_mau] => Đen
+    [ma_mau] => #000000
+)
+
+2025-04-18 17:18:58 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 24
+    [id_bienthe] => 78
+    [so_luong] => 1
+    [gia] => 1980000.00
+    [ten_san_pham] => Giày VANS SKATE OLD SKOOL BLACK/WHITE
+    [hinh_anh] => uploads/products/1744982540_giay-vans-skate-old-skool-black-white-vn0a5fcby28-1-36e25e47-68e3-4fda-acb4-8ed0def6e7cd.webp
+    [ten_size] => 37
+    [ten_mau] => Đen
+    [ma_mau] => #000000
+    [thanh_tien] => 1980000
+)
+
+2025-04-18 17:18:58 - Redirecting to checkout
+2025-04-18 17:28:54 - Buy Now request received - Array
+(
+    [productId] => 26
+    [quantity] => 1
+    [sizeId] => 3
+    [colorId] => 13
+)
+
+2025-04-18 17:28:54 - Extracted data - Array
+(
+    [product_id] => 26
+    [quantity] => 1
+    [size_id] => 3
+    [color_id] => 13
+)
+
+2025-04-18 17:28:54 - Executing query with params - Array
+(
+    [0] => 26
+    [1] => 3
+    [2] => 13
+)
+
+2025-04-18 17:28:54 - Product variant found - Array
+(
+    [variant_id] => 93
+    [id] => 26
+    [tensanpham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [gia] => 1650000.00
+    [hinhanh] => uploads/products/1744982817_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 37
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+)
+
+2025-04-18 17:28:54 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 26
+    [id_bienthe] => 93
+    [so_luong] => 1
+    [gia] => 1650000.00
+    [ten_san_pham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [hinh_anh] => uploads/products/1744982817_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 37
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+    [thanh_tien] => 1650000
+)
+
+2025-04-18 17:28:54 - Redirecting to checkout
+2025-04-18 17:29:07 - Buy Now request received - Array
+(
+    [productId] => 26
+    [quantity] => 1
+    [sizeId] => 4
+    [colorId] => 13
+)
+
+2025-04-18 17:29:07 - Extracted data - Array
+(
+    [product_id] => 26
+    [quantity] => 1
+    [size_id] => 4
+    [color_id] => 13
+)
+
+2025-04-18 17:29:07 - Executing query with params - Array
+(
+    [0] => 26
+    [1] => 4
+    [2] => 13
+)
+
+2025-04-18 17:29:07 - Product variant found - Array
+(
+    [variant_id] => 94
+    [id] => 26
+    [tensanpham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [gia] => 1650000.00
+    [hinhanh] => uploads/products/1744982817_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 38
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+)
+
+2025-04-18 17:29:07 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 26
+    [id_bienthe] => 94
+    [so_luong] => 1
+    [gia] => 1650000.00
+    [ten_san_pham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [hinh_anh] => uploads/products/1744982817_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 38
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+    [thanh_tien] => 1650000
+)
+
+2025-04-18 17:29:07 - Redirecting to checkout

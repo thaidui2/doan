@@ -361,19 +361,36 @@ function updateProductQuantity($order_id) {
                         ?>
                         <tr>
                             <td><?php echo $counter++; ?></td>
-                            <td>
-                                <?php if (!empty($item['hinhanh'])): ?>
-                                <img src="../uploads/products/<?php echo $item['hinhanh']; ?>" alt="<?php echo htmlspecialchars($item['tensanpham']); ?>" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
-                                <?php else: ?>
-                                <div class="bg-light text-center p-2">
-                                    <i class="bi bi-image text-muted"></i>
-                                </div>
-                                <?php endif; ?>
+                            <!-- Product image handling -->
+                            <td class="align-middle">
+                                <?php
+                                // Fix image path handling logic
+                                $img_path = '../images/no-image.png'; // Default fallback image
+                                
+                                if (!empty($item['hinhanh'])) {
+                                    if (strpos($item['hinhanh'], 'uploads/') === 0) {
+                                        // Path already includes directory prefix
+                                        $img_path = '../' . $item['hinhanh'];
+                                    } else if (file_exists('../uploads/products/' . $item['hinhanh'])) {
+                                        $img_path = '../uploads/products/' . $item['hinhanh'];
+                                    } else if (file_exists('../' . $item['hinhanh'])) {
+                                        // Try direct path if exists
+                                        $img_path = '../' . $item['hinhanh'];
+                                    }
+                                }
+                                ?>
+                                <img src="<?php echo $img_path; ?>" 
+                                     class="product-thumbnail rounded" 
+                                     alt="<?php echo htmlspecialchars($item['tensp'] ?? $item['tensanpham'] ?? ''); ?>"
+                                     onerror="this.onerror=null; this.src='../images/no-image.png';">
                             </td>
-                            <td>
-                                <a href="../product-detail.php?id=<?php echo $item['id_sanpham']; ?>" target="_blank" class="text-decoration-none">
-                                    <?php echo htmlspecialchars($item['tensp'] ?: $item['tensanpham'] ?: 'Sản phẩm không tồn tại'); ?>
-                                </a>
+
+                            <!-- Product name cell -->
+                            <td class="align-middle">
+                                <div class="fw-bold"><?php echo htmlspecialchars($item['tensp'] ?? $item['tensanpham'] ?? ''); ?></div>
+                                <?php if (!empty($item['thuoc_tinh'])): ?>
+                                    <div class="small text-muted"><?php echo htmlspecialchars($item['thuoc_tinh']); ?></div>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($item['thuoc_tinh'])): ?>
@@ -581,3 +598,12 @@ document.addEventListener("DOMContentLoaded", function() {
 // Include footer
 include('includes/footer.php');
 ?>
+
+<style>
+    /* Add this if not already present */
+    .product-thumbnail {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+    }
+</style>

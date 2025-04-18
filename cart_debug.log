@@ -129,3 +129,107 @@
 2025-04-18 04:30:34 - Session info - {"session_id":"b0bq2rshl4ffmklek57l5k2v8l","user_id":2}
 2025-04-18 04:30:34 - Found existing cart - {"cart_id":2}
 2025-04-18 04:30:34 - Added new item - {"product_id":15,"quantity":1}
+2025-04-18 12:47:19 - Session info - {"session_id":"ppd115333pgtbkl5l93q1sjp8v","user_id":null}
+2025-04-18 12:47:19 - Created new cart - {"cart_id":4}
+2025-04-18 12:47:19 - Added new item - {"product_id":17,"quantity":1}
+2025-04-18 13:04:00 - Session info - {"session_id":"ppd115333pgtbkl5l93q1sjp8v","user_id":null}
+2025-04-18 13:04:00 - Found existing cart - {"cart_id":4}
+2025-04-18 13:04:00 - Added new item - {"product_id":19,"quantity":1}
+2025-04-18 15:07:28 - Session info - {"session_id":"khain5ga0jlhuv1ipo5mdmjvjp","user_id":2}
+2025-04-18 15:07:31 - Session info - {"session_id":"khain5ga0jlhuv1ipo5mdmjvjp","user_id":2}
+2025-04-18 15:07:36 - Session info - {"session_id":"khain5ga0jlhuv1ipo5mdmjvjp","user_id":2}
+2025-04-18 15:11:34 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"5","colorId":"12"}
+2025-04-18 15:11:34 - Session info - {"session_id":"khain5ga0jlhuv1ipo5mdmjvjp","user_id":2}
+2025-04-18 15:11:34 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"5","colorId":"12"}
+2025-04-18 15:27:31 - Received add to cart request - {"productId":26,"quantity":"1","sizeId":"3","colorId":"13"}
+2025-04-18 15:27:31 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":null}
+2025-04-18 15:27:31 - Processed data - {"product_id":26,"quantity":1,"size_id":3,"color_id":13}
+2025-04-18 15:27:31 - Created new cart - {"cart_id":5}
+2025-04-18 15:27:31 - Added new item - {"variant_id":93,"quantity":1}
+2025-04-18 15:27:31 - Request completed successfully - {"cart_count":"1"}
+2025-04-18 15:29:01 - Received add to cart request - {"productId":26,"quantity":"1","sizeId":"3","colorId":"13"}
+2025-04-18 15:29:01 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:29:01 - Processed data - {"product_id":26,"quantity":1,"size_id":3,"color_id":13}
+2025-04-18 15:29:01 - Found existing cart - {"cart_id":2}
+2025-04-18 15:29:01 - Added new item - {"variant_id":93,"quantity":1}
+2025-04-18 15:29:01 - Request completed successfully - {"cart_count":"1"}
+2025-04-18 15:34:06 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"3","colorId":"13"}
+2025-04-18 15:34:06 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:34:06 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"3","colorId":"13"}
+2025-04-18 15:34:17 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"3","colorId":"13"}
+2025-04-18 15:34:17 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:34:17 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"3","colorId":"13"}
+2025-04-18 15:37:19 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:37:19 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:37:19 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:38:26 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:38:26 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:38:26 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:39:11 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:39:11 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:39:11 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:41:56 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:41:56 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:41:56 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:46:42 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:46:42 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:46:42 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"4","colorId":"12"}
+2025-04-18 15:52:14 - Received add to cart request - {"productId":0,"quantity":"1","sizeId":"5","colorId":"12"}
+2025-04-18 15:52:14 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 15:52:14 - Error: Invalid product ID - {"productId":0,"quantity":"1","sizeId":"5","colorId":"12"}
+2025-04-18 16:04:20 - Received add to cart request - {"productId":0,"quantity":1,"sizeId":5,"colorId":12}
+2025-04-18 16:04:20 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 16:04:20 - Error: Invalid product ID - {"productId":0,"quantity":1,"sizeId":5,"colorId":12}
+2025-04-18 16:06:01 - Received add to cart request - {"productId":0,"quantity":1,"sizeId":3,"colorId":12}
+2025-04-18 16:06:01 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 16:06:01 - Error: Invalid product ID - {"productId":0,"quantity":1,"sizeId":3,"colorId":12}
+2025-04-18 16:28:03 - Raw POST input - "{\"productId\":0,\"quantity\":1,\"sizeId\":3,\"colorId\":12}"
+2025-04-18 16:28:03 - Received add to cart request - {"productId":0,"quantity":1,"sizeId":3,"colorId":12}
+2025-04-18 16:28:03 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 16:28:03 - Error: Invalid product ID - {"productId":0,"quantity":1,"sizeId":3,"colorId":12}
+2025-04-18 16:29:34 - Raw POST input - "{\"productId\":0,\"quantity\":1,\"sizeId\":8,\"colorId\":12}"
+2025-04-18 16:29:34 - Received add to cart request - {"productId":0,"quantity":1,"sizeId":8,"colorId":12}
+2025-04-18 16:29:34 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 16:29:34 - Error: Invalid product ID - {"productId":0,"quantity":1,"sizeId":8,"colorId":12}
+2025-04-18 17:05:46 - Raw POST input - "{\"productId\":24,\"quantity\":1,\"sizeId\":3,\"colorId\":12}"
+2025-04-18 17:05:46 - Received add to cart request - {"productId":24,"quantity":1,"sizeId":3,"colorId":12}
+2025-04-18 17:05:46 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 17:05:46 - Processed data - {"product_id":24,"quantity":1,"size_id":3,"color_id":12}
+2025-04-18 17:05:46 - Found existing cart - {"cart_id":2}
+2025-04-18 17:05:46 - Added new item - {"variant_id":78,"quantity":1}
+2025-04-18 17:05:46 - Request completed successfully - {"cart_count":"2"}
+2025-04-18 17:18:57 - Raw POST input - "{\"productId\":24,\"quantity\":1,\"sizeId\":3,\"colorId\":12}"
+2025-04-18 17:18:57 - Received add to cart request - {"productId":24,"quantity":1,"sizeId":3,"colorId":12}
+2025-04-18 17:18:57 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 17:18:57 - Processed data - {"product_id":24,"quantity":1,"size_id":3,"color_id":12}
+2025-04-18 17:18:57 - Found existing cart - {"cart_id":2}
+2025-04-18 17:18:57 - Added new item - {"variant_id":78,"quantity":1}
+2025-04-18 17:18:57 - Request completed successfully - {"cart_count":"1"}
+2025-04-18 17:31:24 - Raw POST input - "{\"productId\":23,\"quantity\":1,\"sizeId\":5,\"colorId\":12}"
+2025-04-18 17:31:24 - Received add to cart request - {"productId":23,"quantity":1,"sizeId":5,"colorId":12}
+2025-04-18 17:31:24 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 17:31:24 - Processed data - {"product_id":23,"quantity":1,"size_id":5,"color_id":12}
+2025-04-18 17:31:24 - Found existing cart - {"cart_id":2}
+2025-04-18 17:31:24 - Added new item - {"variant_id":68,"quantity":1}
+2025-04-18 17:31:24 - Request completed successfully - {"cart_count":"2"}
+2025-04-18 17:32:55 - Raw POST input - "{\"productId\":25,\"quantity\":1,\"sizeId\":4,\"colorId\":12}"
+2025-04-18 17:32:55 - Received add to cart request - {"productId":25,"quantity":1,"sizeId":4,"colorId":12}
+2025-04-18 17:32:55 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 17:32:55 - Processed data - {"product_id":25,"quantity":1,"size_id":4,"color_id":12}
+2025-04-18 17:32:55 - Found existing cart - {"cart_id":2}
+2025-04-18 17:32:55 - Added new item - {"variant_id":86,"quantity":1}
+2025-04-18 17:32:55 - Request completed successfully - {"cart_count":"3"}
+2025-04-18 17:39:35 - Raw POST input - "{\"productId\":24,\"quantity\":1,\"sizeId\":3,\"colorId\":12}"
+2025-04-18 17:39:35 - Received add to cart request - {"productId":24,"quantity":1,"sizeId":3,"colorId":12}
+2025-04-18 17:39:35 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 17:39:35 - Processed data - {"product_id":24,"quantity":1,"size_id":3,"color_id":12}
+2025-04-18 17:39:35 - Found existing cart - {"cart_id":2}
+2025-04-18 17:39:35 - Added new item - {"variant_id":78,"quantity":1}
+2025-04-18 17:39:35 - Request completed successfully - {"cart_count":"1"}
+2025-04-18 17:46:26 - Raw POST input - "{\"productId\":25,\"quantity\":2,\"sizeId\":8,\"colorId\":12}"
+2025-04-18 17:46:26 - Received add to cart request - {"productId":25,"quantity":2,"sizeId":8,"colorId":12}
+2025-04-18 17:46:26 - Session info - {"session_id":"9aqo88t8lg46hti1aev0oeor21","user_id":2}
+2025-04-18 17:46:26 - Processed data - {"product_id":25,"quantity":2,"size_id":8,"color_id":12}
+2025-04-18 17:46:26 - Found existing cart - {"cart_id":2}
+2025-04-18 17:46:26 - Added new item - {"variant_id":90,"quantity":2}
+2025-04-18 17:46:26 - Request completed successfully - {"cart_count":"2"}

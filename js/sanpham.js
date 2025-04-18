@@ -9,13 +9,18 @@ document.querySelectorAll(".add-to-cart").forEach((button) => {
       '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang thêm...';
     button.disabled = true;
 
-    // Sửa đường dẫn AJAX thành ajax/them_vao_gio.php
+    // Fix: Use JSON format instead of form data
     fetch("ajax/them_vao_gio.php", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/json",
       },
-      body: "product_id=" + productId + "&quantity=1",
+      body: JSON.stringify({
+        productId: parseInt(productId),
+        quantity: 1,
+        sizeId: null,
+        colorId: null,
+      }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -27,59 +32,41 @@ document.querySelectorAll(".add-to-cart").forEach((button) => {
         toast.setAttribute("role", "alert");
         toast.setAttribute("aria-live", "assertive");
         toast.setAttribute("aria-atomic", "true");
-        toast.innerHTML = `
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                ${data.message}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    `;
-        document.body.appendChild(toast);
 
-        // Kích hoạt toast
+        toast.innerHTML = `
+          <div class="d-flex">
+            <div class="toast-body">
+              ${
+                data.message ||
+                (data.success
+                  ? "Đã thêm sản phẩm vào giỏ hàng!"
+                  : "Có lỗi xảy ra khi thêm vào giỏ hàng")
+              }
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        `;
+
+        document.body.appendChild(toast);
         const bsToast = new bootstrap.Toast(toast);
         bsToast.show();
 
-        // Cập nhật số lượng giỏ hàng trong header
-        if (data.success && data.cart_count) {
-          const cartBadges = document.querySelectorAll(".cart-count");
-          cartBadges.forEach((badge) => {
-            badge.textContent = data.cart_count;
-            badge.style.display = "inline-block";
-          });
+        // Update cart count if needed
+        if (data.success && data.cartCount) {
+          const cartCountElement = document.getElementById("cartCount");
+          if (cartCountElement) {
+            cartCountElement.textContent = data.cartCount;
+          }
         }
 
-        // Khôi phục nút
+        // Restore button state
         button.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
         button.disabled = false;
       })
       .catch((error) => {
         console.error("Error:", error);
-        // Khôi phục nút trong trường hợp lỗi
         button.innerHTML = '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
         button.disabled = false;
-
-        // Hiển thị thông báo lỗi
-        const toast = document.createElement("div");
-        toast.className =
-          "toast align-items-center text-white bg-danger position-fixed bottom-0 end-0 m-3";
-        toast.setAttribute("role", "alert");
-        toast.setAttribute("aria-live", "assertive");
-        toast.setAttribute("aria-atomic", "true");
-        toast.innerHTML = `
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    `;
-        document.body.appendChild(toast);
-
-        // Kích hoạt toast
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
       });
   });
 });

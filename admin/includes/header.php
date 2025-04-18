@@ -114,6 +114,19 @@ if (isset($_SESSION['success_message'])) {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+
+    <?php if (basename($_SERVER['PHP_SELF']) === 'edit_product.php' || basename($_SERVER['PHP_SELF']) === 'add_product.php'): ?>
+    <link rel="stylesheet" href="css/product-edit.css">
+    <?php endif; ?>
+    
+    <!-- Add dashboard-specific CSS if on index page -->
+    <?php if (basename($_SERVER['PHP_SELF']) === 'index.php'): ?>
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    <?php endif; ?>
+    
     <!-- Fix for Bootstrap dropdowns -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {

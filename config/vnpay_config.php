@@ -5,14 +5,23 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
  * VNPAY Payment Gateway Configuration
  */
 
-// Thông tin cấu hình VNPAY
-define('VNPAY_TMN_CODE', 'YOUR_TMN_CODE'); // Terminal ID provided by VNPAY
-define('VNPAY_HASH_SECRET', 'YOUR_HASH_SECRET'); // Secret key provided by VNPAY
-define('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'); // Sandbox URL, use real URL for production
-define('VNPAY_RETURN_URL', 'https://yourdomain.com/vnpay_return.php'); // Return URL after payment
-define('VNPAY_API_URL', 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction'); // API URL for transaction checking
+// VNPAY Configuration - SANDBOX MODE
+$vnp_TmnCode = "HQTPW4RO"; // Your Terminal ID provided by VNPAY
+$vnp_HashSecret = "MKDMH902XG9NGN32YE766M2PNR8PG3KH"; // Your Hash Secret provided by VNPAY
+$vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"; // Sandbox payment URL
+$vnp_ReturnUrl = "http://localhost/bug_shop/vnpay_return.php"; // Return URL after payment
 
-// Config parameters for development/production environments
+// IMPORTANT: For production use, replace with your actual VNPAY credentials
+// $vnp_TmnCode = "YOUR_PRODUCTION_TMN_CODE";
+// $vnp_HashSecret = "YOUR_PRODUCTION_HASH_SECRET"; 
+// $vnp_Url = "https://pay.vnpay.vn/vpcpay.html";
+
+// SANDBOX/DEV MODE INFO - Use these for testing
+// TMN Code: CGMART01
+// Hash Secret: IIMYAWTHPOEKSOXNBCELLLDTQXKQUWHK
+// Test cards: https://sandbox.vnpayment.vn/apis/danh-sach-tai-khoan-test/
+
+// Common constants
 define('VNPAY_VERSION', '2.1.0');
 define('VNPAY_CURRENCY', 'VND');
 define('VNPAY_LOCALE', 'vn');
@@ -82,15 +91,25 @@ function vnpay_validate_data($vnp_Params, $vnp_HashSecret) {
     
     // Remove secure hash from params to validate
     unset($vnp_Params['vnp_SecureHash']);
+    unset($vnp_Params['vnp_SecureHashType']);
     
     // Sort params by key
     ksort($vnp_Params);
     
     // Build query string
-    $query = http_build_query($vnp_Params);
+    $i = 0;
+    $hashData = "";
+    foreach ($vnp_Params as $key => $value) {
+        if ($i == 1) {
+            $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+        } else {
+            $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+            $i = 1;
+        }
+    }
     
     // Create hash data
-    $vnp_CalcHash = hash_hmac('sha512', $query, $vnp_HashSecret);
+    $vnp_CalcHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
     
     // Compare hash values
     return $vnp_CalcHash === $vnp_SecureHash;

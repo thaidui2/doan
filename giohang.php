@@ -333,9 +333,28 @@ while ($item = $cart_items_result->fetch_assoc()) {
                                         </div>
                                         </td>
                                         <td>
-                                            <img src="<?php echo !empty($item['hinhanh']) ? 'uploads/products/' . $item['hinhanh'] : 'images/no-image.png'; ?>" 
+                                            <?php 
+                                            // Fix image path handling
+                                            $item_image_path = 'images/no-image.png'; // Default image
+                                            
+                                            if (!empty($item['hinhanh'])) {
+                                                // Check if path already includes directory prefix
+                                                if (strpos($item['hinhanh'], 'uploads/') === 0) {
+                                                    $item_image_path = $item['hinhanh'];
+                                                } else {
+                                                    // Check if file exists in uploads/products directory
+                                                    if (file_exists('uploads/products/' . $item['hinhanh'])) {
+                                                        $item_image_path = 'uploads/products/' . $item['hinhanh'];
+                                                    } elseif (file_exists($item['hinhanh'])) {
+                                                        $item_image_path = $item['hinhanh'];
+                                                    }
+                                                }
+                                            }
+                                            ?>
+                                            <img src="<?php echo $item_image_path; ?>" 
                                                  class="cart-item-image rounded" 
-                                                 alt="<?php echo htmlspecialchars($item['tensanpham']); ?>">
+                                                 alt="<?php echo htmlspecialchars($item['tensanpham']); ?>"
+                                                 onerror="this.onerror=null; this.src='images/no-image.png';">
                                         </td>
                                         <td>
                                             <?php
@@ -440,6 +459,28 @@ while ($item = $cart_items_result->fetch_assoc()) {
                         </div>
                     </form>
                 </div>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Cart actions -->
+        <div class="d-flex justify-content-between mt-4">
+            <a href="sanpham.php" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Tiếp tục mua hàng
+            </a>
+            
+            <?php if ($total_items > 0): ?>
+                <a href="thanhtoan.php" class="btn btn-primary">
+                    <i class="bi bi-credit-card me-1"></i> Tiến hành thanh toán
+                </a>
+            <?php endif; ?>
+        </div>
+
+        <!-- Additional notice for guest users -->
+        <?php if ($total_items > 0 && (!isset($_SESSION['user']) || !$_SESSION['user']['logged_in'])): ?>
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle me-2"></i>
+                Bạn chưa đăng nhập. Bạn vẫn có thể thanh toán nhưng chỉ có thể sử dụng phương thức thanh toán VNPAY.
+                <a href="dangnhap.php?redirect=giohang.php" class="alert-link">Đăng nhập</a> để mở khóa thêm các phương thức thanh toán khác.
             </div>
         <?php endif; ?>
     </div>

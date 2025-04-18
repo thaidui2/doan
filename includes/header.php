@@ -88,18 +88,28 @@ function getCategories($conn) {
     return $stmt->get_result();
 }
 
+// Lấy thương hiệu cho menu
+function getBrands($conn) {
+    $stmt = $conn->prepare("
+        SELECT id, ten, logo 
+        FROM thuong_hieu 
+        ORDER BY ten ASC
+    ");
+    $stmt->execute();
+    return $stmt->get_result();
+}
+
 // Calculate cart count
 $cart_count = getCartItemCount($conn);
 $categories = getCategories($conn);
-
+$brands = getBrands($conn);
 if (!$categories || $categories->num_rows == 0) {
     error_log("Không tìm thấy danh mục nào hoặc lỗi kết nối cơ sở dữ liệu");
 }
-
 // Lấy thông tin giỏ hàng - lấy cart_id trước khi duyệt items
 $cart_id = 0;
 $cart_total = 0;
-
+// Calculate cart count
 // Lấy giỏ hàng hiện tại của người dùng
 $session_id = session_id();
 $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
@@ -113,14 +123,11 @@ if ($user_id) {
     $cart_stmt = $conn->prepare("SELECT id FROM giohang WHERE session_id = ? AND id_user IS NULL");
     $cart_stmt->bind_param("s", $session_id);
 }
-
 $cart_stmt->execute();
 $cart_result = $cart_stmt->get_result();
-
 if ($cart_result->num_rows > 0) {
     $cart_info = $cart_result->fetch_assoc();
     $cart_id = $cart_info['id'];
-    
     // Tính tổng tiền từ các mục trong giỏ hàng thay vì lấy từ cột tong_tien
     $total_stmt = $conn->prepare("
         SELECT SUM(gct.gia * gct.so_luong) as total 
@@ -130,20 +137,16 @@ if ($cart_result->num_rows > 0) {
     $total_stmt->bind_param("i", $cart_id);
     $total_stmt->execute();
     $total_result = $total_stmt->get_result();
-    
     if ($total_result->num_rows > 0) {
         $total_row = $total_result->fetch_assoc();
         $cart_total = $total_row['total'] ?? 0;
     }
 }
-
 // Sau khi lấy được cart_id, mới lấy các items
 $cart_items = getCartPreviewItems($conn);
-
 // Lấy trang hiện tại để đánh dấu menu active
 $current_page = basename($_SERVER['PHP_SELF']);
-?>
-
+?>  
 <header class="sticky-top">
     <!-- Thông báo khuyến mãi -->
     <div class="announcement-bar py-2 bg-dark text-white">
@@ -161,7 +164,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </div>
         </div>
     </div>
-    
+
     <!-- Thanh điều hướng chính -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-3">
         <div class="container">
@@ -170,12 +173,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <img src="images/logo.png" alt="Bug Shop Logo" height="40" class="d-inline-block align-text-top me-2">
                 <span class="fw-bold text-primary">BUG SHOP</span>
             </a>
-            
             <!-- Nút toggle cho mobile -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
+
             <!-- Menu chính -->
             <div class="collapse navbar-collapse" id="navbarMain">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
@@ -184,7 +186,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <i class="bi bi-house-door"></i> Trang chủ
                         </a>
                     </li>
-                    
+
                     <!-- Dropdown Sản phẩm -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle <?php echo $current_page == 'sanpham.php' ? 'active fw-bold' : ''; ?>" 
@@ -198,7 +200,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                         <i class="bi bi-grid-3x3-gap"></i> Tất cả sản phẩm
                                     </a>
                                 </div>
-                                
                                 <?php while($category = $categories->fetch_assoc()): ?>
                                 <div class="col-6">
                                     <a class="dropdown-item category-item d-flex align-items-center" 
@@ -216,7 +217,44 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             </div>
                         </div>
                     </li>
-                    
+
+                    <!-- Dropdown Thương hiệu -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="brandDropdown" data-bs-toggle="dropdown">
+                            <i class="bi bi-bookmark-star"></i> Thương hiệu
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-start brands-menu" aria-labelledby="brandDropdown">
+                            <div class="row p-2">
+                                <div class="col-12">
+                                    <a class="dropdown-item fw-bold bg-light rounded mb-2 py-2" href="sanpham.php?thuonghieu=all">
+                                        <i class="bi bi-shop"></i> Tất cả thương hiệu
+                                    </a>
+                                </div>
+                                
+                                <?php if($brands && $brands->num_rows > 0): ?>
+                                    <?php while($brand = $brands->fetch_assoc()): ?>
+                                    <div class="col-6">
+                                        <a class="dropdown-item brand-item d-flex align-items-center" 
+                                           href="sanpham.php?thuonghieu=<?php echo $brand['id']; ?>">
+                                            <?php if(!empty($brand['logo'])): ?>
+                                            <img src="uploads/brands/<?php echo $brand['logo']; ?>" 
+                                                 class="brand-thumbnail me-2" alt="<?php echo htmlspecialchars($brand['ten']); ?>">
+                                            <?php else: ?>
+                                            <i class="bi bi-award me-2"></i>
+                                            <?php endif; ?>
+                                            <?php echo htmlspecialchars($brand['ten']); ?>
+                                        </a>
+                                    </div>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <div class="col-12">
+                                        <span class="dropdown-item">Chưa có thương hiệu nào</span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </li>
+
                     <!-- Các liên kết khác -->
                     <li class="nav-item">
                         <a class="nav-link <?php echo $current_page == 'khuyenmai.php' ? 'active fw-bold' : ''; ?>" href="khuyenmai.php">
@@ -237,7 +275,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         <i class="bi bi-search"></i>
                     </button>
                 </form>
-                
+
                 <!-- Các nút chức năng -->
                 <div class="d-flex align-items-center">
                     <!-- Dropdown giỏ hàng -->
@@ -252,13 +290,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-count" style="display: none;">0</span>
                             <?php endif; ?>
                         </a>
-                        
+
                         <!-- Cart dropdown items container -->
                         <div class="dropdown-menu dropdown-menu-end p-0 border-0 shadow-lg rounded-3" id="cartDropdownMenu" aria-labelledby="cartDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
                             <div class="p-3 border-bottom">
                                 <h6 class="mb-0">Giỏ hàng của bạn</h6>
                             </div>
-                            
                             <div id="cart-items-container">
                                 <?php if (isset($cart_items) && !empty($cart_items)): ?>
                                     <?php foreach ($cart_items as $item): ?>
@@ -283,7 +320,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                             </div>
                                         </a>
                                     <?php endforeach; ?>
-                                    
                                     <div class="p-3 border-top">
                                         <div class="d-flex justify-content-between mb-2">
                                             <span>Tổng tiền:</span>
@@ -302,7 +338,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Phần đăng nhập/tài khoản -->
                     <div class="user-menu-wrapper">
                         <?php if(isset($_SESSION['user']) && $_SESSION['user']['logged_in'] === true): ?>
@@ -318,11 +354,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                     <li><a class="dropdown-item" href="donhang.php"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
                                     <li><a class="dropdown-item" href="donhoantra.php"><i class="bi bi-arrow-return-left me-2"></i>Yêu cầu hoàn trả</a></li>
                                     <li><a class="dropdown-item" href="wishlist.php"><i class="bi bi-heart me-2"></i>Sản phẩm yêu thích</a></li>
-                                    
-                                    <?php 
-                                    // Xóa bỏ phần kiểm tra người bán
-                                    ?>
-                                    
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
                                 </ul>
@@ -342,7 +373,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </div>
         </div>
     </nav>
-    
+
     <!-- Thêm vào cuối file, trước phần đóng </header> -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -351,7 +382,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         document.querySelectorAll('a').forEach(function(link) {
             console.log(link.href, link);
         });
-        
+
         // Kiểm tra liên kết đăng nhập
         const loginLink = document.querySelector('a[href="dangnhap.php"]');
         if (loginLink) {
@@ -417,23 +448,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
     border-radius: 3px;
 }
 
-/* Dropdown danh mục sản phẩm */
-.categories-menu {
+/* Dropdown danh mục sản phẩm và thương hiệu */
+.categories-menu, .brands-menu {
     min-width: 400px;
 }
 
-.category-item {
+.category-item, .brand-item {
     padding: 0.5rem;
     margin-bottom: 0.25rem;
     border-radius: 0.25rem;
     transition: all 0.2s ease;
 }
 
-.category-item:hover {
+.category-item:hover, .brand-item:hover {
     background-color: #f8f9fa;
 }
 
-.category-thumbnail {
+.category-thumbnail, .brand-thumbnail {
     width: 24px;
     height: 24px;
     object-fit: cover;
@@ -501,7 +532,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         display: none;
     }
     
-    .categories-menu {
+    .categories-menu, .brands-menu {
         min-width: 300px;
     }
 }

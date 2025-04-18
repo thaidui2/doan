@@ -2,8 +2,7 @@
 session_start();
 include('config/config.php');
 
-// Include email functionality but don't call functions yet
-include_once 'includes/order_emails.php';
+
 
 // Kiểm tra đăng nhập
 if (!isset($_SESSION['user'])) {
@@ -155,7 +154,7 @@ $page_title = "Đơn hàng của tôi";
             <div class="modal-body">
                 <p>Bạn có chắc chắn muốn hủy đơn hàng này không?</p>
                 <p class="text-muted small">Lưu ý: Hành động này không thể hoàn tác.</p>
-                <form id="cancelOrderForm" method="post" action="huy-donhang.php">
+                <form id="cancelOrderForm" method="post" action="huydonhang.php">
                     <input type="hidden" name="order_id" id="cancelOrderId" value="">
                     <div class="mb-3">
                         <label for="cancelReason" class="form-label">Lý do hủy đơn:</label>
