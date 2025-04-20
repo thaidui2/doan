@@ -2,212 +2,120 @@
 session_start();
 include('config/config.php');
 
-// Debug information
-error_log("Process Order - POST data: " . print_r($_POST, true));
+// Debug logging
+function debug_log($message, $data = null) {
+    $log_message = date('Y-m-d H:i:s') . ' - ' . $message;
+    if ($data !== null) {
+        $log_message .= ' - ' . print_r($data, true);
+    }
+    file_put_contents('debug_order.log', $log_message . "\n", FILE_APPEND);
+}
 
-// Redirect if no payment method or necessary data is missing
-if (!isset($_POST['payment_method'])) {
-    $_SESSION['error_message'] = 'Vui lòng chọn phương thức thanh toán';
+debug_log('Order processing started', $_POST);
+
+// Check if form was submitted
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: thanhtoan.php');
     exit();
 }
 
-// Get order information from POST
-$payment_method = $_POST['payment_method'];
-$fullname = $_POST['fullname'] ?? '';
+// Variable to track if user is logged in
+$is_logged_in = isset($_SESSION['user']) && $_SESSION['user']['logged_in'] === true;
+
+// Get payment method and validate it - enforce VNPAY for guest users
+$payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : 'cod';
+debug_log('Original payment method', $payment_method);
+
+if (!$is_logged_in && $payment_method === 'cod') {
+    $payment_method = 'vnpay'; // Force VNPAY for non-logged in users
+}
+
+debug_log('Final payment method', $payment_method);
+
+// Get form data
+$ho_ten = $_POST['fullname'] ?? '';
 $email = $_POST['email'] ?? '';
-$phone = $_POST['phone'] ?? '';
-$address = $_POST['address'] ?? '';
-$province = $_POST['province_name'] ?? '';
-$district = $_POST['district_name'] ?? '';
-$ward = $_POST['ward_name'] ?? '';
-$note = $_POST['note'] ?? '';
-$promo_code = $_POST['promo_code'] ?? '';
-$discount_amount = floatval($_POST['discount_amount'] ?? 0);
-$discount_id = intval($_POST['discount_id'] ?? 0);
+$sodienthoai = $_POST['phone'] ?? '';
+$diachi = $_POST['address'] ?? '';
+$tinh_tp = $_POST['province_name'] ?? $_POST['province'] ?? '';
+$quan_huyen = $_POST['district_name'] ?? $_POST['district'] ?? '';
+$phuong_xa = $_POST['ward_name'] ?? $_POST['ward'] ?? '';
+$ghi_chu = $_POST['note'] ?? '';
 
-// Check required fields
-if (empty($fullname) || empty($phone) || empty($email) || empty($address) || empty($province) || empty($district)) {
-    $_SESSION['error_message'] = 'Vui lòng điền đầy đủ thông tin thanh toán';
+// Validate required fields
+if (empty($ho_ten) || empty($sodienthoai) || empty($diachi) || empty($tinh_tp) || empty($quan_huyen)) {
+    $_SESSION['error_message'] = 'Vui lòng điền đầy đủ thông tin giao hàng.';
     header('Location: thanhtoan.php');
     exit();
 }
-
-// Get user information
-$user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
 // Generate order code
-$order_code = 'BUG' . date('ymd') . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 5));
+$order_code = 'BUG' . date('ymd') . substr(time(), -3) . strtoupper(substr(md5(rand()), 0, 4));
 
-// Determine if we're processing a "Buy Now" order or normal checkout
-$is_buy_now = isset($_GET['buy_now']) && $_GET['buy_now'] == 1;
+// Get user ID if logged in, otherwise null
+$user_id = $is_logged_in ? $_SESSION['user']['id'] : null;
 
-// Process the order based on the type
-if ($is_buy_now) {
-    // Buy Now checkout
-    if (!isset($_SESSION['buy_now_cart'])) {
-        $_SESSION['error_message'] = 'Không tìm thấy thông tin sản phẩm để mua ngay';
-        header('Location: sanpham.php');
-        exit();
-    }
-    
+// Check if this is a "Buy Now" purchase - check both POST and GET
+$buy_now = (isset($_POST['buy_now']) && $_POST['buy_now'] == '1') || 
+           (isset($_GET['buy_now']) && $_GET['buy_now'] == '1');
+
+debug_log('Is Buy Now?', $buy_now);
+
+// Get order items and calculate totals
+$order_items = [];
+$total_amount = 0;
+
+if ($buy_now && isset($_SESSION['buy_now_cart'])) {
+    // Process "Buy Now" item
+    debug_log('Processing Buy Now cart', $_SESSION['buy_now_cart']);
     $item = $_SESSION['buy_now_cart'];
-    $product_id = $item['id_sanpham'];
-    $variant_id = $item['id_bienthe'] ?? null;
-    $quantity = $item['so_luong'];
-    $price = $item['gia'];
-    $total_amount = $price * $quantity;
-    
-    // Apply shipping fee
-    $shipping_fee = 30000; // Standard shipping fee
-    // Check if eligible for free shipping based on amount
-    if ($total_amount >= 500000) {
-        $shipping_fee = 0;
-    }
-    
-    // Apply discount if available
-    if (!empty($promo_code) && $discount_amount > 0) {
-        $total_with_discount = $total_amount - $discount_amount;
-        if ($total_with_discount < 0) $total_with_discount = 0;
-    } else {
-        $total_with_discount = $total_amount;
-    }
-    
-    // Calculate final amount
-    $final_amount = $total_with_discount + $shipping_fee;
-    
-    // Create order in database
-    $stmt = $conn->prepare("
-        INSERT INTO donhang (ma_donhang, id_user, ho_ten, email, sodienthoai, diachi, tinh_tp, quan_huyen, 
-                           phuong_xa, tong_tien, phi_vanchuyen, giam_gia, thanh_tien, ma_giam_gia, 
-                           phuong_thuc_thanh_toan, trang_thai_thanh_toan, trang_thai_don_hang, ghi_chu)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    
-    $payment_status = 0; // Default: not paid
-    $order_status = 1;  // Default: pending
-    
-    $stmt->bind_param(
-        "sisssssssdddssiiss",  
-        $order_code, $user_id, $fullname, $email, $phone, $address, $province, $district, 
-        $ward, $total_amount, $shipping_fee, $discount_amount, $final_amount, $promo_code, 
-        $payment_method, $payment_status, $order_status, $note
-    );
-    
-    if (!$stmt->execute()) {
-        error_log("Error creating order: " . $conn->error);
-        $_SESSION['error_message'] = 'Có lỗi xảy ra khi tạo đơn hàng';
-        header('Location: thanhtoan.php');
-        exit();
-    }
-    
-    $order_id = $conn->insert_id;
-    
-    // Get product name
-    $product_stmt = $conn->prepare("SELECT tensanpham FROM sanpham WHERE id = ?");
-    $product_stmt->bind_param("i", $product_id);
-    $product_stmt->execute();
-    $product_result = $product_stmt->get_result();
-    
-    if ($product_result->num_rows > 0) {
-        $product = $product_result->fetch_assoc();
-        $product_name = $product['tensanpham'];
-    } else {
-        $product_name = "Sản phẩm #" . $product_id;
-    }
-    
-    // Get variant attributes
-    $variant_attr = "";
-    if ($variant_id) {
-        $variant_stmt = $conn->prepare("
-            SELECT size.gia_tri AS size_name, color.gia_tri AS color_name
-            FROM sanpham_bien_the AS sbt
-            LEFT JOIN thuoc_tinh AS size ON sbt.id_size = size.id
-            LEFT JOIN thuoc_tinh AS color ON sbt.id_mau = color.id
-            WHERE sbt.id = ?
-        ");
-        $variant_stmt->bind_param("i", $variant_id);
-        $variant_stmt->execute();
-        $variant_result = $variant_stmt->get_result();
-        
-        if ($variant_result->num_rows > 0) {
-            $variant = $variant_result->fetch_assoc();
-            $variant_attr = "Size: " . $variant['size_name'] . ", Màu: " . $variant['color_name'];
-        }
-    }
-    
-    // Add order detail
-    $detail_stmt = $conn->prepare("
-        INSERT INTO donhang_chitiet (id_donhang, id_sanpham, id_bienthe, tensp, thuoc_tinh, gia, soluong, thanh_tien)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    
-    $item_total = $price * $quantity;
-    
-    $detail_stmt->bind_param(
-        "iiissdid", 
-        $order_id, $product_id, $variant_id, $product_name, $variant_attr, 
-        $price, $quantity, $item_total
-    );
-    
-    if (!$detail_stmt->execute()) {
-        error_log("Error adding order detail: " . $conn->error);
-    }
-    
-    // Record order creation in history
-    $action = "Tạo đơn hàng";
-    $user_name = $user_id ? (isset($_SESSION['user']['ten']) ? $_SESSION['user']['ten'] : 'Người dùng') : 'Khách vãng lai';
-    $log_note = "Đơn hàng mới được tạo với phương thức thanh toán: " . $payment_method;
-    
-    $log_stmt = $conn->prepare("
-        INSERT INTO donhang_lichsu (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu)
-        VALUES (?, ?, ?, ?)
-    ");
-    
-    $log_stmt->bind_param("isss", $order_id, $action, $user_name, $log_note);
-    $log_stmt->execute();
-    
-    // Clear buy now session data
-    unset($_SESSION['buy_now_cart']);
+    $order_items[] = [
+        'id_sanpham' => $item['id_sanpham'],
+        'id_bienthe' => $item['id_bienthe'],
+        'tensp' => $item['ten_san_pham'],
+        'thuoc_tinh' => 'Size: ' . $item['ten_size'] . ', Màu: ' . $item['ten_mau'],
+        'gia' => $item['gia'],
+        'soluong' => $item['so_luong'],
+        'thanh_tien' => $item['thanh_tien']
+    ];
+    $total_amount = $item['thanh_tien'];
 } else {
-    // Regular cart checkout
-    // Obtain the cart first
+    // Process regular cart checkout
+    debug_log('Processing regular cart checkout');
     $session_id = session_id();
     
-    if ($user_id) {
-        $stmt = $conn->prepare("SELECT id FROM giohang WHERE id_user = ?");
-        $stmt->bind_param("i", $user_id);
-    } else {
-        $stmt = $conn->prepare("SELECT id FROM giohang WHERE session_id = ? AND id_user IS NULL");
-        $stmt->bind_param("s", $session_id);
-    }
-    
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        $_SESSION['error_message'] = 'Không tìm thấy giỏ hàng';
-        header('Location: giohang.php');
-        exit();
-    }
-    
-    $cart = $result->fetch_assoc();
-    $cart_id = $cart['id'];
-    
-    // Determine if we're checking out selected items or entire cart
-    $selected_items = isset($_POST['selected_items']) ? $_POST['selected_items'] : [];
-    
-    // Get cart items to checkout
-    if (!empty($selected_items)) {
+    // Determine which items to checkout
+    if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && !empty($_SESSION['checkout_items'])) {
+        $selected_items = $_SESSION['checkout_items'];
         $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
+        
+        // Get cart ID
+        if ($user_id) {
+            $cart_stmt = $conn->prepare("SELECT id FROM giohang WHERE id_user = ?");
+            $cart_stmt->bind_param("i", $user_id);
+        } else {
+            $cart_stmt = $conn->prepare("SELECT id FROM giohang WHERE session_id = ? AND id_user IS NULL");
+            $cart_stmt->bind_param("s", $session_id);
+        }
+        $cart_stmt->execute();
+        $cart_result = $cart_stmt->get_result();
+        
+        if ($cart_result->num_rows === 0) {
+            throw new Exception("Không tìm thấy giỏ hàng");
+        }
+        
+        $cart_id = $cart_result->fetch_assoc()['id'];
+        
+        // Get selected items
+        $types = "i" . str_repeat("i", count($selected_items));
+        $params = array_merge([$cart_id], $selected_items);
         
         $query = "
             SELECT gct.*, 
-                sbt.id_sanpham,
-                sp.tensanpham, 
-                sp.hinhanh,
-                size.gia_tri AS ten_kichthuoc,
-                color.gia_tri AS ten_mau
+                   sp.tensanpham, 
+                   sp.id as id_sanpham,
+                   size.gia_tri AS ten_kichthuoc,
+                   color.gia_tri AS ten_mau
             FROM giohang_chitiet gct
             JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
             JOIN sanpham sp ON sbt.id_sanpham = sp.id
@@ -216,174 +124,235 @@ if ($is_buy_now) {
             WHERE gct.id_giohang = ? AND gct.id IN ($placeholders)
         ";
         
-        $types = "i" . str_repeat("i", count($selected_items));
-        $params = array_merge([$cart_id], $selected_items);
-        
         $stmt = $conn->prepare($query);
         $stmt->bind_param($types, ...$params);
     } else {
-        $stmt = $conn->prepare("
-            SELECT gct.*, 
-                sbt.id_sanpham,
-                sp.tensanpham, 
-                sp.hinhanh,
-                size.gia_tri AS ten_kichthuoc,
-                color.gia_tri AS ten_mau
-            FROM giohang_chitiet gct
-            JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
-            JOIN sanpham sp ON sbt.id_sanpham = sp.id
-            LEFT JOIN thuoc_tinh size ON sbt.id_size = size.id AND size.loai = 'size'
-            LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
-            WHERE gct.id_giohang = ?
-        ");
-        $stmt->bind_param("i", $cart_id);
+        // Get all items in cart
+        if ($user_id) {
+            $query = "
+                SELECT gct.*, 
+                       sp.tensanpham, 
+                       sp.id as id_sanpham,
+                       size.gia_tri AS ten_kichthuoc,
+                       color.gia_tri AS ten_mau
+                FROM giohang_chitiet gct
+                JOIN giohang g ON gct.id_giohang = g.id
+                JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
+                JOIN sanpham sp ON sbt.id_sanpham = sp.id
+                LEFT JOIN thuoc_tinh size ON sbt.id_size = size.id AND size.loai = 'size'
+                LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
+                WHERE g.id_user = ?
+            ";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $user_id);
+        } else {
+            $query = "
+                SELECT gct.*, 
+                       sp.tensanpham, 
+                       sp.id as id_sanpham,
+                       size.gia_tri AS ten_kichthuoc,
+                       color.gia_tri AS ten_mau
+                FROM giohang_chitiet gct
+                JOIN giohang g ON gct.id_giohang = g.id
+                JOIN sanpham_bien_the sbt ON gct.id_bienthe = sbt.id
+                JOIN sanpham sp ON sbt.id_sanpham = sp.id
+                LEFT JOIN thuoc_tinh size ON sbt.id_size = size.id AND size.loai = 'size'
+                LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
+                WHERE g.session_id = ? AND g.id_user IS NULL
+            ";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("s", $session_id);
+        }
     }
     
     $stmt->execute();
-    $items = $stmt->get_result();
+    $result = $stmt->get_result();
     
-    if ($items->num_rows === 0) {
-        $_SESSION['error_message'] = 'Không có sản phẩm nào để thanh toán';
-        header('Location: giohang.php');
-        exit();
+    while ($item = $result->fetch_assoc()) {
+        $thuoc_tinh = 'Size: ' . ($item['ten_kichthuoc'] ?? 'N/A') . ', Màu: ' . ($item['ten_mau'] ?? 'N/A');
+        $thanh_tien = $item['gia'] * $item['so_luong'];
+        $total_amount += $thanh_tien;
+        
+        $order_items[] = [
+            'id_sanpham' => $item['id_sanpham'],
+            'id_bienthe' => $item['id_bienthe'],
+            'tensp' => $item['tensanpham'],
+            'thuoc_tinh' => $thuoc_tinh,
+            'gia' => $item['gia'],
+            'soluong' => $item['so_luong'],
+            'thanh_tien' => $thanh_tien
+        ];
     }
+}
+
+debug_log('Order items', $order_items);
+debug_log('Total amount', $total_amount);
+
+// Apply shipping fee and discounts
+$shipping_fee = 30000;
+$discount_amount = isset($_POST['discount_amount']) ? floatval($_POST['discount_amount']) : 0;
+$final_amount = $total_amount + $shipping_fee - $discount_amount;
+$promo_code = isset($_POST['promo_code']) ? $_POST['promo_code'] : '';
+
+// Start transaction
+$conn->begin_transaction();
+
+try {
+    debug_log('Preparing order insertion with payment method', $payment_method);
     
-    // Calculate totals
-    $total_amount = 0;
-    $checkout_items = [];
-    
-    while ($item = $items->fetch_assoc()) {
-        $checkout_items[] = $item;
-        $total_amount += $item['gia'] * $item['so_luong'];
-    }
-    
-    // Apply shipping fee
-    $shipping_fee = 30000; // Standard shipping fee
-    // Check if eligible for free shipping based on amount
-    if ($total_amount >= 500000) {
-        $shipping_fee = 0;
-    }
-    
-    // Apply discount if available
-    if (!empty($promo_code) && $discount_amount > 0) {
-        $total_with_discount = $total_amount - $discount_amount;
-        if ($total_with_discount < 0) $total_with_discount = 0;
-    } else {
-        $total_with_discount = $total_amount;
-    }
-    
-    // Calculate final amount
-    $final_amount = $total_with_discount + $shipping_fee;
-    
-    // Create order in database
-    $stmt = $conn->prepare("
-        INSERT INTO donhang (ma_donhang, id_user, ho_ten, email, sodienthoai, diachi, tinh_tp, quan_huyen, 
-                           phuong_xa, tong_tien, phi_vanchuyen, giam_gia, thanh_tien, ma_giam_gia, 
-                           phuong_thuc_thanh_toan, trang_thai_thanh_toan, trang_thai_don_hang, ghi_chu)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    // Create order - ENSURE payment_method is included in bind_param
+    $order_stmt = $conn->prepare("
+        INSERT INTO donhang (
+            ma_donhang, id_user, ho_ten, email, sodienthoai, diachi, 
+            tinh_tp, quan_huyen, phuong_xa, tong_tien, phi_vanchuyen, 
+            giam_gia, thanh_tien, ma_giam_gia, phuong_thuc_thanh_toan, 
+            trang_thai_thanh_toan, trang_thai_don_hang, ghi_chu
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?
+        )
     ");
-    
-    $payment_status = 0; // Default: not paid
-    $order_status = 1;  // Default: pending
-    
-    $stmt->bind_param(
-        "sisssssssdddssiiss",  
-        $order_code, $user_id, $fullname, $email, $phone, $address, $province, $district, 
-        $ward, $total_amount, $shipping_fee, $discount_amount, $final_amount, $promo_code, 
-        $payment_method, $payment_status, $order_status, $note
+
+    if (!$order_stmt) {
+        throw new Exception("Prepare failed: " . $conn->error);
+    }
+
+    // Make sure to bind the payment_method parameter
+    $order_stmt->bind_param(
+        "sissssssddddssss",
+        $order_code, $user_id, $ho_ten, $email, $sodienthoai, $diachi,
+        $tinh_tp, $quan_huyen, $phuong_xa, $total_amount, $shipping_fee,
+        $discount_amount, $final_amount, $promo_code, $payment_method,
+        $ghi_chu
     );
-    
-    if (!$stmt->execute()) {
-        error_log("Error creating order: " . $conn->error);
-        $_SESSION['error_message'] = 'Có lỗi xảy ra khi tạo đơn hàng';
-        header('Location: thanhtoan.php');
+
+    if (!$order_stmt->execute()) {
+        throw new Exception("Execute failed: " . $order_stmt->error);
+    }
+
+    $order_id = $conn->insert_id;
+    debug_log('Order inserted successfully', ['order_id' => $order_id, 'payment_method' => $payment_method]);
+
+    // Insert order details
+    if (!empty($order_items)) {
+        $detail_stmt = $conn->prepare("
+            INSERT INTO donhang_chitiet (
+                id_donhang, id_sanpham, id_bienthe, tensp, thuoc_tinh,
+                gia, soluong, thanh_tien
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        foreach ($order_items as $item) {
+            $detail_stmt->bind_param(
+                "iiissidi",
+                $order_id, $item['id_sanpham'], $item['id_bienthe'], $item['tensp'],
+                $item['thuoc_tinh'], $item['gia'], $item['soluong'], $item['thanh_tien']
+            );
+            
+            if (!$detail_stmt->execute()) {
+                throw new Exception("Failed to insert order details: " . $detail_stmt->error);
+            }
+            
+            // Update product inventory
+            $update_inventory = $conn->prepare("
+                UPDATE sanpham_bien_the SET so_luong = so_luong - ? 
+                WHERE id = ? AND so_luong >= ?
+            ");
+            $update_inventory->bind_param("iii", $item['soluong'], $item['id_bienthe'], $item['soluong']);
+            $update_inventory->execute();
+        }
+        
+        debug_log('Order details inserted successfully');
+    }
+
+    // Create payment info for VNPAY if selected
+    if ($payment_method === 'vnpay') {
+        $_SESSION['payment_info'] = [
+            'id' => $order_id,
+            'ma_donhang' => $order_code,
+            'amount' => $final_amount,
+            'order_desc' => "Thanh toán đơn hàng " . $order_code
+        ];
+
+        // Commit transaction before redirecting
+        $conn->commit();
+        
+        // Redirect to VNPAY processing
+        header('Location: vnpay_create_payment.php');
         exit();
     }
     
-    $order_id = $conn->insert_id;
-    
-    // Add order details for each item
-    foreach ($checkout_items as $item) {
-        $product_id = $item['id_sanpham'];
-        $variant_id = $item['id_bienthe'];
-        $product_name = $item['tensanpham'];
-        $price = $item['gia'];
-        $quantity = $item['so_luong'];
-        $variant_attr = "";
-        
-        if (!empty($item['ten_kichthuoc'])) {
-            $variant_attr .= "Size: " . $item['ten_kichthuoc'];
-        }
-        
-        if (!empty($item['ten_mau'])) {
-            if (!empty($variant_attr)) {
-                $variant_attr .= ", ";
-            }
-            $variant_attr .= "Màu: " . $item['ten_mau'];
-        }
-        
-        $item_total = $price * $quantity;
-        
-        $detail_stmt = $conn->prepare("
-            INSERT INTO donhang_chitiet (id_donhang, id_sanpham, id_bienthe, tensp, thuoc_tinh, gia, soluong, thanh_tien)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        $detail_stmt->bind_param(
-            "iiissdid", 
-            $order_id, $product_id, $variant_id, $product_name, $variant_attr, 
-            $price, $quantity, $item_total
-        );
-        
-        if (!$detail_stmt->execute()) {
-            error_log("Error adding order detail: " . $conn->error);
-        }
-        
-        // Remove checked out items from cart if successfully added to order
-        if ($detail_stmt->affected_rows > 0) {
-            $delete_stmt = $conn->prepare("DELETE FROM giohang_chitiet WHERE id = ? AND id_giohang = ?");
-            $delete_stmt->bind_param("ii", $item['id'], $cart_id);
-            $delete_stmt->execute();
-        }
-    }
-    
-    // Record order creation in history
+    // For COD and other methods, complete the order
+    // Add order to history
     $action = "Tạo đơn hàng";
-    $user_name = $user_id ? (isset($_SESSION['user']['ten']) ? $_SESSION['user']['ten'] : 'Người dùng') : 'Khách vãng lai';
-    $log_note = "Đơn hàng mới được tạo với phương thức thanh toán: " . $payment_method;
+    $nguoi_thuchien = $is_logged_in ? "Người dùng" : "Khách vãng lai";
+    $note = "Đơn hàng mới được tạo với phương thức thanh toán: " . $payment_method;
     
-    $log_stmt = $conn->prepare("
+    $history_stmt = $conn->prepare("
         INSERT INTO donhang_lichsu (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu)
         VALUES (?, ?, ?, ?)
     ");
-    
-    $log_stmt->bind_param("isss", $order_id, $action, $user_name, $log_note);
-    $log_stmt->execute();
-}
+    $history_stmt->bind_param("isss", $order_id, $action, $nguoi_thuchien, $note);
+    $history_stmt->execute();
 
-// Process by payment method
-if ($payment_method == 'cod') {
-    // For COD, redirect to success page
-    $_SESSION['order_success'] = true;
-    $_SESSION['last_order_id'] = $order_id;
-    header("Location: dathang_thanhcong.php?id=$order_id");
-    exit();
-} else if ($payment_method == 'vnpay') {
-    // For VNPAY, prepare payment info and redirect to VNPAY
-    $_SESSION['payment_info'] = [
-        'id' => $order_id,
-        'ma_donhang' => $order_code,
-        'amount' => $final_amount,
-        'order_desc' => "Thanh toán đơn hàng $order_code"
-    ];
+    // Clear cart items if not buy_now (they were already processed)
+    if (!$buy_now) {
+        if ($user_id) {
+            $cart_query = $conn->prepare("SELECT id FROM giohang WHERE id_user = ?");
+            $cart_query->bind_param("i", $user_id);
+        } else {
+            $cart_query = $conn->prepare("SELECT id FROM giohang WHERE session_id = ? AND id_user IS NULL");
+            $cart_query->bind_param("s", $session_id);
+        }
+        $cart_query->execute();
+        $cart_result = $cart_query->get_result();
+        
+        if ($cart_result->num_rows > 0) {
+            $cart_id = $cart_result->fetch_assoc()['id'];
+            
+            // Delete either selected items or all items
+            if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && !empty($_SESSION['checkout_items'])) {
+                $selected_items = $_SESSION['checkout_items'];
+                $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
+                
+                $delete_params = array_merge([$cart_id], $selected_items);
+                $delete_types = "i" . str_repeat("i", count($selected_items));
+                
+                $delete_stmt = $conn->prepare("DELETE FROM giohang_chitiet WHERE id_giohang = ? AND id IN ($placeholders)");
+                $delete_stmt->bind_param($delete_types, ...$delete_params);
+                $delete_stmt->execute();
+            } else {
+                $delete_stmt = $conn->prepare("DELETE FROM giohang_chitiet WHERE id_giohang = ?");
+                $delete_stmt->bind_param("i", $cart_id);
+                $delete_stmt->execute();
+            }
+        }
+    }
+
+    // Commit the transaction
+    $conn->commit();
     
-    header("Location: vnpay_create_payment.php");
+    // Clear checkout session data
+    if ($buy_now) {
+        unset($_SESSION['buy_now_cart']);
+    } else {
+        unset($_SESSION['checkout_items']);
+        unset($_SESSION['checkout_type']);
+    }
+    
+    // Redirect to success page
+    $_SESSION['order_success'] = [
+        'order_id' => $order_id,
+        'order_code' => $order_code
+    ];
+    header('Location: order_success.php');
     exit();
-} else {
-    // Fallback for other payment methods
-    $_SESSION['order_success'] = true;
-    $_SESSION['last_order_id'] = $order_id;
-    header("Location: order_success.php?id=$order_id");
+    
+} catch (Exception $e) {
+    // Rollback on error
+    $conn->rollback();
+    debug_log('Error processing order', $e->getMessage());
+    $_SESSION['error_message'] = 'Có lỗi xảy ra: ' . $e->getMessage();
+    header('Location: thanhtoan.php');
     exit();
 }
 ?>

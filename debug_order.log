@@ -1,0 +1,124 @@
+2025-04-20 10:57:52 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 06
+    [district] => 064
+    [ward] => 02080
+    [payment_method] => vnpay
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Bắc Kạn
+    [district_name] => Chợ Đồn
+    [ward_name] => Bình Trung
+    [full_address] => đông tiến, Bình Trung, Chợ Đồn, Bắc Kạn
+)
+
+2025-04-20 10:57:52 - Original payment method - vnpay
+2025-04-20 10:57:52 - Final payment method - vnpay
+2025-04-20 10:57:52 - Is Buy Now? - 1
+2025-04-20 10:57:52 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 29
+    [id_bienthe] => 114
+    [so_luong] => 1
+    [gia] => 829000.00
+    [ten_san_pham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [hinh_anh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 829000
+)
+
+2025-04-20 10:57:52 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 29
+            [id_bienthe] => 114
+            [tensp] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 829000.00
+            [soluong] => 1
+            [thanh_tien] => 829000
+        )
+
+)
+
+2025-04-20 10:57:52 - Total amount - 829000
+2025-04-20 10:57:52 - Preparing order insertion with payment method - vnpay
+2025-04-20 10:57:52 - Order inserted successfully - Array
+(
+    [order_id] => 32
+    [payment_method] => vnpay
+)
+
+2025-04-20 10:57:52 - Order details inserted successfully
+2025-04-20 10:58:54 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 66
+    [district] => 650
+    [ward] => 24343
+    [payment_method] => vnpay
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Đắk Lắk
+    [district_name] => Krông Năng
+    [ward_name] => Krông Năng
+    [full_address] => đông tiến, Krông Năng, Krông Năng, Đắk Lắk
+)
+
+2025-04-20 10:58:54 - Original payment method - vnpay
+2025-04-20 10:58:54 - Final payment method - vnpay
+2025-04-20 10:58:54 - Is Buy Now? - 1
+2025-04-20 10:58:54 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 29
+    [id_bienthe] => 114
+    [so_luong] => 1
+    [gia] => 829000.00
+    [ten_san_pham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [hinh_anh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 829000
+)
+
+2025-04-20 10:58:54 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 29
+            [id_bienthe] => 114
+            [tensp] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 829000.00
+            [soluong] => 1
+            [thanh_tien] => 829000
+        )
+
+)
+
+2025-04-20 10:58:54 - Total amount - 829000
+2025-04-20 10:58:54 - Preparing order insertion with payment method - vnpay
+2025-04-20 10:58:54 - Order inserted successfully - Array
+(
+    [order_id] => 33
+    [payment_method] => vnpay
+)
+
+2025-04-20 10:58:54 - Order details inserted successfully

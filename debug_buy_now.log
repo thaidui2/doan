@@ -1,0 +1,298 @@
+2025-04-20 08:57:37 - Buy Now request received - Array
+(
+    [productId] => 27
+    [quantity] => 1
+    [sizeId] => 19
+    [colorId] => 15
+)
+
+2025-04-20 08:57:37 - Extracted data - Array
+(
+    [product_id] => 27
+    [quantity] => 1
+    [size_id] => 19
+    [color_id] => 15
+)
+
+2025-04-20 08:57:37 - Executing query with params - Array
+(
+    [0] => 27
+    [1] => 19
+    [2] => 15
+)
+
+2025-04-20 08:57:37 - Product variant found - Array
+(
+    [variant_id] => 111
+    [id] => 27
+    [tensanpham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [gia] => 1650000.00
+    [hinhanh] => uploads/products/1745072553_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 45
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+)
+
+2025-04-20 08:57:37 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 27
+    [id_bienthe] => 111
+    [so_luong] => 1
+    [gia] => 1650000.00
+    [ten_san_pham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [hinh_anh] => uploads/products/1745072553_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 45
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 1650000
+)
+
+2025-04-20 08:57:37 - Redirecting to checkout
+2025-04-20 10:37:05 - Buy Now request received - Array
+(
+    [productId] => 25
+    [quantity] => 1
+    [sizeId] => 4
+    [colorId] => 12
+)
+
+2025-04-20 10:37:05 - Extracted data - Array
+(
+    [product_id] => 25
+    [quantity] => 1
+    [size_id] => 4
+    [color_id] => 12
+)
+
+2025-04-20 10:37:05 - Executing query with params - Array
+(
+    [0] => 25
+    [1] => 4
+    [2] => 12
+)
+
+2025-04-20 10:37:05 - Product variant found - Array
+(
+    [variant_id] => 86
+    [id] => 25
+    [tensanpham] => Giày VANS OLD SKOOL LOGO CHECK BLACK
+    [gia] => 1750000.00
+    [hinhanh] => uploads/products/1744982672_giay-vans-old-skool-logo-check-black-vn0005ufcji-1.webp
+    [ten_size] => 38
+    [ten_mau] => Đen
+    [ma_mau] => #000000
+)
+
+2025-04-20 10:37:05 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 25
+    [id_bienthe] => 86
+    [so_luong] => 1
+    [gia] => 1750000.00
+    [ten_san_pham] => Giày VANS OLD SKOOL LOGO CHECK BLACK
+    [hinh_anh] => uploads/products/1744982672_giay-vans-old-skool-logo-check-black-vn0005ufcji-1.webp
+    [ten_size] => 38
+    [ten_mau] => Đen
+    [ma_mau] => #000000
+    [thanh_tien] => 1750000
+)
+
+2025-04-20 10:37:05 - Redirecting to checkout
+2025-04-20 10:37:48 - Buy Now request received - Array
+(
+    [productId] => 25
+    [quantity] => 1
+    [sizeId] => 4
+    [colorId] => 12
+)
+
+2025-04-20 10:37:48 - Extracted data - Array
+(
+    [product_id] => 25
+    [quantity] => 1
+    [size_id] => 4
+    [color_id] => 12
+)
+
+2025-04-20 10:37:48 - Executing query with params - Array
+(
+    [0] => 25
+    [1] => 4
+    [2] => 12
+)
+
+2025-04-20 10:37:48 - Product variant found - Array
+(
+    [variant_id] => 86
+    [id] => 25
+    [tensanpham] => Giày VANS OLD SKOOL LOGO CHECK BLACK
+    [gia] => 1750000.00
+    [hinhanh] => uploads/products/1744982672_giay-vans-old-skool-logo-check-black-vn0005ufcji-1.webp
+    [ten_size] => 38
+    [ten_mau] => Đen
+    [ma_mau] => #000000
+)
+
+2025-04-20 10:37:48 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 25
+    [id_bienthe] => 86
+    [so_luong] => 1
+    [gia] => 1750000.00
+    [ten_san_pham] => Giày VANS OLD SKOOL LOGO CHECK BLACK
+    [hinh_anh] => uploads/products/1744982672_giay-vans-old-skool-logo-check-black-vn0005ufcji-1.webp
+    [ten_size] => 38
+    [ten_mau] => Đen
+    [ma_mau] => #000000
+    [thanh_tien] => 1750000
+)
+
+2025-04-20 10:37:48 - Redirecting to checkout
+2025-04-20 10:46:17 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 9
+    [colorId] => 13
+)
+
+2025-04-20 10:46:17 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 9
+    [color_id] => 13
+)
+
+2025-04-20 10:46:17 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 9
+    [2] => 13
+)
+
+2025-04-20 10:46:17 - Product variant found - Array
+(
+    [variant_id] => 115
+    [id] => 29
+    [tensanpham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [gia] => 829000.00
+    [hinhanh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 43
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+)
+
+2025-04-20 10:46:17 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 29
+    [id_bienthe] => 115
+    [so_luong] => 1
+    [gia] => 829000.00
+    [ten_san_pham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [hinh_anh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 43
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+    [thanh_tien] => 829000
+)
+
+2025-04-20 10:46:17 - Redirecting to checkout
+2025-04-20 10:53:42 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 13
+)
+
+2025-04-20 10:53:42 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 13
+)
+
+2025-04-20 10:53:42 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 8
+    [2] => 13
+)
+
+2025-04-20 10:53:42 - No product variant found
+2025-04-20 10:53:46 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 13
+)
+
+2025-04-20 10:53:46 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 13
+)
+
+2025-04-20 10:53:46 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 8
+    [2] => 13
+)
+
+2025-04-20 10:53:46 - No product variant found
+2025-04-20 10:57:40 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 11
+)
+
+2025-04-20 10:57:40 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 11
+)
+
+2025-04-20 10:57:40 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 8
+    [2] => 11
+)
+
+2025-04-20 10:57:40 - Product variant found - Array
+(
+    [variant_id] => 114
+    [id] => 29
+    [tensanpham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [gia] => 829000.00
+    [hinhanh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-04-20 10:57:40 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 29
+    [id_bienthe] => 114
+    [so_luong] => 1
+    [gia] => 829000.00
+    [ten_san_pham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [hinh_anh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 829000
+)
+
+2025-04-20 10:57:40 - Redirecting to checkout
