@@ -25,22 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Xử lý nút yêu thích
-  const wishlistButtons = document.querySelectorAll(".wishlist-icon button");
-  wishlistButtons.forEach((button) => {
-    button.addEventListener("click", function (e) {
-      e.preventDefault();
-      const icon = this.querySelector("i");
-      if (icon.classList.contains("bi-heart")) {
-        icon.classList.remove("bi-heart");
-        icon.classList.add("bi-heart-fill");
-        icon.classList.add("text-danger");
-      } else {
-        icon.classList.remove("bi-heart-fill");
-        icon.classList.remove("text-danger");
-        icon.classList.add("bi-heart");
-      }
-    });
-  });
+  
 
   // Hiệu ứng cho nút yêu thích
   const wishlistEffectButtons = document.querySelectorAll(
@@ -134,14 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Xử lý nút thêm vào giỏ
-  const addToCartButtons = document.querySelectorAll(".add-to-cart");
-  addToCartButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-      const productId = this.getAttribute("data-product-id");
-      addToCart(productId, 1);
-    });
-  });
-
+  
   // Hàm thêm sản phẩm vào giỏ hàng
   function addToCart(productId, quantity) {
     fetch("add_to_cart.php", {

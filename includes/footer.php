@@ -131,9 +131,7 @@ s0.parentNode.insertBefore(s1,s0);
 </script>
 <!--End of Tawk.to Script-->
 
-<!-- Toast container -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
-<!-- Bootstrap JS -->
+
 
 
 <!-- Custom JS -->

@@ -481,3 +481,47 @@ body::-webkit-scrollbar {
     transform: rotate(360deg);
   }
 }
+
+/* Wishlist button styles */
+.wishlist-button {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.wishlist-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.wishlist-button.active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    opacity: 1;
+}
+
+.wishlist-button.active i {
+    color: white;
+}
+
+/* Toast notification styling */
+.toast-container {
+    z-index: 1060;
+}
+
+.toast-container {
+    z-index: 9999;
+}
+
+.toast {
+    min-width: 250px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.text-white {
+    color: #fff !important;
+}

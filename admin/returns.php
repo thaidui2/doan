@@ -19,13 +19,13 @@ $offset = ($current_page - 1) * $items_per_page;
 
 // Xây dựng truy vấn
 $query = "SELECT hr.*, 
-          u.tenuser, u.email,
+          u.ten as tenuser, u.email,
           sp.tensanpham, sp.hinhanh,
-          dh.id_donhang AS ma_donhang
+          dh.ma_donhang
           FROM hoantra hr
-          JOIN users u ON hr.id_nguoidung = u.id_user
-          JOIN sanpham sp ON hr.id_sanpham = sp.id_sanpham
-          JOIN donhang dh ON hr.id_donhang = dh.id_donhang";
+          JOIN users u ON hr.id_nguoidung = u.id
+          JOIN sanpham sp ON hr.id_sanpham = sp.id
+          JOIN donhang dh ON hr.id_donhang = dh.id";
 
 $where_conditions = [];
 // Lọc theo trạng thái
@@ -36,7 +36,7 @@ if ($status_filter > 0) {
 // Tìm kiếm
 if (!empty($search_keyword)) {
     $search_term = "%$search_keyword%";
-    $where_conditions[] = "(u.tenuser LIKE '$search_term' OR u.email LIKE '$search_term' OR dh.ma_donhang LIKE '$search_term' OR sp.tensanpham LIKE '$search_term')";
+    $where_conditions[] = "(u.ten LIKE '$search_term' OR u.email LIKE '$search_term' OR dh.ma_donhang LIKE '$search_term' OR sp.tensanpham LIKE '$search_term')";
 }
 
 // Thêm điều kiện WHERE nếu có
@@ -47,10 +47,23 @@ if (!empty($where_conditions)) {
 // Sắp xếp theo thời gian tạo mới nhất
 $query .= " ORDER BY hr.ngaytao DESC";
 
-// Đếm tổng số bản ghi
-$count_query = str_replace("hr.*, u.tenuser, u.sodienthoai, u.email, sp.tensanpham, sp.hinhanh, dh.ma_donhang", "COUNT(*) as total", $query);
+// Đếm tổng số bản ghi - Build a separate count query
+$count_query = "SELECT COUNT(*) as total 
+                FROM hoantra hr
+                JOIN users u ON hr.id_nguoidung = u.id
+                JOIN sanpham sp ON hr.id_sanpham = sp.id
+                JOIN donhang dh ON hr.id_donhang = dh.id";
+
+// Add WHERE conditions to count query if they exist
+if (!empty($where_conditions)) {
+    $count_query .= " WHERE " . implode(" AND ", $where_conditions);
+}
+
 $count_result = $conn->query($count_query);
-$total_items = $count_result->fetch_assoc()['total'];
+$total_items = 0;
+if ($count_result && $row = $count_result->fetch_assoc()) {
+    $total_items = $row['total'];
+}
 $total_pages = ceil($total_items / $items_per_page);
 
 // Thêm giới hạn cho phân trang
@@ -67,6 +80,9 @@ $return_statuses = [
     4 => ['name' => 'Hoàn thành', 'badge' => 'success'],
     5 => ['name' => 'Từ chối', 'badge' => 'danger']
 ];
+
+// Default status for invalid values
+$default_status = ['name' => 'Không xác định', 'badge' => 'secondary'];
 ?>
 
 <!-- Include sidebar -->
@@ -136,7 +152,12 @@ $return_statuses = [
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="../uploads/products/<?php echo $row['hinhanh']; ?>" class="img-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                            <?php 
+                                            $product_image = !empty($row['hinhanh']) ? 
+                                                (strpos($row['hinhanh'], 'uploads/') === 0 ? '../' . $row['hinhanh'] : '../uploads/products/' . $row['hinhanh']) : 
+                                                '../images/no-image.png';
+                                            ?>
+                                            <img src="<?php echo $product_image; ?>" class="img-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover;">
                                             <div><?php echo htmlspecialchars($row['tensanpham']); ?></div>
                                         </div>
                                     </td>
@@ -145,8 +166,13 @@ $return_statuses = [
                                     </td>
                                     <td><?php echo date('d/m/Y H:i', strtotime($row['ngaytao'])); ?></td>
                                     <td>
-                                        <span class="badge bg-<?php echo $return_statuses[$row['trangthai']]['badge']; ?>">
-                                            <?php echo $return_statuses[$row['trangthai']]['name']; ?>
+                                        <?php 
+                                        // Ensure trangthai is an integer and validate it exists in our status array
+                                        $status_id = isset($row['trangthai']) ? (int)$row['trangthai'] : 0;
+                                        $status = isset($return_statuses[$status_id]) ? $return_statuses[$status_id] : $default_status;
+                                        ?>
+                                        <span class="badge bg-<?php echo $status['badge']; ?>">
+                                            <?php echo $status['name']; ?>
                                         </span>
                                     </td>
                                     <td>

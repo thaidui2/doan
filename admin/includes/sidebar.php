@@ -32,8 +32,13 @@ if ($reviews_query) {
     $notification_count += $new_reviews;
 }
 
-// Đếm số lượng yêu cầu hoàn trả (nếu có)
+// Đếm số lượng yêu cầu hoàn trả chờ xử lý
 $pending_returns = 0;
+$return_query = $conn->query("SELECT COUNT(*) as count FROM hoantra WHERE trangthai = 1");
+if ($return_query) {
+    $pending_returns = $return_query->fetch_assoc()['count'] ?? 0;
+    $notification_count += $pending_returns;
+}
 
 // Đếm các yêu cầu liên hệ mới (nếu có)
 $contact_requests = 0;
@@ -111,6 +116,16 @@ if (!isset($admin_level)) {
                     <i class="bi bi-star me-2"></i> Đánh giá
                     <?php if ($new_reviews > 0): ?>
                         <span class="badge bg-danger rounded-pill"><?php echo $new_reviews; ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            
+            <!-- Hoàn trả -->
+            <li class="nav-item">
+                <a class="nav-link <?php echo ($current_page == 'returns.php' || $current_page == 'return-detail.php') ? 'active' : ''; ?>" href="returns.php">
+                    <i class="bi bi-box-arrow-left me-2"></i> Yêu cầu hoàn trả
+                    <?php if ($pending_returns > 0): ?>
+                        <span class="badge bg-danger rounded-pill"><?php echo $pending_returns; ?></span>
                     <?php endif; ?>
                 </a>
             </li>

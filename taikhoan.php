@@ -259,7 +259,9 @@ $wishlist_count = $wishlist_result->fetch_assoc()['count'];
 </head>
 
 <body>
-    <?php include('includes/header.php'); ?>
+    <?php 
+    include('includes/head.php');
+    include('includes/header.php'); ?>
     
     <div class="container py-4">
         <!-- Display messages -->

@@ -1,4 +1,7 @@
 <?php
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
 // Set page title
 $page_title = 'Chi tiết đánh giá';
 

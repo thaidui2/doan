@@ -31,6 +31,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
 
 <body>
 <?php 
+    include('includes/head.php'); // Include navbar for user login/logout and cart icon
     require_once('includes/header.php'); // Use only header which already includes the proper head content
     ?>
     

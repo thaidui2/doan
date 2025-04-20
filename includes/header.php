@@ -352,8 +352,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                     </li>
                                     <li><a class="dropdown-item" href="taikhoan.php"><i class="bi bi-person me-2"></i>Tài khoản của tôi</a></li>
                                     <li><a class="dropdown-item" href="donhang.php"><i class="bi bi-receipt me-2"></i>Đơn hàng của tôi</a></li>
-                                    <li><a class="dropdown-item" href="donhoantra.php"><i class="bi bi-arrow-return-left me-2"></i>Yêu cầu hoàn trả</a></li>
-                                    <li><a class="dropdown-item" href="wishlist.php"><i class="bi bi-heart me-2"></i>Sản phẩm yêu thích</a></li>
+                                    <li><a class="dropdown-item" href="hoantra.php"><i class="bi bi-arrow-return-left me-2"></i>Yêu cầu hoàn trả</a></li>
+                                    <li><a class="dropdown-item" href="yeuthich.php"><i class="bi bi-heart me-2"></i>Sản phẩm yêu thích</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
                                 </ul>

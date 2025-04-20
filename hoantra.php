@@ -3,79 +3,42 @@ session_start();
 include('config/config.php');
 
 // Kiểm tra đăng nhập
-if (!isset($_SESSION['user']) || $_SESSION['user']['logged_in'] !== true) {
+if (!isset($_SESSION['user'])) {
     header('Location: dangnhap.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
-    exit();
+    exit;
 }
 
+// Lấy thông tin người dùng
 $user_id = $_SESSION['user']['id'];
-$product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
-$order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
 
-// Kiểm tra thông tin đơn hàng và sản phẩm
-$stmt = $conn->prepare("
-    SELECT dh.*, dhct.*, sp.tensanpham, sp.hinhanh 
-    FROM donhang dh
-    JOIN donhang_chitiet dhct ON dh.id_donhang = dhct.id_donhang  
-    JOIN sanpham sp ON dhct.id_sanpham = sp.id_sanpham
-    WHERE dh.id_donhang = ? 
-    AND dhct.id_sanpham = ?
-    AND dh.id_nguoidung = ?
-    AND dh.trangthai = 4 /* Chỉ cho phép hoàn trả đơn hàng đã giao */
+// Lấy danh sách yêu cầu hoàn trả
+$query = $conn->prepare("
+    SELECT 
+        hr.*, 
+        dh.ma_donhang, dh.trang_thai_don_hang,
+        sp.tensanpham, sp.hinhanh
+    FROM hoantra hr
+    JOIN donhang dh ON hr.id_donhang = dh.id
+    JOIN sanpham sp ON hr.id_sanpham = sp.id
+    WHERE hr.id_nguoidung = ?
+    ORDER BY hr.ngaytao DESC
 ");
-$stmt->bind_param("iii", $order_id, $product_id, $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
 
-if ($result->num_rows === 0) {
-    // Không tìm thấy thông tin hợp lệ
-    header('Location: donhang.php');
-    exit();
-}
+$query->bind_param("i", $user_id);
+$query->execute();
+$result = $query->get_result();
 
-$order_item = $result->fetch_assoc();
+// Mảng trạng thái hoàn trả
+$return_statuses = [
+    1 => ['name' => 'Chờ xác nhận', 'badge' => 'warning'],
+    2 => ['name' => 'Đã xác nhận', 'badge' => 'info'],
+    3 => ['name' => 'Đang xử lý', 'badge' => 'primary'],
+    4 => ['name' => 'Hoàn thành', 'badge' => 'success'],
+    5 => ['name' => 'Từ chối', 'badge' => 'danger']
+];
 
-// Xử lý form submit
-$errorMsg = '';
-$successMsg = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $lydo = isset($_POST['lydo']) ? trim($_POST['lydo']) : '';
-    $mota_chitiet = isset($_POST['mota_chitiet']) ? trim($_POST['mota_chitiet']) : '';
-    
-    // Validate input
-    if (empty($lydo)) {
-        $errorMsg = "Vui lòng chọn lý do hoàn trả!";
-    } elseif (empty($mota_chitiet)) {
-        $errorMsg = "Vui lòng mô tả chi tiết vấn đề!";
-    } else {
-        // Kiểm tra xem đã có yêu cầu hoàn trả cho sản phẩm này trong đơn hàng chưa
-        $check_stmt = $conn->prepare("
-            SELECT id_hoantra FROM hoantra 
-            WHERE id_donhang = ? AND id_sanpham = ?
-        ");
-        $check_stmt->bind_param("ii", $order_id, $product_id);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
-        
-        if ($check_result->num_rows > 0) {
-            $errorMsg = "Bạn đã gửi yêu cầu hoàn trả cho sản phẩm này rồi!";
-        } else {
-            // Tạo yêu cầu hoàn trả mới
-            $insert_stmt = $conn->prepare("
-                INSERT INTO hoantra (id_donhang, id_sanpham, id_nguoidung, lydo, mota_chitiet, trangthai, ngaytao)
-                VALUES (?, ?, ?, ?, ?, 1, NOW())
-            ");
-            $insert_stmt->bind_param("iiiss", $order_id, $product_id, $user_id, $lydo, $mota_chitiet);
-            
-            if ($insert_stmt->execute()) {
-                $successMsg = "Yêu cầu hoàn trả đã được gửi thành công!";
-            } else {
-                $errorMsg = "Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại sau!";
-            }
-        }
-    }
-}
+// Default status for invalid values
+$default_status = ['name' => 'Không xác định', 'badge' => 'secondary'];
 ?>
 
 <!DOCTYPE html>
@@ -84,155 +47,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yêu cầu hoàn trả - Bug Shop</title>
-    <?php include('includes/head.php'); ?>
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
     <?php include('includes/header.php'); ?>
     
     <div class="container py-5">
-        <h1 class="mb-4">Yêu cầu hoàn trả sản phẩm</h1>
-        
-        <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="index.php">Trang chủ</a></li>
-                <li class="breadcrumb-item"><a href="taikhoan.php">Tài khoản</a></li>
-                <li class="breadcrumb-item"><a href="donhang.php">Đơn hàng của tôi</a></li>
-                <li class="breadcrumb-item"><a href="chitietdonhang.php?id=<?php echo $order_id; ?>">Đơn hàng #<?php echo $order_id; ?></a></li>
-                <li class="breadcrumb-item active" aria-current="page">Hoàn trả sản phẩm</li>
-            </ol>
-        </nav>
-        
         <div class="row">
-            <div class="col-lg-8">
-                <!-- Thông tin sản phẩm -->
+            <div class="col-lg-3">
+                <!-- Menu tài khoản người dùng -->
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Thông tin sản phẩm hoàn trả</h5>
-                    </div>
                     <div class="card-body">
-                        <div class="d-flex align-items-start">
-                            <img src="<?php echo !empty($order_item['hinhanh']) ? 'uploads/products/' . $order_item['hinhanh'] : 'images/no-image.png'; ?>" 
-                                 alt="<?php echo $order_item['tensanpham']; ?>" 
-                                 class="rounded me-3" style="width: 100px;">
-                            <div>
-                                <h5><?php echo $order_item['tensanpham']; ?></h5>
-                                <p class="mb-1">
-                                    <strong>Đơn hàng:</strong> #<?php echo $order_id; ?>
-                                </p>
-                                <p class="mb-1">
-                                    <strong>Số lượng:</strong> <?php echo $order_item['soluong']; ?>
-                                </p>
-                                <p class="mb-1">
-                                    <strong>Giá:</strong> <?php echo number_format($order_item['gia'], 0, ',', '.'); ?>₫
-                                </p>
-                                <p class="mb-0">
-                                    <strong>Thành tiền:</strong> <?php echo number_format($order_item['thanh_tien'], 0, ',', '.'); ?>₫
-                                </p>
-                            </div>
+                        <h5 class="card-title">Tài khoản của tôi</h5>
+                        <div class="list-group list-group-flush">
+                            <a href="taikhoan.php" class="list-group-item list-group-item-action">
+                                <i class="bi bi-person me-2"></i> Thông tin tài khoản
+                            </a>
+                            <a href="donhang.php" class="list-group-item list-group-item-action">
+                                <i class="bi bi-receipt me-2"></i> Đơn hàng của tôi
+                            </a>
+                            <a href="hoantra.php" class="list-group-item list-group-item-action active">
+                                <i class="bi bi-arrow-return-left me-2"></i> Yêu cầu hoàn trả
+                            </a>
+                            <a href="wishlist.php" class="list-group-item list-group-item-action">
+                                <i class="bi bi-heart me-2"></i> Sản phẩm yêu thích
+                            </a>
+                            <a href="logout.php" class="list-group-item list-group-item-action text-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
+                            </a>
                         </div>
                     </div>
                 </div>
-                
-                <?php if($successMsg): ?>
-                <div class="alert alert-success" role="alert">
-                    <?php echo $successMsg; ?>
-                    <div class="mt-3">
-                        <a href="chitietdonhang.php?id=<?php echo $order_id; ?>" class="btn btn-primary">
-                            Trở về chi tiết đơn hàng
-                        </a>
-                    </div>
-                </div>
-                <?php else: ?>
-                
-                <!-- Form hoàn trả -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Thông tin hoàn trả</h5>
-                    </div>
-                    <div class="card-body">
-                        <?php if($errorMsg): ?>
-                        <div class="alert alert-danger" role="alert">
-                            <?php echo $errorMsg; ?>
-                        </div>
-                        <?php endif; ?>
-                        
-                        <form method="post" action="">
-                            <div class="mb-3">
-                                <label for="lydo" class="form-label">Lý do hoàn trả <span class="text-danger">*</span></label>
-                                <select class="form-select" id="lydo" name="lydo" required>
-                                    <option value="">-- Chọn lý do --</option>
-                                    <option value="Sản phẩm bị lỗi/hỏng">Sản phẩm bị lỗi/hỏng</option>
-                                    <option value="Sản phẩm không đúng mô tả">Sản phẩm không đúng mô tả</option>
-                                    <option value="Sản phẩm không đúng kích thước">Sản phẩm không đúng kích thước</option>
-                                    <option value="Sản phẩm không đúng màu sắc">Sản phẩm không đúng màu sắc</option>
-                                    <option value="Nhận được sai sản phẩm">Nhận được sai sản phẩm</option>
-                                    <option value="Khác">Lý do khác</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="mota_chitiet" class="form-label">Mô tả chi tiết <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="mota_chitiet" name="mota_chitiet" rows="5" placeholder="Vui lòng mô tả chi tiết vấn đề của sản phẩm..." required></textarea>
-                                <div class="form-text">Vui lòng cung cấp càng nhiều chi tiết càng tốt để chúng tôi có thể hỗ trợ bạn nhanh chóng.</div>
-                            </div>
-                            
-                            <div class="d-grid gap-2 d-flex justify-content-end">
-                                <a href="chitietdonhang.php?id=<?php echo $order_id; ?>" class="btn btn-outline-secondary">
-                                    Hủy
-                                </a>
-                                <button type="submit" class="btn btn-primary">
-                                    Gửi yêu cầu hoàn trả
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <?php endif; ?>
             </div>
             
-            <div class="col-lg-4">
-                <!-- Chính sách hoàn trả -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Chính sách hoàn trả</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item px-0">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                Thời gian yêu cầu hoàn trả: trong vòng 7 ngày kể từ ngày nhận hàng
-                            </li>
-                            <li class="list-group-item px-0">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                Sản phẩm phải còn nguyên tem, nhãn và chưa qua sử dụng
-                            </li>
-                            <li class="list-group-item px-0">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                Cung cấp đầy đủ hình ảnh, video chứng minh lỗi sản phẩm
-                            </li>
-                            <li class="list-group-item px-0">
-                                <i class="bi bi-exclamation-circle-fill text-warning me-2"></i>
-                                Thời gian xử lý yêu cầu hoàn trả từ 3-5 ngày làm việc
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Các bước hoàn trả -->
+            <div class="col-lg-9">
                 <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Quy trình hoàn trả</h5>
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">Yêu cầu hoàn trả</h4>
                     </div>
-                    <div class="card-body">
-                        <ol class="list-group list-group-numbered">
-                            <li class="list-group-item border-0 px-0">Gửi yêu cầu hoàn trả</li>
-                            <li class="list-group-item border-0 px-0">Chờ xác nhận từ shop</li>
-                            <li class="list-group-item border-0 px-0">Nhận thông tin địa chỉ trả hàng</li>
-                            <li class="list-group-item border-0 px-0">Đóng gói và gửi trả sản phẩm</li>
-                            <li class="list-group-item border-0 px-0">Shop kiểm tra sản phẩm hoàn trả</li>
-                            <li class="list-group-item border-0 px-0">Nhận hoàn tiền hoặc đổi sản phẩm mới</li>
-                        </ol>
+                    
+                    <div class="card-body p-0">
+                        <?php if ($result->num_rows > 0): ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">Mã yêu cầu</th>
+                                            <th scope="col">Sản phẩm</th>
+                                            <th scope="col">Đơn hàng</th>
+                                            <th scope="col">Ngày yêu cầu</th>
+                                            <th scope="col">Trạng thái</th>
+                                            <th scope="col">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php while ($row = $result->fetch_assoc()): ?>
+                                            <tr>
+                                                <td>#HR<?php echo $row['id_hoantra']; ?></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <?php 
+                                                        $product_image = !empty($row['hinhanh']) ? 
+                                                            (strpos($row['hinhanh'], 'uploads/') === 0 ? $row['hinhanh'] : 'uploads/products/' . $row['hinhanh']) : 
+                                                            'images/no-image.png';
+                                                        ?>
+                                                        <img src="<?php echo $product_image; ?>" alt="<?php echo htmlspecialchars($row['tensanpham']); ?>" class="img-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                                        <div class="small"><?php echo htmlspecialchars($row['tensanpham']); ?></div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <a href="chitiet-donhang.php?id=<?php echo $row['id_donhang']; ?>" class="text-decoration-none">
+                                                        #<?php echo $row['ma_donhang']; ?>
+                                                    </a>
+                                                </td>
+                                                <td><?php echo date('d/m/Y H:i', strtotime($row['ngaytao'])); ?></td>
+                                                <td>
+                                                    <?php 
+                                                    // Ensure trangthai is an integer and validate it exists in our status array
+                                                    $status_id = isset($row['trangthai']) ? (int)$row['trangthai'] : 0;
+                                                    $status = isset($return_statuses[$status_id]) ? $return_statuses[$status_id] : $default_status;
+                                                    ?>
+                                                    <span class="badge bg-<?php echo $status['badge']; ?>">
+                                                        <?php echo $status['name']; ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="chitiet-hoantra.php?id=<?php echo $row['id_hoantra']; ?>" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-eye"></i> Chi tiết
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <div class="p-5 text-center">
+                                <div class="mb-4">
+                                    <i class="bi bi-arrow-return-left text-muted display-4"></i>
+                                </div>
+                                <h5>Bạn chưa có yêu cầu hoàn trả nào</h5>
+                                <p class="text-muted">Các yêu cầu hoàn trả sản phẩm sẽ được hiển thị ở đây</p>
+                                <div class="mt-3">
+                                    <a href="donhang.php" class="btn btn-outline-primary">Xem đơn hàng của tôi</a>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -240,5 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     
     <?php include('includes/footer.php'); ?>
+    
+    <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -115,6 +115,39 @@ if (isset($_POST['delete_customer'])) {
         }
     }
 }
+
+// Handle password reset if requested
+if (isset($_POST['reset_password'])) {
+    // Generate a random password
+    $new_password = generateRandomPassword();
+    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+    
+    $update_stmt = $conn->prepare("UPDATE users SET matkhau = ? WHERE id = ?");
+    $update_stmt->bind_param("si", $hashed_password, $customer_id);
+    
+    if ($update_stmt->execute()) {
+        $_SESSION['success_message'] = "Đã đặt lại mật khẩu thành công";
+        $_SESSION['new_password'] = $new_password; // Store temporarily to display to admin
+        
+        // Log the activity
+        $admin_id = $_SESSION['admin_id'];
+        $details = "Đã đặt lại mật khẩu cho khách hàng: " . $customer['taikhoan'];
+        logAdminActivity($conn, $admin_id, 'reset_password', 'customer', $customer_id, $details);
+    } else {
+        $_SESSION['error_message'] = "Lỗi khi đặt lại mật khẩu: " . $conn->error;
+    }
+}
+
+// Function to generate random password
+function generateRandomPassword($length = 8) {
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $password = '';
+    $chars_length = strlen($chars) - 1;
+    
+    for ($i = 0; $i < $length; $password .= $chars[rand(0, $chars_length)], $i++);
+    
+    return $password;
+}
 ?>
 
 <!-- Main content -->
@@ -133,6 +166,13 @@ if (isset($_POST['delete_customer'])) {
             <a href="customers.php" class="btn btn-sm btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Quay lại
             </a>
+            
+            <form method="post" class="d-inline me-2">
+                <button type="submit" name="reset_password" class="btn btn-sm btn-info me-2"
+                        onclick="return confirm('Bạn có chắc chắn muốn đặt lại mật khẩu cho tài khoản này?');">
+                    <i class="bi bi-key"></i> Đặt lại mật khẩu
+                </button>
+            </form>
             
             <form method="post" class="d-inline me-2">
                 <?php if ($customer['trang_thai'] == 1): ?>
@@ -168,6 +208,15 @@ if (isset($_POST['delete_customer'])) {
             <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['new_password'])): ?>
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <strong>Mật khẩu mới:</strong> <?php echo $_SESSION['new_password']; ?>
+            <br><small class="text-muted">Vui lòng ghi nhớ hoặc sao chép mật khẩu này và cung cấp cho khách hàng. Mật khẩu sẽ biến mất khi bạn rời khỏi trang.</small>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['new_password']); ?>
     <?php endif; ?>
     
     <div class="row">

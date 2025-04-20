@@ -68,9 +68,13 @@ $order_statuses = [
 // Phương thức thanh toán
 $payment_methods = [
     'cod' => 'Tiền mặt khi nhận hàng',
+    '0' => 'Tiền mặt khi nhận hàng (COD)',
     'bank_transfer' => 'Chuyển khoản ngân hàng',
     'momo' => 'Ví MoMo',
-    'vnpay' => 'VNPay'
+    'vnpay' => 'VNPay',
+    '1' => 'Chuyển khoản ngân hàng',
+    '2' => 'Ví MoMo',
+    '3' => 'VNPay'
 ];
 
 // Xử lý cập nhật trạng thái đơn hàng
@@ -250,9 +254,13 @@ function updateProductQuantity($order_id) {
                             <p>
                                 <strong>Phương thức thanh toán:</strong> 
                                 <?php 
-                                    echo isset($payment_methods[$order['phuong_thuc_thanh_toan']]) ? 
-                                         $payment_methods[$order['phuong_thuc_thanh_toan']] : 
-                                         $order['phuong_thuc_thanh_toan']; 
+                                    $payment_method = trim($order['phuong_thuc_thanh_toan']);
+                                    if (isset($payment_methods[$payment_method])) {
+                                        echo $payment_methods[$payment_method];
+                                    } else {
+                                        // Fallback display - capitalize first letter and replace underscores with spaces
+                                        echo ucfirst(str_replace('_', ' ', $payment_method));
+                                    }
                                 ?>
                             </p>
                         </div>

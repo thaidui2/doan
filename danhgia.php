@@ -308,7 +308,9 @@ if ($product_id > 0 && $order_id > 0) {
     </style>
 </head>
 <body>
-    <?php include('includes/header.php'); ?>
+    <?php 
+    include('includes/head.php');
+    include('includes/header.php'); ?>
     
     <div class="container py-5">
         <div class="row justify-content-center">

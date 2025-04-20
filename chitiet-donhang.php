@@ -215,6 +215,9 @@ $order_statuses = [
                                         <th class="text-center">Số lượng</th>
                                         <th class="text-end">Đơn giá</th>
                                         <th class="text-end">Thành tiền</th>
+                                        <?php if ($order['trang_thai_don_hang'] == 4): ?>
+                                        <th class="text-center">Thao tác</th>
+                                        <?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -238,12 +241,26 @@ $order_statuses = [
                                         <td class="text-center"><?php echo $item['soluong']; ?></td>
                                         <td class="text-end"><?php echo number_format($item['gia'], 0, ',', '.'); ?>₫</td>
                                         <td class="text-end fw-bold"><?php echo number_format($item['thanh_tien'], 0, ',', '.'); ?>₫</td>
-                                        <?php if ($order['trang_thai_don_hang'] == 4 && !$item['da_danh_gia']): ?>
-                                        <td>
-                                            <a href="danhgia.php?id_sp=<?php echo $item['id_sanpham']; ?>&id_dh=<?php echo $order_id; ?>" 
-                                               class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-star-fill"></i> Đánh giá
-                                            </a>
+                                        <?php if ($order['trang_thai_don_hang'] == 4): ?>
+                                        <td class="text-center">
+                                            <div class="d-flex flex-column gap-2">
+                                                <?php 
+                                                // Ensure da_danh_gia exists and cast to boolean for consistent evaluation
+                                                $has_review = isset($item['da_danh_gia']) ? (bool)$item['da_danh_gia'] : false;
+                                                if(!$has_review): 
+                                                ?>
+                                                <a href="danhgia.php?id_sp=<?php echo $item['id_sanpham']; ?>&id_dh=<?php echo $order_id; ?>" 
+                                                   class="btn btn-sm btn-primary" title="Đánh giá sản phẩm">
+                                                    <i class="bi bi-star-fill me-1"></i> Đánh giá
+                                                </a>
+                                                <?php else: ?>
+                                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Đã đánh giá</span>
+                                                <?php endif; ?>
+                                                <a href="donhoantra.php?order_id=<?php echo $order_id; ?>&product_id=<?php echo $item['id_sanpham']; ?>" 
+                                                   class="btn btn-sm btn-outline-danger" title="Yêu cầu hoàn trả">
+                                                    <i class="bi bi-arrow-return-left me-1"></i> Hoàn trả
+                                                </a>
+                                            </div>
                                         </td>
                                         <?php endif; ?>
                                     </tr>
@@ -352,7 +369,7 @@ $order_statuses = [
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                        <a href="huy-donhang.php?id=<?php echo $order_id; ?>" class="btn btn-danger">
+                                        <a href="huydonhang.php?id=<?php echo $order_id; ?>" class="btn btn-danger">
                                             Xác nhận hủy
                                         </a>
                                     </div>
