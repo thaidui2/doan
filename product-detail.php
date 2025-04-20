@@ -326,20 +326,16 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                     <div class="card-body p-3">
                         <div class="main-image-container position-relative" id="image-container">
                             <?php 
-                            // Fix image path handling
+                            // Simplified image path handling
                             $main_image_path = 'images/no-image.png'; // Default image
                             
                             if (!empty($product['hinhanh'])) {
-                                // Check if path already includes directory prefix
                                 if (strpos($product['hinhanh'], 'uploads/') === 0) {
+                                    // Path already contains uploads/ prefix
                                     $main_image_path = $product['hinhanh'];
                                 } else {
-                                    // Check if file exists in uploads/products directory
-                                    if (file_exists('uploads/products/' . $product['hinhanh'])) {
-                                        $main_image_path = 'uploads/products/' . $product['hinhanh'];
-                                    } elseif (file_exists($product['hinhanh'])) {
-                                        $main_image_path = $product['hinhanh'];
-                                    }
+                                    // Try the products subfolder
+                                    $main_image_path = 'uploads/products/' . $product['hinhanh'];
                                 }
                             }
                             ?>
@@ -350,22 +346,18 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                         </div>
                         
                         <!-- Thumbnail Gallery -->
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-wrap gap-2 mt-3">
                             <!-- Hiển thị ảnh màu sắc với indicator -->
                             <?php if (!empty($color_images)): ?>
                                 <?php foreach ($color_images as $color_id => $img): ?>
                                     <?php 
-                                    // Fix color image path handling
+                                    // Simplified color image path handling
                                     $color_img_path = 'images/no-image.png';
                                     if (!empty($img)) {
                                         if (strpos($img, 'uploads/') === 0) {
                                             $color_img_path = $img;
-                                        } else if (file_exists('uploads/colors/' . $img)) {
-                                            $color_img_path = 'uploads/colors/' . $img;
-                                        } else if (file_exists('uploads/products/' . $img)) {
+                                        } else {
                                             $color_img_path = 'uploads/products/' . $img;
-                                        } else if (file_exists($img)) {
-                                            $color_img_path = $img;
                                         }
                                     }
                                     ?>
@@ -384,15 +376,13 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                             <!-- Hiển thị ảnh mặc định -->
                             <?php if (count($images) > 0): ?>
                                 <?php 
-                                // Fix default image path handling
+                                // Simplified default image path handling
                                 $default_img_path = 'images/no-image.png';
                                 if (!empty($images[0])) {
                                     if (strpos($images[0], 'uploads/') === 0) {
                                         $default_img_path = $images[0];
-                                    } else if (file_exists('uploads/products/' . $images[0])) {
+                                    } else {
                                         $default_img_path = 'uploads/products/' . $images[0];
-                                    } else if (file_exists($images[0])) {
-                                        $default_img_path = $images[0];
                                     }
                                 }
                                 ?>
@@ -415,15 +405,13 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                                         <div class="thumbnails-container d-flex flex-wrap gap-2">
                                             <?php for($i=1; $i < count($images); $i++): ?>
                                                 <?php 
-                                                // Fix additional image path handling
+                                                // Simplified additional image path handling
                                                 $additional_img_path = 'images/no-image.png';
                                                 if (!empty($images[$i])) {
                                                     if (strpos($images[$i], 'uploads/') === 0) {
                                                         $additional_img_path = $images[$i];
-                                                    } else if (file_exists('uploads/products/' . $images[$i])) {
+                                                    } else {
                                                         $additional_img_path = 'uploads/products/' . $images[$i];
-                                                    } else if (file_exists($images[$i])) {
-                                                        $additional_img_path = $images[$i];
                                                     }
                                                 }
                                                 ?>
@@ -459,12 +447,24 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                                                 <div class="modal-body">
                                                     <div class="row g-2">
                                                         <?php foreach($images as $index => $img): ?>
+                                                            <?php 
+                                                            // Simplified gallery image path handling
+                                                            $gallery_img_path = 'images/no-image.png';
+                                                            if (!empty($img)) {
+                                                                if (strpos($img, 'uploads/') === 0) {
+                                                                    $gallery_img_path = $img;
+                                                                } else {
+                                                                    $gallery_img_path = 'uploads/products/' . $img;
+                                                                }
+                                                            }
+                                                            ?>
                                                             <div class="col-6 col-md-4">
                                                                 <div class="product-gallery-item">
-                                                                    <img src="uploads/products/<?php echo $img; ?>" 
+                                                                    <img src="<?php echo $gallery_img_path; ?>" 
                                                                          class="img-fluid rounded w-100 gallery-image" 
                                                                          data-index="<?php echo $index; ?>"
-                                                                         alt="<?php echo htmlspecialchars($product['tensanpham']); ?>">
+                                                                         alt="<?php echo htmlspecialchars($product['tensanpham']); ?>"
+                                                                         onerror="this.onerror=null; this.src='images/no-image.png';">
                                                                 </div>
                                                             </div>
                                                         <?php endforeach; ?>
@@ -859,20 +859,14 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
                         <div class="card related-product-card h-100">
                             <a href="product-detail.php?id=<?php echo $related['id']; ?>" class="text-decoration-none">
                                 <?php 
-                                // Fix for related product image paths
+                                // Simplified related image path handling
                                 $related_image_path = 'images/no-image.png'; // Default image
                                 
                                 if (!empty($related['hinhanh'])) {
-                                    // Check if path already includes directory prefix
                                     if (strpos($related['hinhanh'], 'uploads/') === 0) {
                                         $related_image_path = $related['hinhanh'];
                                     } else {
-                                        // Check if file exists in uploads/products directory
-                                        if (file_exists('uploads/products/' . $related['hinhanh'])) {
-                                            $related_image_path = 'uploads/products/' . $related['hinhanh'];
-                                        } elseif (file_exists($related['hinhanh'])) {
-                                            $related_image_path = $related['hinhanh'];
-                                        }
+                                        $related_image_path = 'uploads/products/' . $related['hinhanh'];
                                     }
                                 }
                                 ?>

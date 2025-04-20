@@ -1,85 +1,91 @@
 <?php
-// Start session
 session_start();
+require_once '../config/config.php';
 
-// Check if already logged in
-if(isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
-    // Redirect to dashboard
-    header('Location: index.php');
+// Redirect if already logged in
+if (isset($_SESSION['admin_id']) && isset($_SESSION['admin_loai']) && $_SESSION['admin_loai'] >= 1) {
+    header('Location: dashboard.php');
     exit();
 }
 
-// Include database connection
-require_once('../config/config.php');
-
 $error = '';
-$username = '';
 
-if($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Process login form
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $password = $_POST['password'] ?? '';
     
-    if(empty($username) || empty($password)) {
-        $error = 'Vui lòng nhập tài khoản và mật khẩu.';
+    if (empty($username) || empty($password)) {
+        $error = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu';
     } else {
-        // Updated query to match the new database structure
-        $query = "SELECT id, taikhoan, matkhau, ten, loai_user, trang_thai 
-                  FROM users 
-                  WHERE taikhoan = ? AND (loai_user = 1 OR loai_user = 2) LIMIT 1";
+        // Get user from database
+        $sql = "SELECT id, taikhoan, matkhau, ten, loai_user, trang_thai FROM users 
+                WHERE taikhoan = ? AND loai_user >= 1";
         
-        $stmt = $conn->prepare($query);
+        $stmt = $conn->prepare($sql);
         $stmt->bind_param('s', $username);
         $stmt->execute();
         $result = $stmt->get_result();
         
-        if($result->num_rows === 1) {
-            $admin = $result->fetch_assoc();
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
             
-            // Check password
-            if(password_verify($password, $admin['matkhau'])) {
+            // Verify password
+            if (password_verify($password, $user['matkhau'])) {
                 // Check if account is active
-                if($admin['trang_thai'] == 1) {
+                if ($user['trang_thai'] != 1) {
+                    $error = 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.';
+                } else {
                     // Set session variables
-                    $_SESSION['admin_logged_in'] = true;
-                    $_SESSION['admin_id'] = $admin['id'];
-                    $_SESSION['admin_username'] = $admin['taikhoan'];
-                    $_SESSION['admin_name'] = $admin['ten'];
-                    $_SESSION['admin_level'] = $admin['loai_user']; // Make sure this is set!
+                    $_SESSION['admin_id'] = $user['id'];
+                    $_SESSION['admin_ten'] = $user['ten'];
+                    $_SESSION['admin_loai'] = $user['loai_user'];
                     
                     // Update last login time
-                    $update = $conn->prepare("UPDATE users SET lan_dang_nhap_cuoi = NOW() WHERE id = ?");
-                    $update->bind_param('i', $admin['id']);
-                    $update->execute();
+                    $update_sql = "UPDATE users SET lan_dang_nhap_cuoi = CURRENT_TIMESTAMP() WHERE id = ?";
+                    $update_stmt = $conn->prepare($update_sql);
+                    $update_stmt->bind_param('i', $user['id']);
+                    $update_stmt->execute();
                     
-                    // Log the login activity
-                    $ip = $_SERVER['REMOTE_ADDR'];
-                    $log_query = $conn->prepare("INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) VALUES (?, 'login', 'admin', ?, 'Đăng nhập hệ thống quản trị', ?)");
-                    $log_query->bind_param('iis', $admin['id'], $admin['id'], $ip);
-                    $log_query->execute();
+                    // Log the login action
+                    $log_sql = "INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) 
+                               VALUES (?, 'login', 'admin', ?, 'Đăng nhập hệ thống quản trị', ?)";
+                    $log_stmt = $conn->prepare($log_sql);
+                    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                    $log_stmt->bind_param('iis', $user['id'], $user['id'], $ip);
+                    $log_stmt->execute();
                     
-                    // Check if there's a redirect URL stored in session
-                    if(isset($_SESSION['redirect_after_login'])) {
-                        $redirect_url = $_SESSION['redirect_after_login'];
-                        unset($_SESSION['redirect_after_login']);
-                        header("Location: $redirect_url");
-                    } else {
-                        header('Location: index.php');
-                    }
+                    // Redirect to dashboard
+                    header('Location: dashboard.php');
                     exit();
-                } else {
-                    $error = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.';
                 }
             } else {
-                $error = 'Tài khoản hoặc mật khẩu không đúng.';
+                $error = 'Tên đăng nhập hoặc mật khẩu không chính xác';
             }
         } else {
-            $error = 'Tài khoản hoặc mật khẩu không đúng.';
+            $error = 'Tên đăng nhập hoặc mật khẩu không chính xác';
         }
     }
 }
 
-// Check if session expired
-$expired = isset($_GET['expired']) ? true : false;
+// Get site name from settings
+$site_name = 'Bug Shop Admin';
+$site_logo = '';
+
+$sql_settings = "SELECT setting_value FROM settings WHERE setting_key = 'site_name'";
+$result_settings = $conn->query($sql_settings);
+if ($result_settings && $result_settings->num_rows > 0) {
+    $site_name = $result_settings->fetch_assoc()['setting_value'] . ' Admin';
+}
+
+$sql_logo = "SELECT setting_value FROM settings WHERE setting_key = 'logo'";
+$result_logo = $conn->query($sql_logo);
+if ($result_logo && $result_logo->num_rows > 0) {
+    $logo_file = $result_logo->fetch_assoc()['setting_value'];
+    if (!empty($logo_file) && file_exists('../uploads/settings/' . $logo_file)) {
+        $site_logo = '../uploads/settings/' . $logo_file;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -87,108 +93,69 @@ $expired = isset($_GET['expired']) ? true : false;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập - Bug Shop Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            height: 100vh;
-        }
-        .login-container {
-            max-width: 400px;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-            background-color: #fff;
-        }
-        .brand-logo {
-            font-size: 1.75rem;
-            font-weight: 700;
-        }
-        .form-control:focus {
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-            border-color: #86b7fe;
-        }
-    </style>
+    <title>Đăng nhập - <?php echo htmlspecialchars($site_name); ?></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/login.css">
 </head>
-<body class="d-flex align-items-center justify-content-center">
-    <div class="login-container w-100">
-        <div class="text-center mb-4">
-            <h1 class="brand-logo mb-0 text-primary">
-                <i class="bi bi-bug-fill me-2"></i>
-                Bug Shop
-            </h1>
-            <p class="text-muted">Hệ thống quản trị</p>
-        </div>
-        
-        <?php if($expired): ?>
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                Phiên làm việc đã hết hạn hoặc bạn chưa đăng nhập. Vui lòng đăng nhập lại.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if(!empty($error)): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?php echo $error; ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <?php endif; ?>
-        
-        <form method="post" action="">
-            <div class="mb-3">
-                <label for="username" class="form-label">Tài khoản</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-person"></i></span>
-                    <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($username); ?>" required autofocus>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-5">
+                <div class="login-card">
+                    <div class="login-header">
+                        <?php if (!empty($site_logo)): ?>
+                            <img src="<?php echo htmlspecialchars($site_logo); ?>" alt="<?php echo htmlspecialchars($site_name); ?>" class="login-logo">
+                        <?php else: ?>
+                            <i class="fas fa-bug fa-3x mb-3"></i>
+                        <?php endif; ?>
+                        <h4><?php echo htmlspecialchars($site_name); ?></h4>
+                    </div>
+                    
+                    <div class="login-form">
+                        <?php if (!empty($error)): ?>
+                            <div class="alert alert-danger alert-login" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i> <?php echo htmlspecialchars($error); ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <form method="POST" action="">
+                            <div class="form-group">
+                                <input type="text" class="form-control form-input" name="username" id="username" placeholder="Tên đăng nhập" required autofocus>
+                                <i class="fas fa-user form-icon"></i>
+                            </div>
+                            
+                            <div class="form-group">
+                                <input type="password" class="form-control form-input" name="password" id="password" placeholder="Mật khẩu" required>
+                                <i class="fas fa-lock form-icon"></i>
+                            </div>
+                            
+                            <div class="form-group form-check">
+                                <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                                <label class="form-check-label" for="remember">Ghi nhớ đăng nhập</label>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-login btn-block w-100">Đăng nhập</button>
+                        </form>
+                        
+                        <hr>
+                        
+                        <div class="text-center">
+                            <a href="forgot-password.php" class="forgot-link">Quên mật khẩu?</a>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <a href="../index.php" class="register-link">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại trang chủ
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Mật khẩu</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="remember" name="remember" value="1">
-                <label class="form-check-label" for="remember">Ghi nhớ đăng nhập</label>
-            </div>
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
-                </button>
-            </div>
-        </form>
-        
-        <div class="text-center mt-4">
-            <a href="../index.php" class="text-decoration-none">
-                <i class="bi bi-arrow-left me-1"></i> Trở về trang chủ
-            </a>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Toggle password visibility
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordInput = document.getElementById('password');
-            const icon = this.querySelector('i');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                icon.classList.remove('bi-eye');
-                icon.classList.add('bi-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                icon.classList.remove('bi-eye-slash');
-                icon.classList.add('bi-eye');
-            }
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/login.js"></script>
 </body>
 </html>

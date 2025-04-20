@@ -2,22 +2,18 @@
 // Tạo một mảng settings rỗng ban đầu
 $settings = [];
 
-// Tạo kết nối database mới dành riêng cho footer
+// Sử dụng kết nối từ file config.php
 try {
-    // Thông tin kết nối database
-    $servername = "localhost";
-    $username = "root";
-    $password = "";
-    $dbname = "shop_vippro";
+    // Include file cấu hình nếu chưa được include
+    if (!isset($conn) || $conn->connect_error) {
+        require_once(__DIR__ . '/../config/config.php');
+    }
     
-    // Tạo kết nối mới hoàn toàn độc lập
-    $footer_conn = new mysqli($servername, $username, $password, $dbname);
-    
-    // Kiểm tra kết nối mới
-    if (!$footer_conn->connect_error) {
+    // Kiểm tra kết nối
+    if (!$conn->connect_error) {
         // Nếu kết nối thành công, thực hiện truy vấn settings
         $settingsQuery = "SELECT setting_key, setting_value FROM settings";
-        $settingsResult = $footer_conn->query($settingsQuery);
+        $settingsResult = $conn->query($settingsQuery);
 
         if ($settingsResult && $settingsResult->num_rows > 0) {
             while ($row = $settingsResult->fetch_assoc()) {
@@ -25,8 +21,7 @@ try {
             }
         }
         
-        // Đóng kết nối sau khi sử dụng
-        $footer_conn->close();
+        // Không đóng kết nối ở đây vì có thể được sử dụng ở nơi khác
     }
 } catch (Exception $e) {
     // Ghi log lỗi
