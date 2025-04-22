@@ -26,7 +26,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Bug Shop</title>
-        <script src="js/chatbot.js"></script>
+        
         <link rel="stylesheet" href="css/chatbot.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">  
         
@@ -55,24 +55,24 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                         <div class="carousel-item active">
                             <img src="images\banner\banner_giay_2.webp" class="d-block w-100" alt="New Collection">
                             <div class="carousel-caption d-none d-md-block">
-                                <h1>Bộ Sưu Tập Mới 2025</h1>
-                                <p>Khám phá các mẫu giày mới nhất cho mùa này</p>
+                                <h1 class="display-4 fw-bold text-shadow">Bộ Sưu Tập Mới <span class="highlight">2025</span></h1>
+                                <p class="lead fw-semibold mb-4 text-shadow">Khám phá các mẫu giày mới nhất cho mùa này</p>
                                 <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
                             </div>
                         </div>
                         <div class="carousel-item">
                             <img src="images\banner\banner_giam_gia.webp" class="d-block w-100" alt="Sale">
                             <div class="carousel-caption d-none d-md-block">
-                                <h1>Giảm Giá Đến 40%</h1>
-                                <p>Ưu đãi đặc biệt cho tất cả các sản phẩm thể thao</p>
+                                <h1 class="display-4 fw-bold text-shadow">Giảm Giá Đến 40%</h1>
+                                <p class="lead fw-semibold mb-4 text-shadow">Ưu đãi đặc biệt cho tất cả các sản phẩm thể thao</p>
                                 <a href="#" class="btn btn-danger btn-lg">Xem ngay</a>
                             </div>
                         </div>
                         <div class="carousel-item">
                             <img src="images\banner\banner_giay.png" class="d-block w-100" alt="Limited Edition">
                             <div class="carousel-caption d-none d-md-block">
-                                <h1>Phiên Bản Giới Hạn</h1>
-                                <p>Sản phẩm độc quyền chỉ có tại Bug Shoes</p>
+                                <h1 class="display-4 fw-bold text-shadow">Phiên Bản Giới Hạn</h1>
+                                <p class="lead fw-semibold mb-4 text-shadow">Sản phẩm độc quyền chỉ có tại Bug Shoes</p>
                                 <a href="#" class="btn btn-dark btn-lg">Khám phá</a>
                             </div>
                         </div>
@@ -444,7 +444,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
         <!-- Newsletter -->
         
     </main>
-    <script src="/assets/js/bootstrap.bundle.min.js"></script>
+    
     
     <!-- Add wishlist functionality -->
     <script>
@@ -583,6 +583,31 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
         // Check wishlist status when page loads
         checkWishlistStatus();
     });
+    </script>
+    
+    <!-- Khởi tạo carousel -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Đảm bảo bootstrap đã được tải
+            if (typeof bootstrap !== 'undefined') {
+                var myCarousel = document.getElementById('heroCarousel');
+                if (myCarousel) {
+                    var carousel = new bootstrap.Carousel(myCarousel, {
+                        interval: 5000,
+                        wrap: true
+                    });
+                    
+                    // Khởi động carousel
+                    carousel.cycle();
+                    
+                    console.log('Carousel đã được khởi tạo thành công');
+                } else {
+                    console.error('Không tìm thấy phần tử #heroCarousel');
+                }
+            } else {
+                console.error('Bootstrap chưa được tải');
+            }
+        });
     </script>
     
     <?php include('includes/footer.php'); ?>

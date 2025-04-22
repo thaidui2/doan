@@ -217,6 +217,17 @@ document.addEventListener("DOMContentLoaded", function () {
       this.src = "images/no-image.jpg";
     };
   });
+  
+document.addEventListener('DOMContentLoaded', function() {
+    // Khởi tạo carousel
+    var heroCarousel = new bootstrap.Carousel(document.getElementById('heroCarousel'), {
+        interval: 5000,
+        wrap: true
+    });
+    
+    // Code cho wishlist buttons - giữ nguyên
+    // ...existing code...
+});
 });
 
 // Toast Notification Styles

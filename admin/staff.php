@@ -3,6 +3,77 @@ require_once '../config/database.php';  // Uses PDO connection
 require_once 'includes/functions.php';
 require_once 'includes/auth_check.php';
 
+// Handle AJAX request for staff activity - This must be at the top of the file
+if (isset($_GET['action']) && $_GET['action'] == 'get_activity' && isset($_GET['staff_id'])) {
+    header('Content-Type: application/json');
+    
+    $staff_id = (int)$_GET['staff_id'];
+    $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+    
+    // Build date filter condition
+    $date_filter = '';
+    switch ($filter) {
+        case 'today':
+            $date_filter = "AND DATE(ngay_tao) = CURDATE()";
+            break;
+        case 'week':
+            $date_filter = "AND ngay_tao >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+            break;
+        case 'month':
+            $date_filter = "AND ngay_tao >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+            break;
+        default:
+            $date_filter = ""; // All time
+    }
+    
+    try {
+        // Get staff info first
+        $staff_stmt = $conn->prepare("SELECT ten FROM users WHERE id = ? AND loai_user > 0");
+        $staff_stmt->execute([$staff_id]);
+        $staff = $staff_stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$staff) {
+            echo json_encode(['error' => 'Nhân viên không tồn tại']);
+            exit;
+        }
+        
+        // Get activity logs for this staff
+        $sql = "SELECT * FROM nhat_ky 
+                WHERE id_user = ? $date_filter
+                ORDER BY ngay_tao DESC 
+                LIMIT 100";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$staff_id]);
+        $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Format logs for display
+        $formatted_logs = [];
+        foreach ($logs as $log) {
+            $formatted_logs[] = [
+                'id' => $log['id'],
+                'action' => getActionLabel($log['hanh_dong']),
+                'object_type' => getObjectTypeLabel($log['doi_tuong_loai']),
+                'object_id' => $log['doi_tuong_id'],
+                'details' => $log['chi_tiet'],
+                'ip' => $log['ip_address'],
+                'date' => date('d/m/Y H:i:s', strtotime($log['ngay_tao']))
+            ];
+        }
+        
+        echo json_encode([
+            'staff' => $staff,
+            'logs' => $formatted_logs,
+            'count' => count($logs)
+        ]);
+        exit;
+        
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // Set current page for sidebar highlighting
 $current_page = 'staff';
 $page_title = 'Quản lý nhân viên';
@@ -339,6 +410,13 @@ $extra_js = '<script src="js/staff.js"></script>';
                                                 <i class="fas fa-key"></i>
                                             </button>
                                             
+                                            <!-- Add Activity Log Button -->
+                                            <button class="btn btn-sm btn-outline-info view-activity-btn"
+                                                data-staff-id="<?php echo $staff['id']; ?>"
+                                                data-staff-name="<?php echo htmlspecialchars($staff['ten']); ?>">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                            
                                             <?php if ($staff['id'] != $_SESSION['admin_id']): ?>
                                                 <?php if ($staff['trang_thai'] == 1): ?>
                                                     <a href="staff.php?action=deactivate&id=<?php echo $staff['id']; ?>" 
@@ -467,5 +545,172 @@ $extra_js = '<script src="js/staff.js"></script>';
         </div>
     </div>
 </div>
+
+<!-- Add Staff Activity Modal -->
+<div class="modal fade" id="staffActivityModal" tabindex="-1" aria-labelledby="staffActivityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staffActivityModalLabel">Hoạt động của nhân viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0" id="activity-staff-name"></h6>
+                    <div class="d-flex align-items-center">
+                        <label for="activity-date-filter" class="me-2">Lọc theo ngày:</label>
+                        <select class="form-select form-select-sm" id="activity-date-filter">
+                            <option value="all">Tất cả</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="week">Tuần này</option>
+                            <option value="month">Tháng này</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="staff-activity-container">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing code...
+    
+    // Staff Activity Functionality
+    const viewActivityButtons = document.querySelectorAll('.view-activity-btn');
+    const staffActivityModal = new bootstrap.Modal(document.getElementById('staffActivityModal'));
+    const staffActivityContainer = document.getElementById('staff-activity-container');
+    const activityStaffName = document.getElementById('activity-staff-name');
+    const activityDateFilter = document.getElementById('activity-date-filter');
+    let currentStaffId = null;
+    
+    viewActivityButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const staffId = this.getAttribute('data-staff-id');
+            const staffName = this.getAttribute('data-staff-name');
+            currentStaffId = staffId;
+            
+            activityStaffName.textContent = `Nhân viên: ${staffName}`;
+            activityDateFilter.value = 'all'; // Reset filter
+            
+            loadStaffActivity(staffId, 'all');
+            staffActivityModal.show();
+        });
+    });
+    
+    activityDateFilter.addEventListener('change', function() {
+        if (currentStaffId) {
+            loadStaffActivity(currentStaffId, this.value);
+        }
+    });
+    
+    function loadStaffActivity(staffId, filter) {
+        staffActivityContainer.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+            </div>
+        `;
+        
+        // Updated to use the new AJAX endpoint
+        fetch(`ajax/staff_activity.php?staff_id=${staffId}&filter=${filter}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    staffActivityContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            ${data.error}
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (data.logs.length === 0) {
+                    staffActivityContainer.innerHTML = `
+                        <div class="alert alert-info">
+                            Không có hoạt động nào được ghi nhận.
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Thời gian</th>
+                                    <th>Hành động</th>
+                                    <th>Đối tượng</th>
+                                    <th>Chi tiết</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.logs.forEach(log => {
+                    html += `
+                        <tr>
+                            <td>${log.date}</td>
+                            <td><span class="badge bg-${getActionBadgeColor(log.action)}">${log.action}</span></td>
+                            <td>${log.object_type} ${log.object_id ? '#' + log.object_id : ''}</td>
+                            <td>${log.details ?? ''}</td>
+                            <td><small>${log.ip ?? ''}</small></td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                staffActivityContainer.innerHTML = html;
+            })
+            .catch(error => {
+                staffActivityContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        Lỗi khi tải dữ liệu: ${error.message}
+                    </div>
+                `;
+            });
+    }
+    
+    function getActionBadgeColor(action) {
+        const colors = {
+            'Thêm mới': 'success',
+            'Cập nhật': 'primary',
+            'Xóa': 'danger',
+            'Đăng nhập': 'info',
+            'Đăng xuất': 'secondary',
+            'Ẩn': 'warning',
+            'Hiển thị': 'success',
+            'Đặt nổi bật': 'primary',
+            'Bỏ nổi bật': 'secondary',
+            'Khóa': 'danger',
+            'Mở khóa': 'success',
+            'Vô hiệu hóa': 'danger',
+            'Đặt lại mật khẩu': 'warning',
+            'Cập nhật trạng thái': 'info'
+        };
+        
+        return colors[action] || 'secondary';
+    }
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>

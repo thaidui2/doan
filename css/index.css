@@ -12,6 +12,37 @@ body::-webkit-scrollbar {
 .carousel-caption {
   font-size: larger;
 }
+.carousel-caption h1 {
+    font-size: 3rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.carousel-caption .highlight {
+    color: #ffdd00;
+    position: relative;
+    padding: 0 5px;
+}
+
+.carousel-caption p {
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 0 auto 1.5rem;
+}
+
+.text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 767.98px) {
+    .carousel-caption h1 {
+        font-size: 2rem;
+    }
+    .carousel-caption p {
+        font-size: 1rem;
+    }
+}
 .category-card {
   height: 250px;
   overflow: hidden;

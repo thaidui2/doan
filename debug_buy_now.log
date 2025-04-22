@@ -296,3 +296,251 @@
 )
 
 2025-04-20 10:57:40 - Redirecting to checkout
+2025-04-21 11:42:00 - Buy Now request received - Array
+(
+    [productId] => 31
+    [quantity] => 1
+    [sizeId] => 5
+    [colorId] => 14
+)
+
+2025-04-21 11:42:00 - Extracted data - Array
+(
+    [product_id] => 31
+    [quantity] => 1
+    [size_id] => 5
+    [color_id] => 14
+)
+
+2025-04-21 11:42:00 - Executing query with params - Array
+(
+    [0] => 31
+    [1] => 5
+    [2] => 14
+)
+
+2025-04-21 11:42:00 - Product variant found - Array
+(
+    [variant_id] => 122
+    [id] => 31
+    [tensanpham] => Giày Puma RS-X3
+    [gia] => 2200000.00
+    [hinhanh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 39
+    [ten_mau] => Đỏ
+    [ma_mau] => #FF0000
+)
+
+2025-04-21 11:42:00 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 122
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 39
+    [ten_mau] => Đỏ
+    [ma_mau] => #FF0000
+    [thanh_tien] => 2200000
+)
+
+2025-04-21 11:42:00 - Redirecting to checkout
+2025-04-21 18:22:46 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 9
+    [colorId] => 11
+)
+
+2025-04-21 18:22:46 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 9
+    [color_id] => 11
+)
+
+2025-04-21 18:22:46 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 9
+    [2] => 11
+)
+
+2025-04-21 18:22:46 - No product variant found
+2025-04-21 18:22:52 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 9
+    [colorId] => 11
+)
+
+2025-04-21 18:22:52 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 9
+    [color_id] => 11
+)
+
+2025-04-21 18:22:52 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 9
+    [2] => 11
+)
+
+2025-04-21 18:22:52 - No product variant found
+2025-04-21 18:23:30 - Buy Now request received - Array
+(
+    [productId] => 27
+    [quantity] => 1
+    [sizeId] => 9
+    [colorId] => 15
+)
+
+2025-04-21 18:23:30 - Extracted data - Array
+(
+    [product_id] => 27
+    [quantity] => 1
+    [size_id] => 9
+    [color_id] => 15
+)
+
+2025-04-21 18:23:30 - Executing query with params - Array
+(
+    [0] => 27
+    [1] => 9
+    [2] => 15
+)
+
+2025-04-21 18:23:30 - Product variant found - Array
+(
+    [variant_id] => 107
+    [id] => 27
+    [tensanpham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [gia] => 1650000.00
+    [hinhanh] => uploads/products/1745072553_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 43
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+)
+
+2025-04-21 18:23:30 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 27
+    [id_bienthe] => 107
+    [so_luong] => 1
+    [gia] => 1650000.00
+    [ten_san_pham] => Giày Nike Court Vision Mid Smoke Grey DN3577-002
+    [hinh_anh] => uploads/products/1745072553_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg
+    [ten_size] => 43
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 1650000
+)
+
+2025-04-21 18:23:30 - Redirecting to checkout
+2025-04-21 18:23:50 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 9
+    [colorId] => 13
+)
+
+2025-04-21 18:23:50 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 9
+    [color_id] => 13
+)
+
+2025-04-21 18:23:50 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 9
+    [2] => 13
+)
+
+2025-04-21 18:23:50 - Product variant found - Array
+(
+    [variant_id] => 115
+    [id] => 29
+    [tensanpham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [gia] => 829000.00
+    [hinhanh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 43
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+)
+
+2025-04-21 18:23:50 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 29
+    [id_bienthe] => 115
+    [so_luong] => 1
+    [gia] => 829000.00
+    [ten_san_pham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [hinh_anh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 43
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+    [thanh_tien] => 829000
+)
+
+2025-04-21 18:23:50 - Redirecting to checkout
+2025-04-21 18:24:11 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 9
+    [colorId] => 13
+)
+
+2025-04-21 18:24:11 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 9
+    [color_id] => 13
+)
+
+2025-04-21 18:24:11 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 9
+    [2] => 13
+)
+
+2025-04-21 18:24:11 - Product variant found - Array
+(
+    [variant_id] => 115
+    [id] => 29
+    [tensanpham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [gia] => 829000.00
+    [hinhanh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 43
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+)
+
+2025-04-21 18:24:11 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 29
+    [id_bienthe] => 115
+    [so_luong] => 1
+    [gia] => 829000.00
+    [ten_san_pham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [hinh_anh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 43
+    [ten_mau] => Xám
+    [ma_mau] => #808080
+    [thanh_tien] => 829000
+)
+
+2025-04-21 18:24:11 - Redirecting to checkout

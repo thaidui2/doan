@@ -150,7 +150,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <header class="sticky-top">
     <!-- Thông báo khuyến mãi -->
     <div class="announcement-bar py-2 bg-dark text-white">
-        <div class="container">
+        <div class="container-fluid"> <!-- Changed from container to container-fluid -->
             <div class="d-flex justify-content-between align-items-center">
                 <div class="small d-none d-md-block">
                     <i class="bi bi-telephone-fill"></i> Hotline: 0123.456.789 | 
@@ -166,8 +166,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </div>
 
     <!-- Thanh điều hướng chính -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-3">
-        <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-2">
+        <div class="container-fluid"> <!-- Changed from container to container-fluid -->
             <!-- Logo -->
             <a class="navbar-brand d-flex align-items-center" href="index.php">
                 <img src="images/logo.png" alt="Bug Shop Logo" height="40" class="d-inline-block align-text-top me-2">
