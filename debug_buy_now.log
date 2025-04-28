@@ -544,3 +544,53 @@
 )
 
 2025-04-21 18:24:11 - Redirecting to checkout
+2025-04-25 09:07:47 - Buy Now request received - Array
+(
+    [productId] => 29
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 11
+)
+
+2025-04-25 09:07:47 - Extracted data - Array
+(
+    [product_id] => 29
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 11
+)
+
+2025-04-25 09:07:47 - Executing query with params - Array
+(
+    [0] => 29
+    [1] => 8
+    [2] => 11
+)
+
+2025-04-25 09:07:47 - Product variant found - Array
+(
+    [variant_id] => 114
+    [id] => 29
+    [tensanpham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [gia] => 829000.00
+    [hinhanh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-04-25 09:07:47 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 29
+    [id_bienthe] => 114
+    [so_luong] => 1
+    [gia] => 829000.00
+    [ten_san_pham] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+    [hinh_anh] => uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 829000
+)
+
+2025-04-25 09:07:47 - Redirecting to checkout
