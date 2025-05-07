@@ -124,97 +124,27 @@ function formatVND($amount) {
 $page_title = 'Dashboard';
 $current_page = 'dashboard';
 
-// Include custom JS for this page
-$extra_js = '
+// CSS riêng cho trang này
+$page_css = ['css/dashboard.css'];
+
+// Javascript riêng cho trang này
+$page_js = ['js/dashboard.js'];
+
+// Dữ liệu JavaScript tùy chỉnh cần truyền từ PHP sang JS
+$head_custom = '
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Revenue Chart
-const revenueData = ' . json_encode(array_column($revenue_by_month, 'revenue')) . ';
-const revenueLabels = ' . json_encode(array_column($revenue_by_month, 'month')) . ';
-
-const ctx = document.getElementById(\'revenueChart\').getContext(\'2d\');
-const revenueChart = new Chart(ctx, {
-    type: \'line\',
-    data: {
-        labels: revenueLabels,
-        datasets: [{
-            label: \'Doanh thu (VND)\',
-            data: revenueData,
-            backgroundColor: \'rgba(78, 115, 223, 0.05)\',
-            borderColor: \'rgba(78, 115, 223, 1)\',
-            pointRadius: 3,
-            pointBackgroundColor: \'rgba(78, 115, 223, 1)\',
-            pointBorderColor: \'rgba(78, 115, 223, 1)\',
-            pointHoverRadius: 5,
-            pointHoverBackgroundColor: \'rgba(78, 115, 223, 1)\',
-            pointHoverBorderColor: \'rgba(78, 115, 223, 1)\',
-            pointHitRadius: 10,
-            pointBorderWidth: 2,
-            borderWidth: 4,
-            fill: true,
-            tension: 0.3
-        }]
-    },
-    options: {
-        maintainAspectRatio: false,
-        layout: {
-            padding: {
-                left: 10,
-                right: 25,
-                top: 25,
-                bottom: 0
-            }
-        },
-        scales: {
-            x: {
-                grid: {
-                    display: false,
-                    drawBorder: false
-                }
-            },
-            y: {
-                ticks: {
-                    callback: function(value) {
-                        return new Intl.NumberFormat(\'vi-VN\', { 
-                            style: \'currency\', 
-                            currency: \'VND\',
-                            maximumFractionDigits: 0
-                        }).format(value);
-                    }
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false
-            },
-            tooltip: {
-                backgroundColor: "rgb(255, 255, 255)",
-                bodyColor: "#858796",
-                titleColor: "#6e707e",
-                borderColor: \'#dddfeb\',
-                borderWidth: 1,
-                displayColors: false,
-                callbacks: {
-                    label: function(context) {
-                        return new Intl.NumberFormat(\'vi-VN\', { 
-                            style: \'currency\', 
-                            currency: \'VND\',
-                            maximumFractionDigits: 0
-                        }).format(context.parsed.y);
-                    }
-                }
-            }
-        }
-    }
-});
+// Truyền dữ liệu từ PHP sang JS
+var revenueChartData = {
+    labels: ' . json_encode(array_column($revenue_by_month, 'month')) . ',
+    data: ' . json_encode(array_column($revenue_by_month, 'revenue')) . '
+};
 </script>';
 
 // Include header and sidebar
 include 'includes/header.php';
 include 'includes/sidebar.php';
 ?>
-
 <!-- Main Content -->
 <div class="col-md-10 col-lg-10 ms-auto">
     <div class="container-fluid px-4">
@@ -222,7 +152,7 @@ include 'includes/sidebar.php';
             <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
             <div class="d-none d-md-inline-block">
                 <div class="btn-group">
-                    <a href="#" class="btn btn-sm btn-primary">
+                    <a href="#" class="btn btn-sm btn-primary btn-export-report">
                         <i class="fas fa-download fa-sm"></i> Xuất báo cáo
                     </a>
                 </div>

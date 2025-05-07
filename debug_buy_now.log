@@ -594,3 +594,453 @@
 )
 
 2025-04-25 09:07:47 - Redirecting to checkout
+2025-05-07 11:02:08 - Buy Now request received - Array
+(
+    [productId] => 33
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 16
+)
+
+2025-05-07 11:02:08 - Extracted data - Array
+(
+    [product_id] => 33
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 16
+)
+
+2025-05-07 11:02:08 - Executing query with params - Array
+(
+    [0] => 33
+    [1] => 8
+    [2] => 16
+)
+
+2025-05-07 11:02:08 - Product variant found - Array
+(
+    [variant_id] => 137
+    [id] => 33
+    [tensanpham] => Dép Nike Air Max
+    [gia] => 900000.00
+    [hinhanh] => uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp
+    [ten_size] => 42
+    [ten_mau] => Xanh lá
+    [ma_mau] => #77ee77
+)
+
+2025-05-07 11:02:08 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 33
+    [id_bienthe] => 137
+    [so_luong] => 1
+    [gia] => 900000.00
+    [ten_san_pham] => Dép Nike Air Max
+    [hinh_anh] => uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp
+    [ten_size] => 42
+    [ten_mau] => Xanh lá
+    [ma_mau] => #77ee77
+    [thanh_tien] => 900000
+)
+
+2025-05-07 11:02:08 - Redirecting to checkout
+2025-05-07 11:42:54 - Buy Now request received - Array
+(
+    [productId] => 30
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 11
+)
+
+2025-05-07 11:42:54 - Extracted data - Array
+(
+    [product_id] => 30
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 11
+)
+
+2025-05-07 11:42:54 - Executing query with params - Array
+(
+    [0] => 30
+    [1] => 8
+    [2] => 11
+)
+
+2025-05-07 11:42:54 - Product variant found - Array
+(
+    [variant_id] => 118
+    [id] => 30
+    [tensanpham] => Giày Adidas Ultraboost 21
+    [gia] => 2500000.00
+    [hinhanh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-07 11:42:54 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-07 11:42:54 - Redirecting to checkout
+2025-05-07 12:03:31 - Buy Now request received - Array
+(
+    [productId] => 30
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 11
+)
+
+2025-05-07 12:03:31 - Extracted data - Array
+(
+    [product_id] => 30
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 11
+)
+
+2025-05-07 12:03:31 - Executing query with params - Array
+(
+    [0] => 30
+    [1] => 8
+    [2] => 11
+)
+
+2025-05-07 12:03:31 - Product variant found - Array
+(
+    [variant_id] => 118
+    [id] => 30
+    [tensanpham] => Giày Adidas Ultraboost 21
+    [gia] => 2500000.00
+    [hinhanh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-07 12:03:31 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-07 12:03:31 - Redirecting to checkout
+2025-05-07 12:06:50 - Buy Now request received - Array
+(
+    [productId] => 30
+    [quantity] => 1
+    [sizeId] => 7
+    [colorId] => 11
+)
+
+2025-05-07 12:06:50 - Extracted data - Array
+(
+    [product_id] => 30
+    [quantity] => 1
+    [size_id] => 7
+    [color_id] => 11
+)
+
+2025-05-07 12:06:50 - Executing query with params - Array
+(
+    [0] => 30
+    [1] => 7
+    [2] => 11
+)
+
+2025-05-07 12:06:50 - Product variant found - Array
+(
+    [variant_id] => 117
+    [id] => 30
+    [tensanpham] => Giày Adidas Ultraboost 21
+    [gia] => 2500000.00
+    [hinhanh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 41
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-07 12:06:50 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 117
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 41
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-07 12:06:50 - Redirecting to checkout
+2025-05-07 12:09:11 - Buy Now request received - Array
+(
+    [productId] => 30
+    [quantity] => 3
+    [sizeId] => 8
+    [colorId] => 11
+)
+
+2025-05-07 12:09:11 - Extracted data - Array
+(
+    [product_id] => 30
+    [quantity] => 3
+    [size_id] => 8
+    [color_id] => 11
+)
+
+2025-05-07 12:09:11 - Executing query with params - Array
+(
+    [0] => 30
+    [1] => 8
+    [2] => 11
+)
+
+2025-05-07 12:09:11 - Product variant found - Array
+(
+    [variant_id] => 118
+    [id] => 30
+    [tensanpham] => Giày Adidas Ultraboost 21
+    [gia] => 2500000.00
+    [hinhanh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-07 12:09:11 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 3
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 7500000
+)
+
+2025-05-07 12:09:11 - Redirecting to checkout
+2025-05-07 12:14:00 - Buy Now request received - Array
+(
+    [productId] => 30
+    [quantity] => 2
+    [sizeId] => 7
+    [colorId] => 11
+)
+
+2025-05-07 12:14:00 - Extracted data - Array
+(
+    [product_id] => 30
+    [quantity] => 2
+    [size_id] => 7
+    [color_id] => 11
+)
+
+2025-05-07 12:14:00 - Executing query with params - Array
+(
+    [0] => 30
+    [1] => 7
+    [2] => 11
+)
+
+2025-05-07 12:14:00 - Product variant found - Array
+(
+    [variant_id] => 117
+    [id] => 30
+    [tensanpham] => Giày Adidas Ultraboost 21
+    [gia] => 2500000.00
+    [hinhanh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 41
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-07 12:14:00 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 117
+    [so_luong] => 2
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 41
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 5000000
+)
+
+2025-05-07 12:14:00 - Redirecting to checkout
+2025-05-07 12:16:27 - Buy Now request received - Array
+(
+    [productId] => 30
+    [quantity] => 3
+    [sizeId] => 8
+    [colorId] => 11
+)
+
+2025-05-07 12:16:27 - Extracted data - Array
+(
+    [product_id] => 30
+    [quantity] => 3
+    [size_id] => 8
+    [color_id] => 11
+)
+
+2025-05-07 12:16:27 - Executing query with params - Array
+(
+    [0] => 30
+    [1] => 8
+    [2] => 11
+)
+
+2025-05-07 12:16:27 - Product variant found - Array
+(
+    [variant_id] => 118
+    [id] => 30
+    [tensanpham] => Giày Adidas Ultraboost 21
+    [gia] => 2500000.00
+    [hinhanh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-07 12:16:27 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 3
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 7500000
+)
+
+2025-05-07 12:16:27 - Redirecting to checkout
+2025-05-07 12:17:54 - Buy Now request received - Array
+(
+    [productId] => 31
+    [quantity] => 1
+    [sizeId] => 7
+    [colorId] => 15
+)
+
+2025-05-07 12:17:54 - Extracted data - Array
+(
+    [product_id] => 31
+    [quantity] => 1
+    [size_id] => 7
+    [color_id] => 15
+)
+
+2025-05-07 12:17:54 - Executing query with params - Array
+(
+    [0] => 31
+    [1] => 7
+    [2] => 15
+)
+
+2025-05-07 12:17:54 - Product variant found - Array
+(
+    [variant_id] => 127
+    [id] => 31
+    [tensanpham] => Giày Puma RS-X3
+    [gia] => 2200000.00
+    [hinhanh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+)
+
+2025-05-07 12:17:54 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-07 12:17:54 - Redirecting to checkout
+2025-05-07 12:36:31 - Buy Now request received - Array
+(
+    [productId] => 32
+    [quantity] => 1
+    [sizeId] => 6
+    [colorId] => 11
+)
+
+2025-05-07 12:36:31 - Extracted data - Array
+(
+    [product_id] => 32
+    [quantity] => 1
+    [size_id] => 6
+    [color_id] => 11
+)
+
+2025-05-07 12:36:31 - Executing query with params - Array
+(
+    [0] => 32
+    [1] => 6
+    [2] => 11
+)
+
+2025-05-07 12:36:31 - Product variant found - Array
+(
+    [variant_id] => 130
+    [id] => 32
+    [tensanpham] => Giày Converse Chuck Taylor All Star
+    [gia] => 1500000.00
+    [hinhanh] => uploads/products/1745143609_download (8).jpg
+    [ten_size] => 40
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-07 12:36:31 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 32
+    [id_bienthe] => 130
+    [so_luong] => 1
+    [gia] => 1500000.00
+    [ten_san_pham] => Giày Converse Chuck Taylor All Star
+    [hinh_anh] => uploads/products/1745143609_download (8).jpg
+    [ten_size] => 40
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 1500000
+)
+
+2025-05-07 12:36:31 - Redirecting to checkout

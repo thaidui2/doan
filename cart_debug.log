@@ -261,3 +261,31 @@
 2025-04-25 09:07:45 - Found existing cart - {"cart_id":2}
 2025-04-25 09:07:45 - Updated existing item - {"item_id":25,"new_quantity":2}
 2025-04-25 09:07:45 - Request completed successfully - {"cart_count":"2"}
+2025-05-07 10:20:15 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":5,\"colorId\":14}"
+2025-05-07 10:20:15 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":5,"colorId":14}
+2025-05-07 10:20:15 - Session info - {"session_id":"un5088f98puj3866ub8ib8vboi","user_id":2}
+2025-05-07 10:20:15 - Processed data - {"product_id":31,"quantity":1,"size_id":5,"color_id":14}
+2025-05-07 10:20:15 - Found existing cart - {"cart_id":2}
+2025-05-07 10:20:15 - Added new item - {"variant_id":122,"quantity":1}
+2025-05-07 10:20:15 - Request completed successfully - {"cart_count":"1"}
+2025-05-07 11:19:22 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":5,\"colorId\":14}"
+2025-05-07 11:19:22 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":5,"colorId":14}
+2025-05-07 11:19:22 - Session info - {"session_id":"un5088f98puj3866ub8ib8vboi","user_id":2}
+2025-05-07 11:19:22 - Processed data - {"product_id":31,"quantity":1,"size_id":5,"color_id":14}
+2025-05-07 11:19:22 - Found existing cart - {"cart_id":2}
+2025-05-07 11:19:22 - Added new item - {"variant_id":122,"quantity":1}
+2025-05-07 11:19:22 - Request completed successfully - {"cart_count":"1"}
+2025-05-07 11:34:41 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":5,\"colorId\":14}"
+2025-05-07 11:34:41 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":5,"colorId":14}
+2025-05-07 11:34:41 - Session info - {"session_id":"uubu5b2nekpvkr6hcd82km47sl","user_id":null}
+2025-05-07 11:34:41 - Processed data - {"product_id":31,"quantity":1,"size_id":5,"color_id":14}
+2025-05-07 11:34:41 - Created new cart - {"cart_id":10}
+2025-05-07 11:34:41 - Added new item - {"variant_id":122,"quantity":1}
+2025-05-07 11:34:41 - Request completed successfully - {"cart_count":"1"}
+2025-05-07 11:58:11 - Raw POST input - "{\"productId\":30,\"quantity\":1,\"sizeId\":8,\"colorId\":11}"
+2025-05-07 11:58:11 - Received add to cart request - {"productId":30,"quantity":1,"sizeId":8,"colorId":11}
+2025-05-07 11:58:11 - Session info - {"session_id":"uubu5b2nekpvkr6hcd82km47sl","user_id":2}
+2025-05-07 11:58:11 - Processed data - {"product_id":30,"quantity":1,"size_id":8,"color_id":11}
+2025-05-07 11:58:11 - Found existing cart - {"cart_id":2}
+2025-05-07 11:58:11 - Added new item - {"variant_id":118,"quantity":1}
+2025-05-07 11:58:11 - Request completed successfully - {"cart_count":"1"}

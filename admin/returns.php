@@ -9,8 +9,8 @@ if (!isset($_SESSION['admin_id']) || !isset($_SESSION['admin_loai']) || $_SESSIO
 // Kết nối database
 require_once '../config/config.php';
 $current_page = 'returns';
-include 'includes/header.php';
-include 'includes/sidebar.php';
+$page_title = 'Quản lý hoàn trả';
+$page_css = ['css/returns.css']; // Liên kết với file CSS riêng
 
 // Xử lý cập nhật trạng thái hoàn trả
 if (isset($_POST['update_status']) && isset($_POST['return_id']) && is_numeric($_POST['return_id'])) {
@@ -217,61 +217,11 @@ function getReturnStatusLabel($status) {
 function formatVND($amount) {
     return number_format($amount, 0, ',', '.') . ' ₫';
 }
-?>
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý hoàn trả - Bug Shop Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        /* Custom styles for returns page */
-        .return-item {
-            transition: all 0.3s ease;
-        }
-        
-        .return-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0.3rem 2rem 0 rgba(58, 59, 69, 0.15) !important;
-        }
-        
-        .product-thumbnail {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        
-        .product-thumbnail:hover {
-            transform: scale(1.05);
-        }
-        
-        .badge {
-            font-weight: 600;
-            padding: 0.35em 0.65em;
-            font-size: 0.75em;
-            border-radius: 0.5rem;
-        }
-        
-        .return-reason {
-            padding: 0.5rem;
-            background-color: #f8f9fc;
-            border-radius: 0.35rem;
-            border-left: 4px solid #4e73df;
-        }
-        
-        .status-group .form-select {
-            min-width: 160px;
-        }
-    </style>
-</head>
-<body>
+// Include header và sidebar
+include 'includes/header.php';
+include 'includes/sidebar.php';
+?>
     
     <!-- Main Content -->
     <div class="col-md-10 col-lg-10 ms-auto">
@@ -537,8 +487,10 @@ function formatVND($amount) {
         </div>
     </div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Thêm footer -->
+<?php include 'includes/footer.php'; ?>
+
+<!-- Script thiết lập các animation và tương tác -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Auto dismiss alerts after 5 seconds

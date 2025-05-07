@@ -252,13 +252,54 @@ try {
                 throw new Exception("Failed to insert order details: " . $detail_stmt->error);
             }
             
-            // Update product inventory
+            // Update product inventory - fixed and improved with error handling
             $update_inventory = $conn->prepare("
                 UPDATE sanpham_bien_the SET so_luong = so_luong - ? 
-                WHERE id = ? AND so_luong >= ?
+                WHERE id = ?
             ");
-            $update_inventory->bind_param("iii", $item['soluong'], $item['id_bienthe'], $item['soluong']);
-            $update_inventory->execute();
+            
+            if (!$update_inventory) {
+                throw new Exception("Failed to prepare inventory update: " . $conn->error);
+            }
+            
+            $update_inventory->bind_param("ii", $item['soluong'], $item['id_bienthe']);
+            
+            if (!$update_inventory->execute()) {
+                throw new Exception("Failed to update inventory for product variant ID: " . $item['id_bienthe'] . " - Error: " . $update_inventory->error);
+            }
+            
+            // Also update the main sanpham table's quantity
+            $update_product_inventory = $conn->prepare("
+                UPDATE sanpham SET so_luong = so_luong - ? 
+                WHERE id = ?
+            ");
+            
+            if (!$update_product_inventory) {
+                throw new Exception("Failed to prepare product inventory update: " . $conn->error);
+            }
+            
+            $update_product_inventory->bind_param("ii", $item['soluong'], $item['id_sanpham']);
+            
+            if (!$update_product_inventory->execute()) {
+                throw new Exception("Failed to update product inventory for ID: " . $item['id_sanpham'] . " - Error: " . $update_product_inventory->error);
+            }
+            
+            // Log inventory update for debugging
+            debug_log('Inventory updated', [
+                'product_id' => $item['id_sanpham'],
+                'variant_id' => $item['id_bienthe'], 
+                'quantity_reduced' => $item['soluong'],
+                'variant_rows_affected' => $update_inventory->affected_rows,
+                'product_rows_affected' => $update_product_inventory->affected_rows
+            ]);
+            
+            // If no rows were affected, the inventory might be insufficient
+            if ($update_inventory->affected_rows == 0) {
+                debug_log('Warning: Inventory update affected 0 rows', [
+                    'variant_id' => $item['id_bienthe'], 
+                    'quantity' => $item['soluong']
+                ]);
+            }
         }
         
         debug_log('Order details inserted successfully');
@@ -344,7 +385,7 @@ try {
         'order_id' => $order_id,
         'order_code' => $order_code
     ];
-    header('Location: order_success.php');
+    header('Location: dathang_thanhcong.php?order_id=' . $order_id);
     exit();
     
 } catch (Exception $e) {

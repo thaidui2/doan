@@ -1,0 +1,178 @@
+/* Banner Khuyến Mãi */
+.promotion-banner {
+    margin-bottom: 30px;
+}
+
+.promotion-banner img {
+    max-height: 400px;
+    object-fit: cover;
+}
+
+/* Sale Ribbon */
+.sale-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    overflow: hidden;
+    z-index: 5;
+}
+
+.sale-ribbon span {
+    position: absolute;
+    display: block;
+    width: 160px;
+    padding: 8px 0;
+    background-color: #ff3e3e;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    text-transform: uppercase;
+    text-align: center;
+    transform: rotate(45deg);
+    top: 20px;
+    right: -40px;
+}
+
+/* Flash Sale Section */
+.countdown-section {
+    background-color: #f8f9fa;
+}
+
+.flash-sale-card {
+    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.promo-code-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.countdown {
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.countdown-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+}
+
+.countdown-item span:first-child {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.countdown-label {
+    font-size: 12px;
+}
+
+/* Coupon Styles */
+.coupon-container {
+    margin-bottom: 15px;
+}
+
+.coupon {
+    padding: 12px;
+    background-color: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    border-radius: 6px;
+}
+
+.coupon-code {
+    font-weight: bold;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: #0d6efd;
+}
+
+/* Hiệu ứng tim bay lên khi thích sản phẩm */
+@keyframes float-up {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -200%) scale(1.5); }
+}
+
+.floating-heart {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23dc3545' class='bi bi-heart-fill' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    z-index: 100;
+    animation: float-up 1s forwards;
+    pointer-events: none;
+}
+
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    min-width: 300px;
+    background-color: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    border-radius: 4px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    z-index: 9999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.toast-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-notification.success {
+    border-left: 4px solid #28a745;
+}
+
+.toast-icon {
+    margin-right: 12px;
+    font-size: 20px;
+}
+
+.toast-notification.success .toast-icon {
+    color: #28a745;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767.98px) {
+    .countdown-item {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .countdown-item span:first-child {
+        font-size: 18px;
+    }
+    
+    .countdown-label {
+        font-size: 10px;
+    }
+}

@@ -11,6 +11,7 @@ require_once('includes/functions.php');
 // Set current page for sidebar highlighting
 $current_page = 'orders';
 $page_title = 'Chi tiết đơn hàng';
+$page_css = ['css/order-detail.css']; // CSS riêng cho trang này
 
 // Get order ID from URL
 $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;

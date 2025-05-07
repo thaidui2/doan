@@ -1,0 +1,235 @@
+/* 
+ * Styles for Product Edit/Add Page
+ * Bug Shop Admin
+ */
+
+/* General Styles */
+body {
+    font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f8f9fc;
+}
+
+/* Required Fields */
+.required-field:after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* Form Card Styles */
+.form-card {
+    border: none;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.card-footer {
+    background-color: #f8f9fc;
+    border-top: 1px solid #e3e6f0;
+}
+
+/* Image Upload Container */
+.image-upload-container {
+    border: 2px dashed #ced4da;
+    border-radius: 0.35rem;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.image-upload-container:hover {
+    border-color: #4e73df;
+    background-color: #f1f3fa;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 0.35rem;
+}
+
+/* Product Image Container */
+.product-image-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 0.35rem;
+    overflow: hidden;
+    border: 1px solid #e3e6f0;
+}
+
+.product-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-image-container.main-image {
+    border: 2px solid #4e73df;
+}
+
+.delete-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(220, 53, 69, 0.8);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.delete-image:hover {
+    background-color: rgba(220, 53, 69, 1);
+}
+
+/* Variant Rows */
+.variant-row {
+    background-color: #f8f9fc;
+    border-radius: 0.35rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e3e6f0;
+    transition: all 0.3s ease;
+}
+
+.variant-row:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.remove-variant {
+    color: #dc3545;
+    font-size: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.remove-variant:hover {
+    color: #c82333;
+    transform: scale(1.1);
+}
+
+/* Color Display in Select */
+.color-display {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+/* Summernote Editor */
+.note-editor.note-frame {
+    border-radius: 0.35rem;
+    border-color: #ced4da;
+}
+
+.note-editor.note-frame .note-statusbar {
+    border-top-color: #ced4da;
+    border-bottom-left-radius: 0.35rem;
+    border-bottom-right-radius: 0.35rem;
+}
+
+.note-editor.note-frame .note-toolbar {
+    border-bottom-color: #ced4da;
+    border-top-left-radius: 0.35rem;
+    border-top-right-radius: 0.35rem;
+}
+
+/* Extra Images Preview */
+#extraImagesPreview .extra-image-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    border-radius: 0.35rem;
+    border: 1px solid #e3e6f0;
+}
+
+#extraImagesPreview .extra-image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#extraImagesPreview .remove-extra-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(220, 53, 69, 0.8);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+/* Form Controls */
+.form-control:focus, .form-select:focus {
+    border-color: #bac8f3;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+/* Form Switch */
+.form-check-input:checked {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.form-check-input:focus {
+    border-color: #bac8f3;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-primary:hover {
+    background-color: #4262c5;
+    border-color: #3d5cb8;
+}
+
+.btn-outline-primary {
+    color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767.98px) {
+    .image-preview {
+        max-height: 150px;
+    }
+    
+    .product-image-container {
+        width: 80px;
+        height: 80px;
+    }
+}

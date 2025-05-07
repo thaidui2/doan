@@ -9,8 +9,8 @@ if (!isset($_SESSION['admin_id']) || !isset($_SESSION['admin_loai']) || $_SESSIO
 // Kết nối database
 require_once '../config/config.php';
 $current_page = 'reviews';
-include 'includes/header.php';
-include 'includes/sidebar.php';
+$page_title = 'Quản lý đánh giá';
+$page_css = ['css/reviews.css']; // Liên kết với file CSS riêng
 
 // Xử lý các action: hiện, ẩn, xóa đánh giá
 if (isset($_GET['action']) && isset($_GET['id']) && is_numeric($_GET['id'])) {
@@ -207,19 +207,11 @@ $customers_sql = "SELECT DISTINCT u.id, u.ten, u.email
                  JOIN danhgia d ON u.id = d.id_user
                  ORDER BY u.ten";
 $customers_result = $conn->query($customers_sql);
-?>
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý đánh giá - Bug Shop Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/reviews.css">
-</head>
-<body>
+// Include header và sidebar
+include 'includes/header.php';
+include 'includes/sidebar.php';
+?>
     
     <!-- Main Content -->
     <div class="col-md-10 col-lg-10 ms-auto">
@@ -520,6 +512,8 @@ $customers_result = $conn->query($customers_sql);
         </div>
     </div>
 
+<!-- Thêm footer -->
+<?php include 'includes/footer.php'; ?>
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/reviews.js"></script>

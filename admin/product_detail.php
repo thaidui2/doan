@@ -9,6 +9,12 @@ require_once('includes/auth_check.php');
 $current_page = 'products';
 $page_title = 'Chi tiết sản phẩm';
 
+// CSS riêng cho trang này
+$page_css = ['css/product-detail.css'];
+
+// Javascript riêng cho trang này - nếu cần
+$page_js = [];
+
 // Get product ID from URL
 $product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 

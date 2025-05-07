@@ -1,0 +1,224 @@
+/* 
+ * Return Management Page Styles
+ * Bug Shop Admin
+ */
+
+:root {
+    --primary-color: #4e73df;
+    --secondary-color: #858796;
+    --success-color: #1cc88a;
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --light-color: #f8f9fc;
+}
+
+/* Card Styles */
+.card {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+    border: none;
+    border-radius: 0.35rem;
+}
+
+.card-header {
+    background-color: var(--light-color);
+    border-bottom: 1px solid #e3e6f0;
+    padding: 0.75rem 1.25rem;
+}
+
+/* Return Item Styles */
+.return-item {
+    transition: all 0.3s ease;
+}
+
+.return-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.3rem 2rem 0 rgba(58, 59, 69, 0.15) !important;
+}
+
+/* Product Thumbnail */
+.product-thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.product-thumbnail:hover {
+    transform: scale(1.05);
+}
+
+/* Badge Styles */
+.badge {
+    font-weight: 600;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    border-radius: 0.5rem;
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.bg-danger {
+    background-color: var(--danger-color) !important;
+}
+
+.bg-warning {
+    background-color: var(--warning-color) !important;
+    color: #212529 !important;
+}
+
+.bg-info {
+    background-color: var(--info-color) !important;
+    color: #fff !important;
+}
+
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.bg-secondary {
+    background-color: var(--secondary-color) !important;
+}
+
+/* Return Reason Box */
+.return-reason {
+    padding: 0.75rem;
+    background-color: #f8f9fc;
+    border-radius: 0.35rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Status Group Select */
+.status-group .form-select {
+    min-width: 160px;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #2e59d9;
+    border-color: #2653d4;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-secondary:hover {
+    background-color: #717384;
+    border-color: #6c757d;
+}
+
+/* Form Controls */
+.form-control:focus, .form-select:focus {
+    border-color: #bac8f3;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Pagination Styles */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.page-link {
+    color: var(--primary-color);
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dddfeb;
+}
+
+.page-link:hover {
+    color: #2653d4;
+    background-color: #eaecf4;
+    border-color: #dddfeb;
+}
+
+/* Empty State Styling */
+.text-center.py-5 .fas.fa-undo-alt {
+    color: var(--secondary-color);
+    opacity: 0.5;
+}
+
+/* Alert Styling */
+.alert-success {
+    color: #0f5132;
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+}
+
+.alert-danger {
+    color: #842029;
+    background-color: #f8d7da;
+    border-color: #f5c2c7;
+}
+
+/* Filter Form */
+#filterForm .form-control, 
+#filterForm .form-select {
+    border-radius: 0.35rem;
+}
+
+/* Customer Info */
+.customer-info {
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+/* Animation for Returns List */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.returns-container .return-item {
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Delay each item slightly for staggered effect */
+.returns-container .return-item:nth-child(1) { animation-delay: 0.1s; }
+.returns-container .return-item:nth-child(2) { animation-delay: 0.2s; }
+.returns-container .return-item:nth-child(3) { animation-delay: 0.3s; }
+.returns-container .return-item:nth-child(4) { animation-delay: 0.4s; }
+.returns-container .return-item:nth-child(5) { animation-delay: 0.5s; }
+.returns-container .return-item:nth-child(6) { animation-delay: 0.6s; }
+.returns-container .return-item:nth-child(7) { animation-delay: 0.7s; }
+.returns-container .return-item:nth-child(8) { animation-delay: 0.8s; }
+.returns-container .return-item:nth-child(9) { animation-delay: 0.9s; }
+.returns-container .return-item:nth-child(10) { animation-delay: 1.0s; }
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .product-thumbnail {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .status-group .form-select {
+        min-width: 100%;
+    }
+}

@@ -1,89 +1,161 @@
-:root {
-    --primary-color: #4e73df;
-    --secondary-color: #858796;
-    --success-color: #1cc88a;
-    --info-color: #36b9cc;
-    --warning-color: #f6c23e;
-    --danger-color: #e74a3b;
+/* 
+ * Styles for Categories Management Page
+ * Bug Shop Admin
+ */
+
+/* General Styles */
+.text-shadow {
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-body {
-    background-color: #f8f9fc;
-    font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-.sidebar {
-    min-height: 100vh;
-    background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
-    color: white;
-}
-
-.sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.8);
-    padding: 0.75rem 1rem;
-}
-
-.sidebar .nav-link:hover {
-    color: #fff;
-}
-
-.sidebar .nav-link.active {
-    font-weight: bold;
-    color: #fff;
-}
-
-.sidebar-brand {
-    height: 4.375rem;
-    font-size: 1.2rem;
-    font-weight: 800;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
+/* Category Card and List Styles */
 .category-thumbnail {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     object-fit: cover;
-    border-radius: 5px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
 }
 
 .category-name {
-    max-width: 250px;
+    font-weight: 500;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 200px;
 }
 
-.btn-action {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
 }
 
-.alert-dismissible {
-    padding-right: 1rem;
+/* Status Badges */
+.badge.bg-success {
+    background-color: #28a745 !important;
 }
 
-.filter-container {
-    background-color: #fff;
-    border-radius: 0.35rem;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-    margin-bottom: 1.5rem;
-    padding: 1rem;
+.badge.bg-secondary {
+    background-color: #6c757d !important;
 }
 
-.filters-collapse {
-    padding: 1rem 0;
+.badge.bg-info {
+    background-color: #17a2b8 !important;
 }
 
-.pagination {
-    margin-bottom: 0;
+.badge.bg-primary {
+    background-color: #0d6efd !important;
 }
 
-.nested-category {
-    padding-left: 20px;
-    border-left: 2px solid #e0e0e0;
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+/* Table Enhancements */
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.table thead th {
+    background-color: #f8f9fc;
+    border-bottom-width: 1px;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+/* Filter and Search Form */
+#filtersCollapse {
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    border-top: 1px solid #e3e6f0;
+    padding-top: 1rem;
+}
+
+/* Modal Styles */
+.modal-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.modal-footer {
+    background-color: #f8f9fc;
+    border-top: 1px solid #e3e6f0;
+}
+
+/* Form Elements */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+/* Pagination Styles */
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.pagination .page-link {
+    color: #0d6efd;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+}
+
+/* Empty State Styling */
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Button Adjustments */
+.btn-group .btn {
+    margin-right: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767.98px) {
+    .category-name {
+        max-width: 150px;
+    }
+    
+    .d-flex.gap-1 {
+        flex-direction: column;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+
+/* Custom Switch Styling */
+.form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+/* Image Preview Container */
+.img-fluid {
+    width: auto;
+    margin: 0 auto;
+}
+
+/* Filter Button Focus */
+.btn-outline-primary:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Card Shadow */
+.card.shadow {
+    box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15) !important;
 }

@@ -122,3 +122,696 @@
 )
 
 2025-04-20 10:58:54 - Order details inserted successfully
+2025-05-07 10:30:45 - Order processing started - Array
+(
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 67
+    [district] => 660
+    [ward] => 24612
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [selected_items] => Array
+        (
+            [0] => 27
+        )
+
+    [province_name] => Đắk Nông
+    [district_name] => Gia Nghĩa
+    [ward_name] => Nghĩa Thành
+    [full_address] => đông tiến, Nghĩa Thành, Gia Nghĩa, Đắk Nông
+)
+
+2025-05-07 10:30:45 - Original payment method - cod
+2025-05-07 10:30:45 - Final payment method - cod
+2025-05-07 10:30:45 - Is Buy Now? - 
+2025-05-07 10:30:45 - Processing regular cart checkout
+2025-05-07 10:30:45 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 122
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 39, Màu: Đỏ
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+)
+
+2025-05-07 10:30:45 - Total amount - 2200000
+2025-05-07 10:30:45 - Preparing order insertion with payment method - cod
+2025-05-07 10:30:45 - Order inserted successfully - Array
+(
+    [order_id] => 40
+    [payment_method] => cod
+)
+
+2025-05-07 10:30:45 - Order details inserted successfully
+2025-05-07 11:02:16 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 66
+    [district] => 650
+    [ward] => 24355
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Đắk Lắk
+    [district_name] => Krông Năng
+    [ward_name] => Phú Lộc
+    [full_address] => đông tiến, Phú Lộc, Krông Năng, Đắk Lắk
+)
+
+2025-05-07 11:02:16 - Original payment method - cod
+2025-05-07 11:02:16 - Final payment method - cod
+2025-05-07 11:02:16 - Is Buy Now? - 1
+2025-05-07 11:02:16 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 33
+    [id_bienthe] => 137
+    [so_luong] => 1
+    [gia] => 900000.00
+    [ten_san_pham] => Dép Nike Air Max
+    [hinh_anh] => uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp
+    [ten_size] => 42
+    [ten_mau] => Xanh lá
+    [ma_mau] => #77ee77
+    [thanh_tien] => 900000
+)
+
+2025-05-07 11:02:16 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 33
+            [id_bienthe] => 137
+            [tensp] => Dép Nike Air Max
+            [thuoc_tinh] => Size: 42, Màu: Xanh lá
+            [gia] => 900000.00
+            [soluong] => 1
+            [thanh_tien] => 900000
+        )
+
+)
+
+2025-05-07 11:02:16 - Total amount - 900000
+2025-05-07 11:02:16 - Preparing order insertion with payment method - cod
+2025-05-07 11:02:16 - Order inserted successfully - Array
+(
+    [order_id] => 41
+    [payment_method] => cod
+)
+
+2025-05-07 11:02:16 - Order details inserted successfully
+2025-05-07 11:42:42 - Order processing started - Array
+(
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 92
+    [district] => 923
+    [ward] => 31219
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Cần Thơ
+    [district_name] => Thốt Nốt
+    [ward_name] => Trung Kiên
+    [full_address] => đông tiến, Trung Kiên, Thốt Nốt, Cần Thơ
+)
+
+2025-05-07 11:42:42 - Original payment method - cod
+2025-05-07 11:42:42 - Final payment method - cod
+2025-05-07 11:42:42 - Is Buy Now? - 
+2025-05-07 11:42:42 - Processing regular cart checkout
+2025-05-07 11:42:42 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 122
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 39, Màu: Đỏ
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+)
+
+2025-05-07 11:42:42 - Total amount - 2200000
+2025-05-07 11:42:42 - Preparing order insertion with payment method - cod
+2025-05-07 11:42:42 - Order inserted successfully - Array
+(
+    [order_id] => 42
+    [payment_method] => cod
+)
+
+2025-05-07 11:42:42 - Order details inserted successfully
+2025-05-07 11:44:04 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => chưa đăng nhập
+    [phone] => 0475729543
+    [email] => chuadangnhap@gmail.com
+    [address] => làng xóm
+    [province] => 66
+    [district] => 650
+    [ward] => 24355
+    [payment_method] => vnpay
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => chưa đăng nhập
+    [province_name] => Đắk Lắk
+    [district_name] => Krông Năng
+    [ward_name] => Phú Lộc
+    [full_address] => làng xóm, Phú Lộc, Krông Năng, Đắk Lắk
+)
+
+2025-05-07 11:44:04 - Original payment method - vnpay
+2025-05-07 11:44:04 - Final payment method - vnpay
+2025-05-07 11:44:04 - Is Buy Now? - 1
+2025-05-07 11:44:04 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-07 11:44:04 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 118
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 1
+            [thanh_tien] => 2500000
+        )
+
+)
+
+2025-05-07 11:44:04 - Total amount - 2500000
+2025-05-07 11:44:04 - Preparing order insertion with payment method - vnpay
+2025-05-07 11:44:04 - Order inserted successfully - Array
+(
+    [order_id] => 43
+    [payment_method] => vnpay
+)
+
+2025-05-07 11:44:04 - Order details inserted successfully
+2025-05-07 11:58:26 - Order processing started - Array
+(
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 77
+    [district] => 752
+    [ward] => 26677
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [selected_items] => Array
+        (
+            [0] => 30
+        )
+
+    [province_name] => Bà Rịa - Vũng Tàu
+    [district_name] => Long Điền
+    [ward_name] => Phước Hưng
+    [full_address] => đông tiến, Phước Hưng, Long Điền, Bà Rịa - Vũng Tàu
+)
+
+2025-05-07 11:58:26 - Original payment method - cod
+2025-05-07 11:58:26 - Final payment method - cod
+2025-05-07 11:58:26 - Is Buy Now? - 
+2025-05-07 11:58:26 - Processing regular cart checkout
+2025-05-07 11:58:26 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 118
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 1
+            [thanh_tien] => 2500000
+        )
+
+)
+
+2025-05-07 11:58:26 - Total amount - 2500000
+2025-05-07 11:58:26 - Preparing order insertion with payment method - cod
+2025-05-07 11:58:26 - Order inserted successfully - Array
+(
+    [order_id] => 44
+    [payment_method] => cod
+)
+
+2025-05-07 11:58:26 - Order details inserted successfully
+2025-05-07 12:03:38 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 48
+    [district] => 494
+    [ward] => 20287
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Đà Nẵng
+    [district_name] => Ngũ Hành Sơn
+    [ward_name] => Hoà Quý
+    [full_address] => đông tiến, Hoà Quý, Ngũ Hành Sơn, Đà Nẵng
+)
+
+2025-05-07 12:03:38 - Original payment method - cod
+2025-05-07 12:03:38 - Final payment method - cod
+2025-05-07 12:03:38 - Is Buy Now? - 1
+2025-05-07 12:03:38 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-07 12:03:38 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 118
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 1
+            [thanh_tien] => 2500000
+        )
+
+)
+
+2025-05-07 12:03:38 - Total amount - 2500000
+2025-05-07 12:03:38 - Preparing order insertion with payment method - cod
+2025-05-07 12:03:38 - Order inserted successfully - Array
+(
+    [order_id] => 45
+    [payment_method] => cod
+)
+
+2025-05-07 12:03:38 - Order details inserted successfully
+2025-05-07 12:06:59 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 92
+    [district] => 923
+    [ward] => 31228
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Cần Thơ
+    [district_name] => Thốt Nốt
+    [ward_name] => Thuận Hưng
+    [full_address] => đông tiến, Thuận Hưng, Thốt Nốt, Cần Thơ
+)
+
+2025-05-07 12:06:59 - Original payment method - cod
+2025-05-07 12:06:59 - Final payment method - cod
+2025-05-07 12:06:59 - Is Buy Now? - 1
+2025-05-07 12:06:59 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 117
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 41
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-07 12:06:59 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 117
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 41, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 1
+            [thanh_tien] => 2500000
+        )
+
+)
+
+2025-05-07 12:06:59 - Total amount - 2500000
+2025-05-07 12:06:59 - Preparing order insertion with payment method - cod
+2025-05-07 12:06:59 - Order inserted successfully - Array
+(
+    [order_id] => 46
+    [payment_method] => cod
+)
+
+2025-05-07 12:06:59 - Inventory updated - Array
+(
+    [product_id] => 30
+    [variant_id] => 117
+    [quantity_reduced] => 1
+    [affected_rows] => 1
+)
+
+2025-05-07 12:06:59 - Order details inserted successfully
+2025-05-07 12:09:17 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 66
+    [district] => 656
+    [ward] => 24607
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Đắk Lắk
+    [district_name] => Lắk
+    [ward_name] => Nam Ka
+    [full_address] => đông tiến, Nam Ka, Lắk, Đắk Lắk
+)
+
+2025-05-07 12:09:17 - Original payment method - cod
+2025-05-07 12:09:17 - Final payment method - cod
+2025-05-07 12:09:17 - Is Buy Now? - 1
+2025-05-07 12:09:17 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 3
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 7500000
+)
+
+2025-05-07 12:09:17 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 118
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 3
+            [thanh_tien] => 7500000
+        )
+
+)
+
+2025-05-07 12:09:17 - Total amount - 7500000
+2025-05-07 12:09:17 - Preparing order insertion with payment method - cod
+2025-05-07 12:09:17 - Order inserted successfully - Array
+(
+    [order_id] => 47
+    [payment_method] => cod
+)
+
+2025-05-07 12:09:17 - Inventory updated - Array
+(
+    [product_id] => 30
+    [variant_id] => 118
+    [quantity_reduced] => 3
+    [affected_rows] => 1
+)
+
+2025-05-07 12:09:17 - Order details inserted successfully
+2025-05-07 12:14:17 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 48
+    [district] => 491
+    [ward] => 20209
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => ok
+    [province_name] => Đà Nẵng
+    [district_name] => Thanh Khê
+    [ward_name] => Xuân Hà
+    [full_address] => đông tiến, Xuân Hà, Thanh Khê, Đà Nẵng
+)
+
+2025-05-07 12:14:17 - Original payment method - cod
+2025-05-07 12:14:17 - Final payment method - cod
+2025-05-07 12:14:17 - Is Buy Now? - 1
+2025-05-07 12:14:17 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 117
+    [so_luong] => 2
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 41
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 5000000
+)
+
+2025-05-07 12:14:17 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 117
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 41, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 2
+            [thanh_tien] => 5000000
+        )
+
+)
+
+2025-05-07 12:14:17 - Total amount - 5000000
+2025-05-07 12:14:17 - Preparing order insertion with payment method - cod
+2025-05-07 12:14:17 - Order inserted successfully - Array
+(
+    [order_id] => 48
+    [payment_method] => cod
+)
+
+2025-05-07 12:14:17 - Inventory updated - Array
+(
+    [product_id] => 30
+    [variant_id] => 117
+    [quantity_reduced] => 2
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-07 12:14:17 - Order details inserted successfully
+2025-05-07 12:16:34 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 66
+    [district] => 656
+    [ward] => 24607
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Đắk Lắk
+    [district_name] => Lắk
+    [ward_name] => Nam Ka
+    [full_address] => đông tiến, Nam Ka, Lắk, Đắk Lắk
+)
+
+2025-05-07 12:16:34 - Original payment method - cod
+2025-05-07 12:16:34 - Final payment method - cod
+2025-05-07 12:16:34 - Is Buy Now? - 1
+2025-05-07 12:16:34 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 3
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 7500000
+)
+
+2025-05-07 12:16:34 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 118
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 3
+            [thanh_tien] => 7500000
+        )
+
+)
+
+2025-05-07 12:16:34 - Total amount - 7500000
+2025-05-07 12:16:34 - Preparing order insertion with payment method - cod
+2025-05-07 12:16:34 - Order inserted successfully - Array
+(
+    [order_id] => 49
+    [payment_method] => cod
+)
+
+2025-05-07 12:16:34 - Inventory updated - Array
+(
+    [product_id] => 30
+    [variant_id] => 118
+    [quantity_reduced] => 3
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-07 12:16:34 - Order details inserted successfully
+2025-05-07 12:18:01 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 67
+    [district] => 664
+    [ward] => 24703
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Đắk Nông
+    [district_name] => Krông Nô
+    [ward_name] => Nâm Nung
+    [full_address] => đông tiến, Nâm Nung, Krông Nô, Đắk Nông
+)
+
+2025-05-07 12:18:01 - Original payment method - cod
+2025-05-07 12:18:01 - Final payment method - cod
+2025-05-07 12:18:01 - Is Buy Now? - 1
+2025-05-07 12:18:01 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-07 12:18:01 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 127
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 41, Màu: Xanh dương
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+)
+
+2025-05-07 12:18:01 - Total amount - 2200000
+2025-05-07 12:18:01 - Preparing order insertion with payment method - cod
+2025-05-07 12:18:01 - Order inserted successfully - Array
+(
+    [order_id] => 50
+    [payment_method] => cod
+)
+
+2025-05-07 12:18:01 - Inventory updated - Array
+(
+    [product_id] => 31
+    [variant_id] => 127
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-07 12:18:01 - Order details inserted successfully

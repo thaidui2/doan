@@ -17,30 +17,24 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
     $username = $_SESSION['user']['username'];
 }
 
-// Code tiếp theo...
+// Thiết lập các tham số cho head động
+$page_title = 'Trang chủ';
+$page_css = ['css/index.css']; // Mảng chứa các file CSS cần load
+$page_js = ['js/index.js']; // Mảng chứa các file JS cần load
+
+// Có thể thêm head content tùy chỉnh nếu cần
+$head_custom = '
+<!-- Meta tags tùy chỉnh cho SEO -->
+<meta name="description" content="Bug Shop - Cửa hàng giày dép chất lượng cao">
+<meta name="keywords" content="giày, sneakers, giày thể thao, giày nam, giày nữ">
+';
+
+// Include head.php chứa phần head động
+require_once('includes/head.php');
+require_once('includes/header.php');
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Bug Shop</title>
-        
-        <link rel="stylesheet" href="css/chatbot.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">  
-        
-    </head>
-    
-    
-
 <body>
-    <?php 
-    require_once('includes/head.php');
-    require_once('includes/header.php');
-    
-    ?>
-    <link rel="stylesheet" href="css/index.css">
     <main>
         <!-- Hero Banner -->
         <section class="hero-banner">
@@ -445,170 +439,8 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
         
     </main>
     
-    
-    <!-- Add wishlist functionality -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get all wishlist buttons
-        const wishlistButtons = document.querySelectorAll('.wishlist-button');
-        
-        // Function to update button appearance
-        function updateWishlistButton(button, isInWishlist) {
-            const icon = button.querySelector('i.bi');
-            
-            if (isInWishlist) {
-                icon.classList.remove('bi-heart');
-                icon.classList.add('bi-heart-fill');
-                button.classList.add('active');
-                button.setAttribute('title', 'Xóa khỏi yêu thích');
-            } else {
-                icon.classList.remove('bi-heart-fill');
-                icon.classList.add('bi-heart');
-                button.classList.remove('active');
-                button.setAttribute('title', 'Thêm vào yêu thích');
-            }
-        }
-        
-        // Check which products are in wishlist
-        function checkWishlistStatus() {
-            // Only check if user is logged in and there are products on page
-            if (wishlistButtons.length > 0) {
-                const productIds = Array.from(wishlistButtons).map(button => 
-                    button.getAttribute('data-product-id')
-                );
-                
-                fetch('ajax/wishlist.php?check_products=' + JSON.stringify(productIds), {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.wishlist_items) {
-                        // Update buttons for items in wishlist
-                        wishlistButtons.forEach(button => {
-                            const productId = button.getAttribute('data-product-id');
-                            const isInWishlist = data.wishlist_items.includes(parseInt(productId));
-                            updateWishlistButton(button, isInWishlist);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking wishlist status:', error);
-                });
-            }
-        }
-        
-        // Add click event listener to wishlist buttons
-        wishlistButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation(); // Prevent the event from bubbling up
-                
-                const productId = this.getAttribute('data-product-id');
-                const formData = new FormData();
-                formData.append('product_id', productId);
-                
-                fetch('ajax/wishlist.php', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update button appearance
-                        updateWishlistButton(button, data.status === 'added');
-                        
-                        // Show toast notification
-                        showToast(data.message, data.status === 'added' ? 'success' : 'info');
-                    } else if (data.redirect) {
-                        // Redirect to login page if needed
-                        window.location.href = data.redirect + '?redirect=' + encodeURIComponent(window.location.href);
-                    } else {
-                        showToast(data.message || 'Có lỗi xảy ra, vui lòng thử lại sau', 'error');
-                        console.error('Wishlist error:', data);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating wishlist:', error);
-                    showToast('Đã xảy ra lỗi khi cập nhật danh sách yêu thích', 'error');
-                });
-            });
-        });
-        
-        // Function to show toast notifications
-        function showToast(message, type = 'info') {
-            // Check if toast container exists, if not create it
-            let toastContainer = document.querySelector('.toast-container');
-            if (!toastContainer) {
-                toastContainer = document.createElement('div');
-                toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-                document.body.appendChild(toastContainer);
-            }
-            
-            // Create toast element
-            const toastEl = document.createElement('div');
-            toastEl.className = `toast align-items-center border-0 bg-${type === 'error' ? 'danger' : (type === 'success' ? 'success' : 'info')}`;
-            toastEl.setAttribute('role', 'alert');
-            toastEl.setAttribute('aria-live', 'assertive');
-            toastEl.setAttribute('aria-atomic', 'true');
-            
-            // Toast content
-            toastEl.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body text-white">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            
-            // Add toast to container
-            toastContainer.appendChild(toastEl);
-            
-            // Initialize Bootstrap toast
-            const toast = new bootstrap.Toast(toastEl, {
-                delay: 3000
-            });
-            
-            // Show toast
-            toast.show();
-            
-            // Remove toast element after it's hidden
-            toastEl.addEventListener('hidden.bs.toast', function() {
-                toastEl.remove();
-            });
-        }
-        
-        // Check wishlist status when page loads
-        checkWishlistStatus();
-    });
-    </script>
-    
-    <!-- Khởi tạo carousel -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Đảm bảo bootstrap đã được tải
-            if (typeof bootstrap !== 'undefined') {
-                var myCarousel = document.getElementById('heroCarousel');
-                if (myCarousel) {
-                    var carousel = new bootstrap.Carousel(myCarousel, {
-                        interval: 5000,
-                        wrap: true
-                    });
-                    
-                    // Khởi động carousel
-                    carousel.cycle();
-                    
-                    console.log('Carousel đã được khởi tạo thành công');
-                } else {
-                    console.error('Không tìm thấy phần tử #heroCarousel');
-                }
-            } else {
-                console.error('Bootstrap chưa được tải');
-            }
-        });
-    </script>
+    <!-- Include the external JS file -->
+    <script src="js/index.js"></script>
     
     <?php include('includes/footer.php'); ?>
 </body>

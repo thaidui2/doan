@@ -8,8 +8,6 @@ if (!isset($_SESSION['admin_id']) || !isset($_SESSION['admin_loai']) || $_SESSIO
 
 // Kết nối database
 require_once '../config/config.php';
-include 'includes/header.php';
-include 'includes/sidebar.php';
 
 // Xử lý xóa danh mục
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
@@ -252,296 +250,296 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
         $category_to_edit = $edit_result->fetch_assoc();
     }
 }
-?>
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý danh mục - Bug Shop Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/categories.css">
-</head>
-<body>
+// Set page title and current page for active menu
+$page_title = 'Quản lý danh mục';
+$current_page = 'categories';
+
+// CSS riêng cho trang này
+$page_css = ['css/categories.css'];
+
+// Javascript riêng cho trang này - sẽ được thêm ở cuối trang
+$page_js = ['js/categories.js'];
+
+// Include header và sidebar
+include 'includes/header.php';
+include 'includes/sidebar.php';
+?>
         
-        <!-- Main Content -->
-        <div class="col-md-10 col-lg-10 ms-auto">
-            <div class="container-fluid px-4 py-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="h3 mb-0 text-gray-800">Quản lý danh mục</h1>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
-                        <i class="fas fa-plus me-1"></i> Thêm danh mục
-                    </button>
-                </div>
+<!-- Main Content -->
+<div class="col-md-10 col-lg-10 ms-auto">
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Quản lý danh mục</h1>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                <i class="fas fa-plus me-1"></i> Thêm danh mục
+            </button>
+        </div>
                 
-                <!-- Thông báo -->
-                <?php if (isset($_GET['success'])): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <?php echo htmlspecialchars($_GET['success']); ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                <?php endif; ?>
-                
-                <?php if (isset($_GET['error'])): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <?php echo htmlspecialchars($_GET['error']); ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                <?php endif; ?>
-                
-                <!-- Tìm kiếm và lọc -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Tìm kiếm và lọc</h6>
-                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
-                            <i class="fas fa-filter me-1"></i> Lọc nâng cao
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <form method="GET" action="">
-                            <div class="row align-items-end">
-                                <div class="col-md-6 mb-3">
-                                    <label for="search" class="form-label">Tìm kiếm</label>
-                                    <input type="text" class="form-control" id="search" name="search" 
-                                           placeholder="Tên danh mục, mô tả..." value="<?php echo htmlspecialchars($search); ?>">
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="parent" class="form-label">Danh mục cha</label>
-                                    <select class="form-select" id="parent" name="parent">
-                                        <option value="">Tất cả danh mục</option>
-                                        <option value="0" <?php echo ($parent === '0') ? 'selected' : ''; ?>>Danh mục gốc</option>
-                                        <?php foreach ($all_categories as $id => $name): ?>
-                                            <option value="<?php echo $id; ?>" <?php echo ($parent == $id) ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-md-2 mb-3">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-search me-1"></i> Tìm kiếm
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Lọc nâng cao -->
-                            <div class="collapse <?php echo ($status !== '' || $sort != 'id_desc') ? 'show' : ''; ?>" id="filtersCollapse">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="status" class="form-label">Trạng thái</label>
-                                        <select class="form-select" id="status" name="status">
-                                            <option value="">Tất cả</option>
-                                            <option value="1" <?php echo ($status === '1') ? 'selected' : ''; ?>>Đang hiển thị</option>
-                                            <option value="0" <?php echo ($status === '0') ? 'selected' : ''; ?>>Đang ẩn</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="sort" class="form-label">Sắp xếp</label>
-                                        <select class="form-select" id="sort" name="sort">
-                                            <option value="id_desc" <?php echo ($sort == 'id_desc') ? 'selected' : ''; ?>>Mặc định (Mới nhất)</option>
-                                            <option value="name_asc" <?php echo ($sort == 'name_asc') ? 'selected' : ''; ?>>Tên A-Z</option>
-                                            <option value="name_desc" <?php echo ($sort == 'name_desc') ? 'selected' : ''; ?>>Tên Z-A</option>
-                                            <option value="newest" <?php echo ($sort == 'newest') ? 'selected' : ''; ?>>Mới nhất</option>
-                                            <option value="oldest" <?php echo ($sort == 'oldest') ? 'selected' : ''; ?>>Cũ nhất</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4 mb-3 d-flex align-items-end">
-                                        <a href="categories.php" class="btn btn-outline-secondary w-100">
-                                            <i class="fas fa-redo me-1"></i> Đặt lại bộ lọc
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                
-                <!-- Danh sách danh mục -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            Danh sách danh mục 
-                            <span class="badge bg-secondary ms-1"><?php echo $total_items; ?> danh mục</span>
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="60">ID</th>
-                                        <th width="80">Hình ảnh</th>
-                                        <th>Tên danh mục</th>
-                                        <th>Danh mục cha</th>
-                                        <th>Số lượng</th>
-                                        <th width="100">Trạng thái</th>
-                                        <th width="170">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if ($categories && $categories->num_rows > 0): ?>
-                                        <?php while ($category = $categories->fetch_assoc()): ?>
-                                            <tr>
-                                                <td><?php echo $category['id']; ?></td>
-                                                <td>
-                                                    <?php if (!empty($category['hinhanh'])): ?>
-                                                        <img src="../<?php echo htmlspecialchars($category['hinhanh']); ?>" 
-                                                             alt="<?php echo htmlspecialchars($category['ten']); ?>" 
-                                                             class="category-thumbnail">
-                                                    <?php else: ?>
-                                                        <div class="text-center text-muted">
-                                                            <i class="fas fa-folder fa-2x"></i>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <div class="category-name" title="<?php echo htmlspecialchars($category['ten']); ?>">
-                                                        <?php echo htmlspecialchars($category['ten']); ?>
-                                                    </div>
-                                                    <div class="small text-muted">
-                                                        <?php echo htmlspecialchars($category['slug']); ?>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <?php 
-                                                    if (isset($category['parent_name'])) {
-                                                        echo htmlspecialchars($category['parent_name']);
-                                                    } else {
-                                                        echo '<span class="text-muted">Không có</span>';
-                                                    }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <div class="small mb-1">
-                                                        <span class="badge bg-primary"><?php echo $category['subcategory_count']; ?> danh mục con</span>
-                                                    </div>
-                                                    <div class="small">
-                                                        <span class="badge bg-info"><?php echo $category['product_count']; ?> sản phẩm</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <?php if ($category['trang_thai']): ?>
-                                                        <span class="badge bg-success">Hiển thị</span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-secondary">Ẩn</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex gap-1 mb-1">
-                                                        <a href="categories.php?edit=<?php echo $category['id']; ?>" class="btn btn-sm btn-primary flex-grow-1">
-                                                            <i class="fas fa-edit"></i> Sửa
-                                                        </a>
-                                                    </div>
-                                                    <div class="d-flex gap-1">
-                                                        <a href="categories.php?toggle_status=<?php echo $category['id']; ?>" 
-                                                           class="btn btn-sm <?php echo $category['trang_thai'] ? 'btn-warning' : 'btn-success'; ?> flex-grow-1"
-                                                           onclick="return confirm('Bạn có chắc muốn <?php echo $category['trang_thai'] ? 'ẩn' : 'hiển thị'; ?> danh mục này?')">
-                                                            <i class="fas <?php echo $category['trang_thai'] ? 'fa-eye-slash' : 'fa-eye'; ?>"></i> <?php echo $category['trang_thai'] ? 'Ẩn' : 'Hiện'; ?>
-                                                        </a>
-                                                        <a href="categories.php?delete=<?php echo $category['id']; ?>" 
-                                                           class="btn btn-sm btn-danger flex-grow-1"
-                                                           onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác!')">
-                                                            <i class="fas fa-trash"></i> Xóa
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endwhile; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td colspan="7" class="text-center py-4">
-                                                <div class="text-muted mb-3">
-                                                    <i class="fas fa-folder-open fa-3x"></i>
-                                                </div>
-                                                <h5>Không tìm thấy danh mục nào</h5>
-                                                <p>Hãy thử thay đổi tiêu chí tìm kiếm hoặc thêm danh mục mới</p>
-                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
-                                                    <i class="fas fa-plus me-1"></i> Thêm danh mục mới
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+        <!-- Thông báo -->
+        <?php if (isset($_GET['success'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($_GET['success']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($_GET['error']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Tìm kiếm và lọc -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Tìm kiếm và lọc</h6>
+                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+                    <i class="fas fa-filter me-1"></i> Lọc nâng cao
+                </button>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="">
+                    <div class="row align-items-end">
+                        <div class="col-md-6 mb-3">
+                            <label for="search" class="form-label">Tìm kiếm</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   placeholder="Tên danh mục, mô tả..." value="<?php echo htmlspecialchars($search); ?>">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="parent" class="form-label">Danh mục cha</label>
+                            <select class="form-select" id="parent" name="parent">
+                                <option value="">Tất cả danh mục</option>
+                                <option value="0" <?php echo ($parent === '0') ? 'selected' : ''; ?>>Danh mục gốc</option>
+                                <?php foreach ($all_categories as $id => $name): ?>
+                                    <option value="<?php echo $id; ?>" <?php echo ($parent == $id) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($name); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i> Tìm kiếm
+                            </button>
                         </div>
                     </div>
                     
-                    <!-- Phân trang -->
-                    <?php if ($total_pages > 1): ?>
-                        <div class="card-footer d-flex justify-content-between align-items-center">
-                            <div>
-                                Hiển thị <?php echo min(($page - 1) * $items_per_page + 1, $total_items); ?> - 
-                                <?php echo min($page * $items_per_page, $total_items); ?> 
-                                trong <?php echo $total_items; ?> danh mục
+                    <!-- Lọc nâng cao -->
+                    <div class="collapse <?php echo ($status !== '' || $sort != 'id_desc') ? 'show' : ''; ?>" id="filtersCollapse">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="status" class="form-label">Trạng thái</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">Tất cả</option>
+                                    <option value="1" <?php echo ($status === '1') ? 'selected' : ''; ?>>Đang hiển thị</option>
+                                    <option value="0" <?php echo ($status === '0') ? 'selected' : ''; ?>>Đang ẩn</option>
+                                </select>
                             </div>
-                            <nav>
-                                <ul class="pagination">
-                                    <?php if ($page > 1): ?>
-                                        <li class="page-item">
-                                            <a class="page-link" href="<?php echo '?page=1' . 
-                                                (!empty($search) ? '&search=' . urlencode($search) : '') .
-                                                ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
-                                                ($status !== '' ? '&status=' . urlencode($status) : '') .
-                                                (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
-                                                <i class="fas fa-angle-double-left"></i>
-                                            </a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="<?php echo '?page=' . ($page - 1) . 
-                                                (!empty($search) ? '&search=' . urlencode($search) : '') .
-                                                ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
-                                                ($status !== '' ? '&status=' . urlencode($status) : '') .
-                                                (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
-                                                <i class="fas fa-angle-left"></i>
-                                            </a>
-                                        </li>
-                                    <?php endif; ?>
-                                    
-                                    <?php
-                                    $start_page = max(1, min($page - 2, $total_pages - 4));
-                                    $end_page = min($total_pages, max($page + 2, 5));
-                                    
-                                    for ($i = $start_page; $i <= $end_page; $i++):
-                                    ?>
-                                        <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
-                                            <a class="page-link" href="<?php echo '?page=' . $i . 
-                                                (!empty($search) ? '&search=' . urlencode($search) : '') .
-                                                ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
-                                                ($status !== '' ? '&status=' . urlencode($status) : '') .
-                                                (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
-                                                <?php echo $i; ?>
-                                            </a>
-                                        </li>
-                                    <?php endfor; ?>
-                                    
-                                    <?php if ($page < $total_pages): ?>
-                                        <li class="page-item">
-                                            <a class="page-link" href="<?php echo '?page=' . ($page + 1) . 
-                                                (!empty($search) ? '&search=' . urlencode($search) : '') .
-                                                ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
-                                                ($status !== '' ? '&status=' . urlencode($status) : '') .
-                                                (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
-                                                <i class="fas fa-angle-right"></i>
-                                            </a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="<?php echo '?page=' . $total_pages . 
-                                                (!empty($search) ? '&search=' . urlencode($search) : '') .
-                                                ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
-                                                ($status !== '' ? '&status=' . urlencode($status) : '') .
-                                                (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
-                                                <i class="fas fa-angle-double-right"></i>
-                                            </a>
-                                        </li>
-                                    <?php endif; ?>
-                                </ul>
-                            </nav>
+                            <div class="col-md-4 mb-3">
+                                <label for="sort" class="form-label">Sắp xếp</label>
+                                <select class="form-select" id="sort" name="sort">
+                                    <option value="id_desc" <?php echo ($sort == 'id_desc') ? 'selected' : ''; ?>>Mặc định (Mới nhất)</option>
+                                    <option value="name_asc" <?php echo ($sort == 'name_asc') ? 'selected' : ''; ?>>Tên A-Z</option>
+                                    <option value="name_desc" <?php echo ($sort == 'name_desc') ? 'selected' : ''; ?>>Tên Z-A</option>
+                                    <option value="newest" <?php echo ($sort == 'newest') ? 'selected' : ''; ?>>Mới nhất</option>
+                                    <option value="oldest" <?php echo ($sort == 'oldest') ? 'selected' : ''; ?>>Cũ nhất</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3 d-flex align-items-end">
+                                <a href="categories.php" class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-redo me-1"></i> Đặt lại bộ lọc
+                                </a>
+                            </div>
                         </div>
-                    <?php endif; ?>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Danh sách danh mục -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    Danh sách danh mục 
+                    <span class="badge bg-secondary ms-1"><?php echo $total_items; ?> danh mục</span>
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="60">ID</th>
+                                <th width="80">Hình ảnh</th>
+                                <th>Tên danh mục</th>
+                                <th>Danh mục cha</th>
+                                <th>Số lượng</th>
+                                <th width="100">Trạng thái</th>
+                                <th width="170">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($categories && $categories->num_rows > 0): ?>
+                                <?php while ($category = $categories->fetch_assoc()): ?>
+                                    <tr>
+                                        <td><?php echo $category['id']; ?></td>
+                                        <td>
+                                            <?php if (!empty($category['hinhanh'])): ?>
+                                                <img src="../<?php echo htmlspecialchars($category['hinhanh']); ?>" 
+                                                     alt="<?php echo htmlspecialchars($category['ten']); ?>" 
+                                                     class="category-thumbnail">
+                                            <?php else: ?>
+                                                <div class="text-center text-muted">
+                                                    <i class="fas fa-folder fa-2x"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="category-name" title="<?php echo htmlspecialchars($category['ten']); ?>">
+                                                <?php echo htmlspecialchars($category['ten']); ?>
+                                            </div>
+                                            <div class="small text-muted">
+                                                <?php echo htmlspecialchars($category['slug']); ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php 
+                                            if (isset($category['parent_name'])) {
+                                                echo htmlspecialchars($category['parent_name']);
+                                            } else {
+                                                echo '<span class="text-muted">Không có</span>';
+                                            }
+                                            ?>
+                                        </td>
+                                        <td>
+                                            <div class="small mb-1">
+                                                <span class="badge bg-primary"><?php echo $category['subcategory_count']; ?> danh mục con</span>
+                                            </div>
+                                            <div class="small">
+                                                <span class="badge bg-info"><?php echo $category['product_count']; ?> sản phẩm</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php if ($category['trang_thai']): ?>
+                                                <span class="badge bg-success">Hiển thị</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Ẩn</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 mb-1">
+                                                <a href="categories.php?edit=<?php echo $category['id']; ?>" class="btn btn-sm btn-primary flex-grow-1">
+                                                    <i class="fas fa-edit"></i> Sửa
+                                                </a>
+                                            </div>
+                                            <div class="d-flex gap-1">
+                                                <a href="categories.php?toggle_status=<?php echo $category['id']; ?>" 
+                                                   class="btn btn-sm <?php echo $category['trang_thai'] ? 'btn-warning' : 'btn-success'; ?> flex-grow-1"
+                                                   onclick="return confirm('Bạn có chắc muốn <?php echo $category['trang_thai'] ? 'ẩn' : 'hiển thị'; ?> danh mục này?')">
+                                                    <i class="fas <?php echo $category['trang_thai'] ? 'fa-eye-slash' : 'fa-eye'; ?>"></i> <?php echo $category['trang_thai'] ? 'Ẩn' : 'Hiện'; ?>
+                                                </a>
+                                                <a href="categories.php?delete=<?php echo $category['id']; ?>" 
+                                                   class="btn btn-sm btn-danger flex-grow-1"
+                                                   onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác!')">
+                                                    <i class="fas fa-trash"></i> Xóa
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted mb-3">
+                                            <i class="fas fa-folder-open fa-3x"></i>
+                                        </div>
+                                        <h5>Không tìm thấy danh mục nào</h5>
+                                        <p>Hãy thử thay đổi tiêu chí tìm kiếm hoặc thêm danh mục mới</p>
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                                            <i class="fas fa-plus me-1"></i> Thêm danh mục mới
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+            
+            <!-- Phân trang -->
+            <?php if ($total_pages > 1): ?>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div>
+                        Hiển thị <?php echo min(($page - 1) * $items_per_page + 1, $total_items); ?> - 
+                        <?php echo min($page * $items_per_page, $total_items); ?> 
+                        trong <?php echo $total_items; ?> danh mục
+                    </div>
+                    <nav>
+                        <ul class="pagination">
+                            <?php if ($page > 1): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?php echo '?page=1' . 
+                                        (!empty($search) ? '&search=' . urlencode($search) : '') .
+                                        ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
+                                        ($status !== '' ? '&status=' . urlencode($status) : '') .
+                                        (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?php echo '?page=' . ($page - 1) . 
+                                        (!empty($search) ? '&search=' . urlencode($search) : '') .
+                                        ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
+                                        ($status !== '' ? '&status=' . urlencode($status) : '') .
+                                        (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                            
+                            <?php
+                            $start_page = max(1, min($page - 2, $total_pages - 4));
+                            $end_page = min($total_pages, max($page + 2, 5));
+                            
+                            for ($i = $start_page; $i <= $end_page; $i++):
+                            ?>
+                                <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
+                                    <a class="page-link" href="<?php echo '?page=' . $i . 
+                                        (!empty($search) ? '&search=' . urlencode($search) : '') .
+                                        ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
+                                        ($status !== '' ? '&status=' . urlencode($status) : '') .
+                                        (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
+                                        <?php echo $i; ?>
+                                    </a>
+                                </li>
+                            <?php endfor; ?>
+                            
+                            <?php if ($page < $total_pages): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?php echo '?page=' . ($page + 1) . 
+                                        (!empty($search) ? '&search=' . urlencode($search) : '') .
+                                        ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
+                                        ($status !== '' ? '&status=' . urlencode($status) : '') .
+                                        (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?php echo '?page=' . $total_pages . 
+                                        (!empty($search) ? '&search=' . urlencode($search) : '') .
+                                        ($parent !== '' ? '&parent=' . urlencode($parent) : '') .
+                                        ($status !== '' ? '&status=' . urlencode($status) : '') .
+                                        (!empty($sort) ? '&sort=' . urlencode($sort) : ''); ?>">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </nav>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -651,54 +649,7 @@ if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/categories.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto dismiss alerts after 5 seconds
-    setTimeout(function() {
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        });
-    }, 5000);
-    
-    // Show modal if edit parameter is present
-    <?php if ($category_to_edit): ?>
-    const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
-    categoryModal.show();
-    <?php endif; ?>
-    
-    // Generate slug from name
-    const nameInput = document.getElementById('ten');
-    const slugInput = document.getElementById('slug');
-    
-    if (nameInput && slugInput) {
-        nameInput.addEventListener('keyup', function() {
-            if (!slugInput.value) {
-                slugInput.value = createSlug(nameInput.value);
-            }
-        });
-    }
-    
-    function createSlug(text) {
-        return text.toLowerCase()
-            .replace(/[áàảãạăắằẳẵặâấầẩẫậ]/g, 'a')
-            .replace(/[éèẻẽẹêếềểễệ]/g, 'e')
-            .replace(/[íìỉĩị]/g, 'i')
-            .replace(/[óòỏõọôốồổỗộơớờởỡợ]/g, 'o')
-            .replace(/[úùủũụưứừửữự]/g, 'u')
-            .replace(/[ýỳỷỹỵ]/g, 'y')
-            .replace(/đ/g, 'd')
-            .replace(/\s+/g, '-')
-            .replace(/[^\w\-]+/g, '')
-            .replace(/\-\-+/g, '-')
-            .replace(/^-+/, '')
-            .replace(/-+$/, '');
-    }
-});
-</script>
-</body>
-</html>
+<?php
+// Include footer
+include 'includes/footer.php';
+?>

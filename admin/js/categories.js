@@ -9,10 +9,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
     
     // Show modal if edit parameter is present
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('edit')) {
+    // Kiểm tra cả biến editMode từ PHP và tham số trong URL
+    if (typeof editMode !== 'undefined' && editMode === true) {
         const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
         categoryModal.show();
+    } else {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('edit')) {
+            const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+            categoryModal.show();
+        }
     }
     
     // Generate slug from name
@@ -42,4 +48,12 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/^-+/, '')
             .replace(/-+$/, '');
     }
+    
+    // Auto submit form when select elements change
+    const autoSubmitFilters = document.querySelectorAll('#status, #sort, #parent');
+    autoSubmitFilters.forEach(filter => {
+        filter.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+    });
 });

@@ -1,0 +1,281 @@
+/* Dashboard CSS Styles */
+
+:root {
+    --primary-color: #4e73df;
+    --secondary-color: #858796;
+    --success-color: #1cc88a;
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --light-color: #f8f9fc;
+    --dark-color: #5a5c69;
+}
+
+/* Dashboard statistics cards */
+.stat-card {
+    border-left: 0.25rem solid #dddfeb;
+    transition: transform 0.15s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-primary {
+    border-left-color: var(--primary-color);
+}
+
+.card-primary .text-primary {
+    color: var(--primary-color) !important;
+}
+
+.card-success {
+    border-left-color: var(--success-color);
+}
+
+.card-success .text-success {
+    color: var(--success-color) !important;
+}
+
+.card-info {
+    border-left-color: var(--info-color);
+}
+
+.card-info .text-info {
+    color: var(--info-color) !important;
+}
+
+.card-warning {
+    border-left-color: var(--warning-color);
+}
+
+.card-warning .text-warning {
+    color: var(--warning-color) !important;
+}
+
+.card-danger {
+    border-left-color: var(--danger-color);
+}
+
+.card-danger .text-danger {
+    color: var(--danger-color) !important;
+}
+
+.stat-icon {
+    color: #dddfeb !important;
+    opacity: 0.8;
+    transition: transform 0.15s ease-in-out;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+/* Order status cards */
+.card .text-xs {
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.card h5.mb-0 {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 320px;
+    margin: auto;
+}
+
+/* Activity cards */
+.fa-stack {
+    width: 2em;
+    height: 2em;
+    line-height: 2em;
+}
+
+.fa-stack-2x {
+    font-size: 1.5em;
+}
+
+.opacity-25 {
+    opacity: 0.25 !important;
+}
+
+/* Recent orders table */
+.table-bordered {
+    border: 1px solid #e3e6f0;
+}
+
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid #e3e6f0;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+    font-weight: 700;
+    color: var(--dark-color);
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.bg-info {
+    background-color: var(--info-color) !important;
+}
+
+.bg-warning {
+    background-color: var(--warning-color) !important;
+}
+
+.bg-danger {
+    background-color: var(--danger-color) !important;
+}
+
+.bg-secondary {
+    background-color: var(--secondary-color) !important;
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #2e59d9;
+    border-color: #2653d4;
+}
+
+.btn-info {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+    color: #fff;
+}
+
+.btn-info:hover {
+    background-color: #2ea7bb;
+    border-color: #2a96a5;
+    color: #fff;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* Section title */
+.section-title {
+    font-weight: 700;
+    color: var(--dark-color);
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.section-title:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 50px;
+    height: 3px;
+    background-color: var(--primary-color);
+}
+
+/* Card styling */
+.card {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    border: none;
+    border-radius: 0.35rem;
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 0.75rem 1.25rem;
+}
+
+/* List group items in dashboard */
+.list-group-item {
+    border-color: #e3e6f0;
+    padding: 0.75rem 1.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* Export report button styling */
+.btn-export-report {
+    transition: all 0.2s ease;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.btn-export-report:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Card hover effects */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(58, 59, 69, 0.2);
+}
+
+/* Table row highlighting */
+.table-hover tbody tr {
+    transition: background-color 0.15s ease-in-out;
+}
+
+/* Status badges with hover effect */
+.badge {
+    transition: all 0.2s ease;
+}
+
+.badge:hover {
+    transform: scale(1.1);
+}

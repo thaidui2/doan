@@ -8,8 +8,6 @@ if (!isset($_SESSION['admin_id']) || !isset($_SESSION['admin_loai']) || $_SESSIO
 
 // Kết nối database
 require_once '../config/config.php';
-include 'includes/header.php';
-include 'includes/sidebar.php';
 
 // Khởi tạo biến
 $error = $success = '';
@@ -443,6 +441,27 @@ function create_slug($string)
 function formatVND($amount) {
     return number_format($amount, 0, ',', '.') . ' ₫';
 }
+
+// Thiết lập tiêu đề trang và định nghĩa CSS/JS
+$page_title = 'Chỉnh sửa sản phẩm';
+$current_page = 'products';
+
+// CSS riêng cho trang này
+$page_css = ['css/product_edit.css'];
+
+// Javascript riêng cho trang này
+$page_js = ['js/product.js'];
+
+// Thêm CSS và JS cho Summernote
+$head_custom = '
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+';
+
+// Include header and sidebar
+include 'includes/header.php';
+include 'includes/sidebar.php';
 ?>
 
 <!DOCTYPE html>
