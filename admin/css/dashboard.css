@@ -13,7 +13,7 @@
 
 /* Dashboard statistics cards */
 .stat-card {
-    border-left: 0.25rem solid #dddfeb;
+    border-left: 4px solid;
     transition: transform 0.15s ease-in-out;
 }
 
@@ -64,7 +64,7 @@
 
 .stat-icon {
     color: #dddfeb !important;
-    opacity: 0.8;
+    opacity: 0.3;
     transition: transform 0.15s ease-in-out;
 }
 
@@ -88,8 +88,23 @@
 /* Chart container */
 .chart-container {
     position: relative;
-    height: 320px;
-    margin: auto;
+    min-height: 300px;
+    height: 300px !important;
+    width: 100%;
+    margin: 0 auto;
+}
+
+#revenueChart {
+    max-height: 100%;
+    width: 100%;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Make canvas work properly on all browsers */
+canvas {
+    display: block;
+    box-sizing: border-box;
 }
 
 /* Activity cards */
@@ -209,6 +224,7 @@
     box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
     border: none;
     border-radius: 0.35rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-header {
@@ -227,6 +243,7 @@
 @media (max-width: 768px) {
     .chart-container {
         height: 250px;
+        height: 250px !important;
     }
     
     .stat-card {
@@ -242,6 +259,7 @@
     
     .chart-container {
         height: 200px;
+        height: 200px !important;
     }
 }
 
@@ -257,10 +275,6 @@
 }
 
 /* Card hover effects */
-.card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
 .card:hover {
     transform: translateY(-5px);
     box-shadow: 0 0.5rem 1.5rem rgba(58, 59, 69, 0.2);
@@ -278,4 +292,16 @@
 
 .badge:hover {
     transform: scale(1.1);
+}
+
+/* Override some bootstrap defaults */
+.bg-light {
+    background-color: #f8f9fc !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .chart-container {
+        min-height: 250px;
+    }
 }

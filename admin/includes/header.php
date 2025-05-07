@@ -23,6 +23,11 @@
             echo '<link rel="stylesheet" href="' . $page_css . '">';
         }
     }
+
+    // Thêm vào các script tùy chỉnh từ biến $head_custom
+    if(isset($head_custom)) {
+        echo $head_custom;
+    }
     ?>
 </head>
 <body>

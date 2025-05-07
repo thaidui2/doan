@@ -79,6 +79,27 @@ for ($i = 5; $i >= 0; $i--) {
     ];
 }
 
+// 8.1 Doanh thu theo ngày (7 ngày gần nhất)
+$revenue_by_day = [];
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    
+    $sql_revenue_day = "SELECT SUM(thanh_tien) as revenue, 
+                               COUNT(*) as order_count
+                        FROM donhang 
+                        WHERE DATE(ngay_dat) = '$date' 
+                        AND trang_thai_don_hang IN (2, 3, 4)"; // Include confirmed, shipping, and completed orders
+    $result_revenue_day = $conn->query($sql_revenue_day);
+    $row = $result_revenue_day->fetch_assoc();
+    
+    $revenue_by_day[] = [
+        'date' => date('d/m', strtotime($date)),
+        'full_date' => date('d/m/Y', strtotime($date)),
+        'revenue' => $row['revenue'] ? $row['revenue'] : 0,
+        'order_count' => $row['order_count']
+    ];
+}
+
 // 9. Đơn hàng gần đây
 $sql_recent_orders = "SELECT dh.id, dh.ma_donhang, dh.ho_ten, dh.thanh_tien, dh.trang_thai_don_hang, dh.ngay_dat
                      FROM donhang dh
@@ -120,6 +141,9 @@ function formatVND($amount) {
     return number_format($amount, 0, ',', '.') . ' ₫';
 }
 
+// Set timezone to Vietnam
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 // Set page title and current page for active menu
 $page_title = 'Dashboard';
 $current_page = 'dashboard';
@@ -132,13 +156,24 @@ $page_js = ['js/dashboard.js'];
 
 // Dữ liệu JavaScript tùy chỉnh cần truyền từ PHP sang JS
 $head_custom = '
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// Truyền dữ liệu từ PHP sang JS
-var revenueChartData = {
+// Truyền dữ liệu từ PHP sang JS - sử dụng window để đảm bảo biến global
+window.revenueChartData = {
     labels: ' . json_encode(array_column($revenue_by_month, 'month')) . ',
     data: ' . json_encode(array_column($revenue_by_month, 'revenue')) . '
 };
+
+window.dailyRevenueData = {
+    labels: ' . json_encode(array_column($revenue_by_day, 'date')) . ',
+    revenue: ' . json_encode(array_column($revenue_by_day, 'revenue')) . ',
+    orders: ' . json_encode(array_column($revenue_by_day, 'order_count')) . ',
+    fullDates: ' . json_encode(array_column($revenue_by_day, 'full_date')) . '
+};
+
+// Debugging data
+console.log("Chart data loaded:", window.revenueChartData);
+console.log("Daily data loaded:", window.dailyRevenueData);
 </script>';
 
 // Include header and sidebar
@@ -358,6 +393,66 @@ include 'includes/sidebar.php';
                                 <li class="list-group-item">Chưa có dữ liệu</li>
                             <?php endif; ?>
                         </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Revenue Stats -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Thống kê doanh thu theo ngày (7 ngày gần nhất)</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                        <li><a class="dropdown-item" href="#" id="refreshDailyStats">Làm mới dữ liệu</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="exportDailyStats">Xuất báo cáo</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="chart-container" style="height: 250px">
+                            <canvas id="dailyRevenueChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr class="bg-light">
+                                        <th>Ngày</th>
+                                        <th>Đơn hàng</th>
+                                        <th>Doanh thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    $total_daily_revenue = 0;
+                                    $total_daily_orders = 0;
+                                    
+                                    foreach ($revenue_by_day as $day): 
+                                        $total_daily_revenue += $day['revenue'];
+                                        $total_daily_orders += $day['order_count'];
+                                    ?>
+                                    <tr>
+                                        <td><?php echo $day['full_date']; ?></td>
+                                        <td class="text-center"><?php echo $day['order_count']; ?></td>
+                                        <td class="text-end"><?php echo formatVND($day['revenue']); ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                    <tr class="fw-bold bg-light">
+                                        <td>Tổng</td>
+                                        <td class="text-center"><?php echo $total_daily_orders; ?></td>
+                                        <td class="text-end"><?php echo formatVND($total_daily_revenue); ?></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

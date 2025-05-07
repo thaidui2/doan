@@ -1,4 +1,7 @@
 <?php
+// Set timezone to GMT+7 (Vietnam)
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 // Kiểm tra đăng nhập và quyền admin
 session_start();
 if (!isset($_SESSION['admin_id']) || !isset($_SESSION['admin_loai']) || $_SESSION['admin_loai'] < 1) {
@@ -215,9 +218,9 @@ if ($store_info_result && $store_info_result->num_rows > 0) {
 }
 
 $store_name = $store_info['site_name'] ?? 'Bug Shop';
-$store_email = $store_info['contact_email'] ?? 'contact@bugshop.com';
+$store_email = $store_info['contact_email'] ?? '20210140@eaut.edu.vn';
 $store_phone = $store_info['contact_phone'] ?? '0123456789';
-$store_address = $store_info['address'] ?? 'Số 123, Đường ABC, Quận XYZ, TP. HCM';
+$store_address = $store_info['address'] ?? 'Đại học Công Nghệ Đông Á';
 
 // Xây dựng tựa đề cho bộ lọc
 $filter_title = [];
