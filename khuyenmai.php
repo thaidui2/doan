@@ -19,6 +19,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
 
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,17 +31,18 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
 </head>
 
 <body>
-<?php 
+    <?php
     include('includes/head.php'); // Include navbar for user login/logout and cart icon
     require_once('includes/header.php'); // Use only header which already includes the proper head content
     ?>
-    
+
     <main>
         <!-- Banner Khuyến Mãi -->
         <section class="promotion-banner">
             <div class="container-fluid p-0">
                 <div class="position-relative">
-                    <img src="images/banner/promotion_banner.jpg" class="w-100" alt="Khuyến Mãi" onerror="this.src='images/banner/banner_giam_gia.webp';">
+                    <img src="images/banner/promotion_banner.jpg" class="w-100" alt="Khuyến Mãi"
+                        onerror="this.src='images/banner/banner_giam_gia.webp';">
                     <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
                         <h1 class="display-4 fw-bold">KHUYẾN MÃI HOT</h1>
                         <p class="fs-5">Săn ngay những sản phẩm giảm giá hấp dẫn!</p>
@@ -48,7 +50,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                 </div>
             </div>
         </section>
-        
+
         <!-- Sản phẩm khuyến mãi -->
         <section class="promotion-products py-5 bg-light">
             <div class="container">
@@ -58,7 +60,8 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                         <div class="title-line"></div>
                     </h2>
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             Sắp xếp theo
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="sortDropdown">
@@ -69,17 +72,17 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                         </ul>
                     </div>
                 </div>
-                
+
                 <div class="row g-4" id="promotion-products">
                     <?php
                     // Removed direct database connection code that was using the wrong database "shop_vippro"
                     
                     // Xử lý sắp xếp
                     $sort = isset($_GET['sort']) ? $_GET['sort'] : 'discount_desc';
-                    
+
                     // Thiết lập ORDER BY dựa trên tham số sắp xếp
                     $order_by = "";
-                    switch($sort) {
+                    switch ($sort) {
                         case 'price_asc':
                             $order_by = "ORDER BY s.gia ASC";
                             break;
@@ -94,7 +97,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                             $order_by = "ORDER BY discount_percent DESC";
                             break;
                     }
-                    
+
                     // Updated query to match new database schema
                     $sql = "SELECT s.*, d.ten as tenloai, AVG(dg.diem) as diem_trung_binh,
                             (1 - s.gia/s.giagoc) * 100 as discount_percent
@@ -104,15 +107,15 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                             WHERE s.trangthai = 1 AND s.giagoc > s.gia AND s.giagoc > 0
                             GROUP BY s.id 
                             $order_by";
-                    
+
                     $result = $conn->query($sql);
-                    
+
                     // Kiểm tra và hiển thị sản phẩm
                     if ($result && $result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
                             // Tính phần trăm giảm giá
                             $discount_percent = round(100 - ($row['gia'] / $row['giagoc'] * 100));
-                            
+
                             // Xử lý đường dẫn hình ảnh
                             if (!empty($row['hinhanh'])) {
                                 // First check if the path already contains 'uploads/'
@@ -126,11 +129,12 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                             } else {
                                 $img_path = 'images/no-image.png';
                             }
-                            
+
                             // Xử lý điểm đánh giá
                             $rating = round($row['diem_trung_binh']);
-                            if (is_null($rating)) $rating = 0;
-                    ?>
+                            if (is_null($rating))
+                                $rating = 0;
+                            ?>
                             <div class="col-6 col-md-3 product-item">
                                 <div class="card product-card h-100">
                                     <div class="product-badge-container">
@@ -138,34 +142,31 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                             <i class="bi bi-tags-fill me-1"></i>-<?php echo $discount_percent; ?>%
                                         </div>
                                         <?php if ($row['noibat'] == 1): ?>
-                                        <div class="product-badge bg-primary text-white">
-                                            <i class="bi bi-star-fill me-1"></i>HOT
-                                        </div>
+                                            <div class="product-badge bg-primary text-white">
+                                                <i class="bi bi-star-fill me-1"></i>HOT
+                                            </div>
                                         <?php endif; ?>
-                                    </div>
-                                    <a href="product-detail.php?id=<?php echo $row['id']; ?>" class="product-img-container">
-                                        <img src="<?php echo $img_path; ?>" class="card-img-top product-img" alt="<?php echo htmlspecialchars($row['tensanpham']); ?>" 
-                                             onerror="this.onerror=null; this.src='images/no-image.jpg';">
+                                    </div> <a href="product-detail.php?id=<?php echo $row['id']; ?>"
+                                        class="product-img-container">
+                                        <img src="<?php echo $img_path; ?>" class="card-img-top product-img"
+                                            alt="<?php echo htmlspecialchars($row['tensanpham']); ?>"
+                                            onerror="this.onerror=null; this.src='images/no-image.jpg';">
                                         <div class="overlay-effect"></div>
                                     </a>
-                                    <div class="sale-ribbon">
-                                        <span>SALE</span>
-                                    </div>
                                     <div class="product-action">
                                         <button class="btn btn-light btn-sm rounded-circle" title="Yêu thích">
                                             <i class="bi bi-heart"></i>
                                         </button>
-                                        <button class="btn btn-light btn-sm rounded-circle quick-view" data-id="<?php echo $row['id']; ?>" title="Xem nhanh">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-light btn-sm rounded-circle add-to-cart" data-product-id="<?php echo $row['id']; ?>" title="Thêm vào giỏ hàng">
-                                            <i class="bi bi-cart-plus"></i>
-                                        </button>
+                                    </div>
+                                    <div class="sale-ribbon">
+                                        <span>SALE</span>
                                     </div>
                                     <div class="card-body">
-                                        <div class="product-category"><?php echo htmlspecialchars($row['tenloai'] ?? ''); ?></div>
+                                        <div class="product-category"><?php echo htmlspecialchars($row['tenloai'] ?? ''); ?>
+                                        </div>
                                         <h5 class="card-title product-title">
-                                            <a href="product-detail.php?id=<?php echo $row['id']; ?>" class="text-decoration-none text-dark">
+                                            <a href="product-detail.php?id=<?php echo $row['id']; ?>"
+                                                class="text-decoration-none text-dark">
                                                 <?php echo htmlspecialchars($row['tensanpham']); ?>
                                             </a>
                                         </h5>
@@ -173,21 +174,24 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                             <?php for ($i = 1; $i <= 5; $i++): ?>
                                                 <i class="bi bi-star<?php echo ($i <= $rating) ? '-fill' : ''; ?> text-warning"></i>
                                             <?php endfor; ?>
-                                            <span class="ms-1 text-muted small">(<?php echo $row['soluong_danhgia'] ?? 0; ?>)</span>
+                                            <span
+                                                class="ms-1 text-muted small">(<?php echo $row['soluong_danhgia'] ?? 0; ?>)</span>
                                         </div>
                                         <div class="price-wrapper">
-                                            <span class="text-danger fw-bold"><?php echo number_format($row['gia'], 0, ',', '.'); ?>₫</span>
-                                            <small class="text-decoration-line-through text-muted ms-2"><?php echo number_format($row['giagoc'], 0, ',', '.'); ?>₫</small>
+                                            <span
+                                                class="text-danger fw-bold"><?php echo number_format($row['gia'], 0, ',', '.'); ?>₫</span>
+                                            <small
+                                                class="text-decoration-line-through text-muted ms-2"><?php echo number_format($row['giagoc'], 0, ',', '.'); ?>₫</small>
                                         </div>
                                     </div>
                                     <div class="card-footer">
-                                        <button class="btn btn-primary w-100 add-to-cart" data-product-id="<?php echo $row['id']; ?>">
-                                            <i class="bi bi-cart-plus me-2"></i> Thêm vào giỏ
-                                        </button>
+                                        <a href="product-detail.php?id=<?php echo $row['id']; ?>" class="btn btn-primary w-100">
+                                            <i class="bi bi-info-circle me-2"></i> Xem chi tiết
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                    <?php
+                            <?php
                         }
                     } else {
                         echo '<div class="col-12 text-center py-5">
@@ -200,7 +204,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                     }
                     ?>
                 </div>
-                
+
                 <!-- Phân trang (nếu cần) -->
                 <nav class="mt-5">
                     <ul class="pagination justify-content-center">
@@ -230,8 +234,9 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                         <div class="flash-sale-card p-4 text-center text-lg-start">
                             <h3 class="mb-3">Flash Sale Sắp Kết Thúc!</h3>
                             <p>Nhanh tay mua ngay kẻo lỡ! Giảm giá đặc biệt lên đến 50%.</p>
-                            
-                            <div class="countdown d-flex justify-content-center justify-content-lg-start" id="countdown">
+
+                            <div class="countdown d-flex justify-content-center justify-content-lg-start"
+                                id="countdown">
                                 <div class="countdown-item">
                                     <span id="days">00</span>
                                     <span class="countdown-label">Ngày</span>
@@ -249,7 +254,7 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                     <span class="countdown-label">Giây</span>
                                 </div>
                             </div>
-                            
+
                             <a href="#promotion-products" class="btn btn-danger mt-3">Mua Ngay</a>
                         </div>
                     </div>
@@ -257,24 +262,26 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                         <div class="promo-code-card p-4">
                             <h3 class="mb-3">Mã Giảm Giá</h3>
                             <p>Sử dụng mã giảm giá sau để nhận thêm ưu đãi:</p>
-                            
+
                             <div class="coupon-container mb-3">
                                 <div class="coupon d-flex align-items-center justify-content-between">
                                     <div>
                                         <span class="coupon-code">SUMMER2025</span>
                                         <small class="d-block">Giảm 10% cho đơn hàng trên 500K</small>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-primary copy-code" data-code="SUMMER2025">Sao chép</button>
+                                    <button class="btn btn-sm btn-outline-primary copy-code" data-code="SUMMER2025">Sao
+                                        chép</button>
                                 </div>
                             </div>
-                            
+
                             <div class="coupon-container">
                                 <div class="coupon d-flex align-items-center justify-content-between">
                                     <div>
                                         <span class="coupon-code">NEWUSER</span>
                                         <small class="d-block">Giảm 50K cho khách hàng mới</small>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-primary copy-code" data-code="NEWUSER">Sao chép</button>
+                                    <button class="btn btn-sm btn-outline-primary copy-code" data-code="NEWUSER">Sao
+                                        chép</button>
                                 </div>
                             </div>
                         </div>
@@ -283,9 +290,10 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
             </div>
         </section>
     </main>
-    
+
     <?php include('includes/footer.php'); ?>
-    
+
     <script src="js/khuyenmai.js"></script>
 </body>
+
 </html>

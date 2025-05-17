@@ -1044,3 +1044,153 @@
 )
 
 2025-05-07 12:36:31 - Redirecting to checkout
+2025-05-17 09:12:53 - Buy Now request received - Array
+(
+    [productId] => 31
+    [quantity] => 1
+    [sizeId] => 7
+    [colorId] => 15
+)
+
+2025-05-17 09:12:53 - Extracted data - Array
+(
+    [product_id] => 31
+    [quantity] => 1
+    [size_id] => 7
+    [color_id] => 15
+)
+
+2025-05-17 09:12:53 - Executing query with params - Array
+(
+    [0] => 31
+    [1] => 7
+    [2] => 15
+)
+
+2025-05-17 09:12:53 - Product variant found - Array
+(
+    [variant_id] => 127
+    [id] => 31
+    [tensanpham] => Giày Puma RS-X3
+    [gia] => 2200000.00
+    [hinhanh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+)
+
+2025-05-17 09:12:53 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-17 09:12:53 - Redirecting to checkout
+2025-05-17 09:19:28 - Buy Now request received - Array
+(
+    [productId] => 31
+    [quantity] => 1
+    [sizeId] => 7
+    [colorId] => 15
+)
+
+2025-05-17 09:19:28 - Extracted data - Array
+(
+    [product_id] => 31
+    [quantity] => 1
+    [size_id] => 7
+    [color_id] => 15
+)
+
+2025-05-17 09:19:28 - Executing query with params - Array
+(
+    [0] => 31
+    [1] => 7
+    [2] => 15
+)
+
+2025-05-17 09:19:28 - Product variant found - Array
+(
+    [variant_id] => 127
+    [id] => 31
+    [tensanpham] => Giày Puma RS-X3
+    [gia] => 2200000.00
+    [hinhanh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+)
+
+2025-05-17 09:19:28 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-17 09:19:28 - Redirecting to checkout
+2025-05-17 11:57:02 - Buy Now request received - Array
+(
+    [productId] => 31
+    [quantity] => 1
+    [sizeId] => 7
+    [colorId] => 15
+)
+
+2025-05-17 11:57:02 - Extracted data - Array
+(
+    [product_id] => 31
+    [quantity] => 1
+    [size_id] => 7
+    [color_id] => 15
+)
+
+2025-05-17 11:57:02 - Executing query with params - Array
+(
+    [0] => 31
+    [1] => 7
+    [2] => 15
+)
+
+2025-05-17 11:57:02 - Product variant found - Array
+(
+    [variant_id] => 127
+    [id] => 31
+    [tensanpham] => Giày Puma RS-X3
+    [gia] => 2200000.00
+    [hinhanh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+)
+
+2025-05-17 11:57:02 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-17 11:57:02 - Redirecting to checkout

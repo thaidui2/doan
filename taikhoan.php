@@ -316,7 +316,7 @@ $wishlist_count = $wishlist_result->fetch_assoc()['count'];
                             <a href="thong-tin-ca-nhan.php" class="list-group-item list-group-item-action">
                                 <i class="bi bi-pencil-square me-2"></i> Cập nhật thông tin
                             </a>
-                            <a href="doi-mat-khau.php" class="list-group-item list-group-item-action">
+                            <a href="doimatkhau.php" class="list-group-item list-group-item-action">
                                 <i class="bi bi-shield-lock me-2"></i> Đổi mật khẩu
                             </a>
                             <a href="logout.php" class="list-group-item list-group-item-action text-danger">

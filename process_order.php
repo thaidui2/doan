@@ -3,7 +3,8 @@ session_start();
 include('config/config.php');
 
 // Debug logging
-function debug_log($message, $data = null) {
+function debug_log($message, $data = null)
+{
     $log_message = date('Y-m-d H:i:s') . ' - ' . $message;
     if ($data !== null) {
         $log_message .= ' - ' . print_r($data, true);
@@ -56,8 +57,8 @@ $order_code = 'BUG' . date('ymd') . substr(time(), -3) . strtoupper(substr(md5(r
 $user_id = $is_logged_in ? $_SESSION['user']['id'] : null;
 
 // Check if this is a "Buy Now" purchase - check both POST and GET
-$buy_now = (isset($_POST['buy_now']) && $_POST['buy_now'] == '1') || 
-           (isset($_GET['buy_now']) && $_GET['buy_now'] == '1');
+$buy_now = (isset($_POST['buy_now']) && $_POST['buy_now'] == '1') ||
+    (isset($_GET['buy_now']) && $_GET['buy_now'] == '1');
 
 debug_log('Is Buy Now?', $buy_now);
 
@@ -83,12 +84,12 @@ if ($buy_now && isset($_SESSION['buy_now_cart'])) {
     // Process regular cart checkout
     debug_log('Processing regular cart checkout');
     $session_id = session_id();
-    
+
     // Determine which items to checkout
     if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && !empty($_SESSION['checkout_items'])) {
         $selected_items = $_SESSION['checkout_items'];
         $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
-        
+
         // Get cart ID
         if ($user_id) {
             $cart_stmt = $conn->prepare("SELECT id FROM giohang WHERE id_user = ?");
@@ -99,17 +100,17 @@ if ($buy_now && isset($_SESSION['buy_now_cart'])) {
         }
         $cart_stmt->execute();
         $cart_result = $cart_stmt->get_result();
-        
+
         if ($cart_result->num_rows === 0) {
             throw new Exception("Không tìm thấy giỏ hàng");
         }
-        
+
         $cart_id = $cart_result->fetch_assoc()['id'];
-        
+
         // Get selected items
         $types = "i" . str_repeat("i", count($selected_items));
         $params = array_merge([$cart_id], $selected_items);
-        
+
         $query = "
             SELECT gct.*, 
                    sp.tensanpham, 
@@ -123,7 +124,7 @@ if ($buy_now && isset($_SESSION['buy_now_cart'])) {
             LEFT JOIN thuoc_tinh color ON sbt.id_mau = color.id AND color.loai = 'color'
             WHERE gct.id_giohang = ? AND gct.id IN ($placeholders)
         ";
-        
+
         $stmt = $conn->prepare($query);
         $stmt->bind_param($types, ...$params);
     } else {
@@ -164,15 +165,15 @@ if ($buy_now && isset($_SESSION['buy_now_cart'])) {
             $stmt->bind_param("s", $session_id);
         }
     }
-    
+
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     while ($item = $result->fetch_assoc()) {
         $thuoc_tinh = 'Size: ' . ($item['ten_kichthuoc'] ?? 'N/A') . ', Màu: ' . ($item['ten_mau'] ?? 'N/A');
         $thanh_tien = $item['gia'] * $item['so_luong'];
         $total_amount += $thanh_tien;
-        
+
         $order_items[] = [
             'id_sanpham' => $item['id_sanpham'],
             'id_bienthe' => $item['id_bienthe'],
@@ -199,7 +200,7 @@ $conn->begin_transaction();
 
 try {
     debug_log('Preparing order insertion with payment method', $payment_method);
-    
+
     // Create order - ENSURE payment_method is included in bind_param
     $order_stmt = $conn->prepare("
         INSERT INTO donhang (
@@ -219,9 +220,21 @@ try {
     // Make sure to bind the payment_method parameter
     $order_stmt->bind_param(
         "sissssssddddssss",
-        $order_code, $user_id, $ho_ten, $email, $sodienthoai, $diachi,
-        $tinh_tp, $quan_huyen, $phuong_xa, $total_amount, $shipping_fee,
-        $discount_amount, $final_amount, $promo_code, $payment_method,
+        $order_code,
+        $user_id,
+        $ho_ten,
+        $email,
+        $sodienthoai,
+        $diachi,
+        $tinh_tp,
+        $quan_huyen,
+        $phuong_xa,
+        $total_amount,
+        $shipping_fee,
+        $discount_amount,
+        $final_amount,
+        $promo_code,
+        $payment_method,
         $ghi_chu
     );
 
@@ -244,64 +257,70 @@ try {
         foreach ($order_items as $item) {
             $detail_stmt->bind_param(
                 "iiissidi",
-                $order_id, $item['id_sanpham'], $item['id_bienthe'], $item['tensp'],
-                $item['thuoc_tinh'], $item['gia'], $item['soluong'], $item['thanh_tien']
+                $order_id,
+                $item['id_sanpham'],
+                $item['id_bienthe'],
+                $item['tensp'],
+                $item['thuoc_tinh'],
+                $item['gia'],
+                $item['soluong'],
+                $item['thanh_tien']
             );
-            
+
             if (!$detail_stmt->execute()) {
                 throw new Exception("Failed to insert order details: " . $detail_stmt->error);
             }
-            
+
             // Update product inventory - fixed and improved with error handling
             $update_inventory = $conn->prepare("
                 UPDATE sanpham_bien_the SET so_luong = so_luong - ? 
                 WHERE id = ?
             ");
-            
+
             if (!$update_inventory) {
                 throw new Exception("Failed to prepare inventory update: " . $conn->error);
             }
-            
+
             $update_inventory->bind_param("ii", $item['soluong'], $item['id_bienthe']);
-            
+
             if (!$update_inventory->execute()) {
                 throw new Exception("Failed to update inventory for product variant ID: " . $item['id_bienthe'] . " - Error: " . $update_inventory->error);
             }
-            
+
             // Also update the main sanpham table's quantity
             $update_product_inventory = $conn->prepare("
                 UPDATE sanpham SET so_luong = so_luong - ? 
                 WHERE id = ?
             ");
-            
+
             if (!$update_product_inventory) {
                 throw new Exception("Failed to prepare product inventory update: " . $conn->error);
             }
-            
+
             $update_product_inventory->bind_param("ii", $item['soluong'], $item['id_sanpham']);
-            
+
             if (!$update_product_inventory->execute()) {
                 throw new Exception("Failed to update product inventory for ID: " . $item['id_sanpham'] . " - Error: " . $update_product_inventory->error);
             }
-            
+
             // Log inventory update for debugging
             debug_log('Inventory updated', [
                 'product_id' => $item['id_sanpham'],
-                'variant_id' => $item['id_bienthe'], 
+                'variant_id' => $item['id_bienthe'],
                 'quantity_reduced' => $item['soluong'],
                 'variant_rows_affected' => $update_inventory->affected_rows,
                 'product_rows_affected' => $update_product_inventory->affected_rows
             ]);
-            
+
             // If no rows were affected, the inventory might be insufficient
             if ($update_inventory->affected_rows == 0) {
                 debug_log('Warning: Inventory update affected 0 rows', [
-                    'variant_id' => $item['id_bienthe'], 
+                    'variant_id' => $item['id_bienthe'],
                     'quantity' => $item['soluong']
                 ]);
             }
         }
-        
+
         debug_log('Order details inserted successfully');
     }
 
@@ -316,18 +335,18 @@ try {
 
         // Commit transaction before redirecting
         $conn->commit();
-        
+
         // Redirect to VNPAY processing
         header('Location: vnpay_create_payment.php');
         exit();
     }
-    
+
     // For COD and other methods, complete the order
     // Add order to history
     $action = "Tạo đơn hàng";
     $nguoi_thuchien = $is_logged_in ? "Người dùng" : "Khách vãng lai";
     $note = "Đơn hàng mới được tạo với phương thức thanh toán: " . $payment_method;
-    
+
     $history_stmt = $conn->prepare("
         INSERT INTO donhang_lichsu (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu)
         VALUES (?, ?, ?, ?)
@@ -346,18 +365,18 @@ try {
         }
         $cart_query->execute();
         $cart_result = $cart_query->get_result();
-        
+
         if ($cart_result->num_rows > 0) {
             $cart_id = $cart_result->fetch_assoc()['id'];
-            
+
             // Delete either selected items or all items
             if (isset($_SESSION['checkout_type']) && $_SESSION['checkout_type'] == 'selected' && !empty($_SESSION['checkout_items'])) {
                 $selected_items = $_SESSION['checkout_items'];
                 $placeholders = str_repeat('?,', count($selected_items) - 1) . '?';
-                
+
                 $delete_params = array_merge([$cart_id], $selected_items);
                 $delete_types = "i" . str_repeat("i", count($selected_items));
-                
+
                 $delete_stmt = $conn->prepare("DELETE FROM giohang_chitiet WHERE id_giohang = ? AND id IN ($placeholders)");
                 $delete_stmt->bind_param($delete_types, ...$delete_params);
                 $delete_stmt->execute();
@@ -369,9 +388,32 @@ try {
         }
     }
 
+    // Update promo code usage count if a promo code was used
+    if (!empty($promo_code)) {
+        debug_log('Updating promo code usage count', ['code' => $promo_code]);
+
+        // Check if the promo code exists
+        $promo_check = $conn->prepare("SELECT id FROM khuyen_mai WHERE ma_khuyenmai = ?");
+        $promo_check->bind_param("s", $promo_code);
+        $promo_check->execute();
+        $promo_result = $promo_check->get_result();
+
+        if ($promo_result->num_rows > 0) {
+            // Increment the usage count
+            $update_promo = $conn->prepare("UPDATE khuyen_mai SET da_su_dung = da_su_dung + 1 WHERE ma_khuyenmai = ?");
+            $update_promo->bind_param("s", $promo_code);
+
+            if (!$update_promo->execute()) {
+                debug_log('Failed to update promo code usage count', ['error' => $conn->error]);
+            } else {
+                debug_log('Successfully updated promo code usage count', ['affected_rows' => $update_promo->affected_rows]);
+            }
+        }
+    }
+
     // Commit the transaction
     $conn->commit();
-    
+
     // Clear checkout session data
     if ($buy_now) {
         unset($_SESSION['buy_now_cart']);
@@ -379,7 +421,7 @@ try {
         unset($_SESSION['checkout_items']);
         unset($_SESSION['checkout_type']);
     }
-    
+
     // Redirect to success page
     $_SESSION['order_success'] = [
         'order_id' => $order_id,
@@ -387,7 +429,7 @@ try {
     ];
     header('Location: dathang_thanhcong.php?order_id=' . $order_id);
     exit();
-    
+
 } catch (Exception $e) {
     // Rollback on error
     $conn->rollback();

@@ -77,7 +77,7 @@ $page_title = "Đơn hàng của tôi";
                 </div>
             </div>
         </div>
-        
+
         <!-- Main content -->
         <div class="col-md-9">
             <div class="card">
@@ -107,17 +107,21 @@ $page_title = "Đơn hàng của tôi";
                                             <td><?php echo number_format($order['thanh_tien'], 0, ',', '.'); ?>₫</td>
                                             <td>
                                                 <?php
-                                                $status = $order_statuses[$order['trang_thai_don_hang']] ?? ['name' => 'Không xác định', 'color' => 'secondary']; 
+                                                $status = $order_statuses[$order['trang_thai_don_hang']] ?? ['name' => 'Không xác định', 'color' => 'secondary'];
                                                 ?>
-                                                <span class="badge bg-<?php echo $status['color']; ?>"><?php echo $status['name']; ?></span>
+                                                <span
+                                                    class="badge bg-<?php echo $status['color']; ?>"><?php echo $status['name']; ?></span>
                                                 <?php if ($order['phuong_thuc_thanh_toan'] !== 'cod' && $order['trang_thai_thanh_toan']): ?>
                                                     <span class="badge bg-success">Đã thanh toán</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <a href="chitiet-donhang.php?id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                                                <a href="chitiet-donhang.php?id=<?php echo $order['id']; ?>"
+                                                    class="btn btn-sm btn-outline-primary">Chi tiết</a>
                                                 <?php if ($order['trang_thai_don_hang'] == 1): // Chỉ cho phép hủy đơn khi đơn hàng ở trạng thái "Chờ xác nhận" ?>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger cancel-order-btn" data-id="<?php echo $order['id']; ?>" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger cancel-order-btn"
+                                                        data-id="<?php echo $order['id']; ?>" data-bs-toggle="modal"
+                                                        data-bs-target="#cancelOrderModal">Hủy đơn</button>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
@@ -148,23 +152,25 @@ $page_title = "Đơn hàng của tôi";
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="cancelOrderModalLabel">Xác nhận hủy đơn hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="cancelOrderModalLabel">Xác nhận hủy đơn hàng</h5> <button type="button"
+                    class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>Bạn có chắc chắn muốn hủy đơn hàng này không?</p>
                 <p class="text-muted small">Lưu ý: Hành động này không thể hoàn tác.</p>
-                <form id="cancelOrderForm" method="post" action="huydonhang.php">
-                    <input type="hidden" name="order_id" id="cancelOrderId" value="">
+                <form id="cancelOrderForm" method="get" action="huydonhang.php">
+                    <input type="hidden" name="id" id="cancelOrderId" value="">
                     <div class="mb-3">
                         <label for="cancelReason" class="form-label">Lý do hủy đơn:</label>
                         <select class="form-select" id="cancelReason" name="cancel_reason" required>
                             <option value="">-- Chọn lý do --</option>
-                            <option value="Muốn thay đổi địa chỉ giao hàng">Muốn thay đổi địa chỉ giao hàng</option>
-                            <option value="Muốn thay đổi phương thức thanh toán">Muốn thay đổi phương thức thanh toán</option>
+                            <option value="Tôi muốn thay đổi địa chỉ giao hàng">Muốn thay đổi địa chỉ giao hàng</option>
+                            <option value="Tôi muốn thay đổi phương thức thanh toán">Muốn thay đổi phương thức thanh
+                                toán</option>
                             <option value="Đổi ý, không muốn mua nữa">Đổi ý, không muốn mua nữa</option>
                             <option value="Thời gian giao hàng quá lâu">Thời gian giao hàng quá lâu</option>
-                            <option value="Tìm thấy sản phẩm tốt hơn/giá rẻ hơn">Tìm thấy sản phẩm tốt hơn/giá rẻ hơn</option>
+                            <option value="Tìm thấy sản phẩm tốt hơn/giá rẻ hơn">Tìm thấy sản phẩm tốt hơn/giá rẻ hơn
+                            </option>
                             <option value="other">Lý do khác</option>
                         </select>
                     </div>
@@ -184,8 +190,7 @@ $page_title = "Đơn hàng của tôi";
 
 <?php include('includes/footer.php'); ?>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script>    document.addEventListener('DOMContentLoaded', function () {
         // Xử lý form hủy đơn hàng
         const cancelButtons = document.querySelectorAll('.cancel-order-btn');
         const cancelOrderIdField = document.getElementById('cancelOrderId');
@@ -194,14 +199,14 @@ $page_title = "Đơn hàng của tôi";
         const otherReasonField = document.getElementById('otherReason');
         const confirmCancelBtn = document.getElementById('confirmCancelBtn');
         const cancelOrderForm = document.getElementById('cancelOrderForm');
-        
+
         cancelButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 cancelOrderIdField.value = this.getAttribute('data-id');
             });
         });
-        
-        cancelReasonSelect.addEventListener('change', function() {
+
+        cancelReasonSelect.addEventListener('change', function () {
             if (this.value === 'other') {
                 otherReasonContainer.classList.remove('d-none');
                 otherReasonField.setAttribute('required', 'required');
@@ -210,10 +215,18 @@ $page_title = "Đơn hàng của tôi";
                 otherReasonField.removeAttribute('required');
             }
         });
-        
-        confirmCancelBtn.addEventListener('click', function() {
+
+        confirmCancelBtn.addEventListener('click', function () {
+            // Check if form is valid
             if (cancelOrderForm.checkValidity()) {
-                cancelOrderForm.submit();
+                // If reason is "other", use the other reason text
+                if (cancelReasonSelect.value === 'other') {
+                    // We need to pass the reason directly to huydonhang.php
+                    window.location.href = 'huydonhang.php?id=' + cancelOrderIdField.value + '&reason=' + encodeURIComponent(otherReasonField.value);
+                } else {
+                    // Use selected reason
+                    window.location.href = 'huydonhang.php?id=' + cancelOrderIdField.value + '&reason=' + encodeURIComponent(cancelReasonSelect.value);
+                }
             } else {
                 cancelOrderForm.reportValidity();
             }
@@ -221,4 +234,5 @@ $page_title = "Đơn hàng của tôi";
     });
 </script>
 </body>
+
 </html>

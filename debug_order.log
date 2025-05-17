@@ -815,3 +815,226 @@
 )
 
 2025-05-07 12:18:01 - Order details inserted successfully
+2025-05-17 09:13:07 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => thai
+    [phone] => 0123456781
+    [email] => thai2@gmail.com
+    [address] => xóm làng
+    [province] => 87
+    [district] => 872
+    [ward] => 30073
+    [payment_method] => cod
+    [promo_code] => testadmin1
+    [discount_amount] => 2200000
+    [discount_id] => 5
+    [note] => 
+    [province_name] => Đồng Tháp
+    [district_name] => Tháp Mười
+    [ward_name] => Thanh Mỹ
+    [full_address] => xóm làng, Thanh Mỹ, Tháp Mười, Đồng Tháp
+)
+
+2025-05-17 09:13:07 - Original payment method - cod
+2025-05-17 09:13:07 - Final payment method - cod
+2025-05-17 09:13:07 - Is Buy Now? - 1
+2025-05-17 09:13:07 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-17 09:13:07 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 127
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 41, Màu: Xanh dương
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+)
+
+2025-05-17 09:13:07 - Total amount - 2200000
+2025-05-17 09:13:07 - Preparing order insertion with payment method - cod
+2025-05-17 09:13:07 - Order inserted successfully - Array
+(
+    [order_id] => 57
+    [payment_method] => cod
+)
+
+2025-05-17 09:13:07 - Inventory updated - Array
+(
+    [product_id] => 31
+    [variant_id] => 127
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-17 09:13:07 - Order details inserted successfully
+2025-05-17 09:19:45 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => thai
+    [phone] => 0123456781
+    [email] => thai2@gmail.com
+    [address] => xóm làng
+    [province] => 75
+    [district] => 737
+    [ward] => 26275
+    [payment_method] => cod
+    [promo_code] => testadmin1
+    [discount_amount] => 2200000
+    [discount_id] => 5
+    [note] => 
+    [province_name] => Đồng Nai
+    [district_name] => Trảng Bom
+    [ward_name] => Tây Hoà
+    [full_address] => xóm làng, Tây Hoà, Trảng Bom, Đồng Nai
+)
+
+2025-05-17 09:19:45 - Original payment method - cod
+2025-05-17 09:19:45 - Final payment method - cod
+2025-05-17 09:19:45 - Is Buy Now? - 1
+2025-05-17 09:19:45 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-17 09:19:45 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 127
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 41, Màu: Xanh dương
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+)
+
+2025-05-17 09:19:45 - Total amount - 2200000
+2025-05-17 09:19:45 - Preparing order insertion with payment method - cod
+2025-05-17 09:19:45 - Order inserted successfully - Array
+(
+    [order_id] => 58
+    [payment_method] => cod
+)
+
+2025-05-17 09:19:45 - Inventory updated - Array
+(
+    [product_id] => 31
+    [variant_id] => 127
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-17 09:19:45 - Order details inserted successfully
+2025-05-17 09:19:45 - Updating promo code usage count - Array
+(
+    [code] => testadmin1
+)
+
+2025-05-17 09:19:45 - Successfully updated promo code usage count - Array
+(
+    [affected_rows] => 1
+)
+
+2025-05-17 11:57:13 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => thai
+    [phone] => 0123456781
+    [email] => thai2@gmail.com
+    [address] => xóm làng
+    [province] => 33
+    [district] => 326
+    [ward] => 12022
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => 
+    [province_name] => Hưng Yên
+    [district_name] => Văn Giang
+    [ward_name] => Xuân Quan
+    [full_address] => xóm làng, Xuân Quan, Văn Giang, Hưng Yên
+)
+
+2025-05-17 11:57:13 - Original payment method - cod
+2025-05-17 11:57:13 - Final payment method - cod
+2025-05-17 11:57:13 - Is Buy Now? - 1
+2025-05-17 11:57:13 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-17 11:57:13 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 127
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 41, Màu: Xanh dương
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+)
+
+2025-05-17 11:57:13 - Total amount - 2200000
+2025-05-17 11:57:13 - Preparing order insertion with payment method - cod
+2025-05-17 11:57:13 - Order inserted successfully - Array
+(
+    [order_id] => 59
+    [payment_method] => cod
+)
+
+2025-05-17 11:57:13 - Inventory updated - Array
+(
+    [product_id] => 31
+    [variant_id] => 127
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-17 11:57:13 - Order details inserted successfully
