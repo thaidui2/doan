@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Ngăn hiển thị nội dung cho đến khi font đã tải */
+.font-loading {
+  opacity: 0.9;
+}
+
+/* Đảm bảo chữ không nhảy khi font load xong */
+html {
+  font-display: swap;
+}
+
+/* Áp dụng font Poppins cho tất cả các phần tử */
+* {
+  font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important;
+  font-weight: 600;
+}
+
+/* Đảm bảo các button, input, select và textarea cũng có font Poppins */
+button, input, select, textarea, .btn, .form-control {
+  font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important;
+}

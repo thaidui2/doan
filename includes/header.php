@@ -276,7 +276,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <li class="nav-item">
                         <a class="nav-link <?php echo $current_page == 'lienhe.php' ? 'active fw-bold' : ''; ?>"
                             href="lienhe.php">
-                            <i class="bi bi-chat-dots"></i> Liên hệ
+                            <i class="bi bi-envelope"></i> Liên hệ
                         </a>
                     </li>
                 </ul>

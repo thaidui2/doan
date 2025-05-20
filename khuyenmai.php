@@ -153,8 +153,9 @@ if (isset($_SESSION['user']['logged_in']) && $_SESSION['user']['logged_in'] === 
                                             onerror="this.onerror=null; this.src='images/no-image.jpg';">
                                         <div class="overlay-effect"></div>
                                     </a>
-                                    <div class="product-action">
-                                        <button class="btn btn-light btn-sm rounded-circle" title="Yêu thích">
+                                    <div class="product-action" style="top: 90px;"> <!-- Di chuyển nút yêu thích xuống dưới -->
+                                        <button class="btn btn-light btn-sm rounded-circle wishlist-button"
+                                            data-product-id="<?php echo $row['id']; ?>" title="Yêu thích">
                                             <i class="bi bi-heart"></i>
                                         </button>
                                     </div>

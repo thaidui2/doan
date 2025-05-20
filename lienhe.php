@@ -9,18 +9,18 @@ if (!isset($conn)) {
     include('config/config.php');
 }
 
-// Get contact information from cai_dat table (updated query)
+// Get contact information from settings table
 $settings_query = $conn->query("
-    SELECT khoa, gia_tri 
-    FROM cai_dat 
-    WHERE nhom = 'general' 
-    OR khoa IN ('facebook_url', 'instagram_url', 'twitter_url', 'youtube_url')
+    SELECT setting_key, setting_value 
+    FROM settings 
+    WHERE setting_key IN ('site_name', 'contact_email', 'contact_phone', 'address', 
+                        'facebook_url', 'instagram_url', 'twitter_url', 'youtube_url')
 ");
 
 $settings = [];
 if ($settings_query) {
     while ($row = $settings_query->fetch_assoc()) {
-        $settings[$row['khoa']] = $row['gia_tri'];
+        $settings[$row['setting_key']] = $row['setting_value'];
     }
 } else {
     // Fallback if table doesn't exist
@@ -50,17 +50,16 @@ if ($settings_query) {
     require_once('includes/head.php');
     require_once('includes/header.php');
 
-    ?>
-    <!-- Hero Banner -->
+    ?> <!-- Hero Banner -->
     <div class="contact-hero">
         <div class="container">
-            <div class="row align-items-center">
+            <div class="row align-items-center text-center text-lg-start py-3">
                 <div class="col-lg-7">
                     <h1 class="hero-title">Liên hệ với chúng tôi</h1>
                     <p class="hero-subtitle">Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7. Hãy để lại thông tin và chúng tôi
                         sẽ liên hệ lại ngay.</p>
                 </div>
-                <div class="col-lg-5 d-none d-lg-block">
+                <div class="col-lg-5 d-none d-lg-block text-center">
                     <img src="images/contact-illustration.svg" alt="Contact Us" class="img-fluid contact-illustration"
                         onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/headset.svg'; this.classList.add('fallback-icon')">
                 </div>
@@ -149,9 +148,7 @@ if ($settings_query) {
                                         title="Twitter">
                                         <i class="bi bi-twitter-x"></i>
                                     </a>
-                                <?php endif; ?>
-
-                                <?php if (!empty($settings['youtube_url'])): ?>
+                                <?php endif; ?> <?php if (!empty($settings['youtube_url'])): ?>
                                     <a href="<?php echo $settings['youtube_url']; ?>" target="_blank" class="social-icon"
                                         title="YouTube">
                                         <i class="bi bi-youtube"></i>
@@ -159,7 +156,7 @@ if ($settings_query) {
                                 <?php endif; ?>
 
                                 <a href="https://zalo.me/" target="_blank" class="social-icon" title="Zalo">
-                                    <i class="bi bi-chat-dots"></i>
+                                    <i class="bi bi-telephone"></i>
                                 </a>
                             </div>
                         </div>
@@ -302,50 +299,12 @@ if ($settings_query) {
                                 class="btn btn-primary me-3">
                                 <i class="bi bi-telephone-fill me-2"></i> Gọi ngay
                             </a>
-                            <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                data-bs-target="#quickContactModal">
-                                <i class="bi bi-chat-fill me-2"></i> Chat với tư vấn viên
-                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Quick Contact Modal -->
-    <div class="modal fade" id="quickContactModal" tabindex="-1" aria-labelledby="quickContactModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="quickContactModalLabel">Liên hệ nhanh</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="quickContactForm">
-                        <div class="mb-3">
-                            <label for="quickName" class="form-label">Họ tên</label>
-                            <input type="text" class="form-control" id="quickName" placeholder="Nhập họ tên của bạn">
-                        </div>
-                        <div class="mb-3">
-                            <label for="quickPhone" class="form-label">Số điện thoại</label>
-                            <input type="tel" class="form-control" id="quickPhone" placeholder="Nhập số điện thoại">
-                        </div>
-                        <div class="mb-3">
-                            <label for="quickMessage" class="form-label">Nội dung</label>
-                            <textarea class="form-control" id="quickMessage" rows="3"
-                                placeholder="Nhập nội dung cần tư vấn"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="button" class="btn btn-primary" id="submitQuickContact">Gửi yêu cầu</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <?php
     // Include footer

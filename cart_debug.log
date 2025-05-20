@@ -289,3 +289,73 @@
 2025-05-07 11:58:11 - Found existing cart - {"cart_id":2}
 2025-05-07 11:58:11 - Added new item - {"variant_id":118,"quantity":1}
 2025-05-07 11:58:11 - Request completed successfully - {"cart_count":"1"}
+2025-05-18 18:13:43 - Raw POST input - "{\"productId\":33,\"quantity\":1,\"sizeId\":8,\"colorId\":13}"
+2025-05-18 18:13:43 - Received add to cart request - {"productId":33,"quantity":1,"sizeId":8,"colorId":13}
+2025-05-18 18:13:43 - Session info - {"session_id":"frggubpg7vprt7o1qaln46cfnf","user_id":2}
+2025-05-18 18:13:43 - Processed data - {"product_id":33,"quantity":1,"size_id":8,"color_id":13}
+2025-05-18 18:13:43 - Found existing cart - {"cart_id":2}
+2025-05-18 18:13:44 - Added new item - {"variant_id":135,"quantity":1}
+2025-05-18 18:13:44 - Request completed successfully - {"cart_count":"1"}
+2025-05-20 10:05:23 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":7,\"colorId\":15}"
+2025-05-20 10:05:23 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":7,"colorId":15}
+2025-05-20 10:05:23 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":null}
+2025-05-20 10:05:23 - Processed data - {"product_id":31,"quantity":1,"size_id":7,"color_id":15}
+2025-05-20 10:05:23 - Created new cart - {"cart_id":13}
+2025-05-20 10:05:23 - Added new item - {"variant_id":127,"quantity":1}
+2025-05-20 10:05:23 - Request completed successfully - {"cart_count":"1"}
+2025-05-20 15:19:59 - Raw POST input - "{\"productId\":29,\"quantity\":2,\"sizeId\":9,\"colorId\":13}"
+2025-05-20 15:19:59 - Received add to cart request - {"productId":29,"quantity":2,"sizeId":9,"colorId":13}
+2025-05-20 15:19:59 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":2}
+2025-05-20 15:19:59 - Processed data - {"product_id":29,"quantity":2,"size_id":9,"color_id":13}
+2025-05-20 15:19:59 - Found existing cart - {"cart_id":2}
+2025-05-20 15:19:59 - Added new item - {"variant_id":115,"quantity":2}
+2025-05-20 15:19:59 - Request completed successfully - {"cart_count":"2"}
+2025-05-20 15:54:05 - Raw POST input - "{\"productId\":34,\"quantity\":2,\"sizeId\":6,\"colorId\":11}"
+2025-05-20 15:54:05 - Received add to cart request - {"productId":34,"quantity":2,"sizeId":6,"colorId":11}
+2025-05-20 15:54:05 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":3}
+2025-05-20 15:54:05 - Processed data - {"product_id":34,"quantity":2,"size_id":6,"color_id":11}
+2025-05-20 15:54:14 - Raw POST input - "{\"productId\":34,\"quantity\":2,\"sizeId\":6,\"colorId\":11}"
+2025-05-20 15:54:14 - Received add to cart request - {"productId":34,"quantity":2,"sizeId":6,"colorId":11}
+2025-05-20 15:54:14 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":3}
+2025-05-20 15:54:14 - Processed data - {"product_id":34,"quantity":2,"size_id":6,"color_id":11}
+2025-05-20 15:54:32 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":7,\"colorId\":15}"
+2025-05-20 15:54:32 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":7,"colorId":15}
+2025-05-20 15:54:32 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":3}
+2025-05-20 15:54:32 - Processed data - {"product_id":31,"quantity":1,"size_id":7,"color_id":15}
+2025-05-20 15:54:50 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":7,\"colorId\":15}"
+2025-05-20 15:54:50 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":7,"colorId":15}
+2025-05-20 15:54:50 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":3}
+2025-05-20 15:54:50 - Processed data - {"product_id":31,"quantity":1,"size_id":7,"color_id":15}
+2025-05-20 15:58:41 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":7,\"colorId\":15}"
+2025-05-20 15:58:41 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":7,"colorId":15}
+2025-05-20 15:58:41 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":3}
+2025-05-20 15:58:41 - Processed data - {"product_id":31,"quantity":1,"size_id":7,"color_id":15}
+2025-05-20 15:58:45 - Raw POST input - "{\"productId\":31,\"quantity\":2,\"sizeId\":6,\"colorId\":15}"
+2025-05-20 15:58:45 - Received add to cart request - {"productId":31,"quantity":2,"sizeId":6,"colorId":15}
+2025-05-20 15:58:45 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":3}
+2025-05-20 15:58:45 - Processed data - {"product_id":31,"quantity":2,"size_id":6,"color_id":15}
+2025-05-20 15:58:47 - Raw POST input - "{\"productId\":31,\"quantity\":2,\"sizeId\":6,\"colorId\":14}"
+2025-05-20 15:58:47 - Received add to cart request - {"productId":31,"quantity":2,"sizeId":6,"colorId":14}
+2025-05-20 15:58:47 - Session info - {"session_id":"o6tjcg7qcmtudikn8sntrgu54i","user_id":3}
+2025-05-20 15:58:47 - Processed data - {"product_id":31,"quantity":2,"size_id":6,"color_id":14}
+2025-05-20 16:01:14 - Raw POST input - "{\"productId\":34,\"quantity\":1,\"sizeId\":6,\"colorId\":11}"
+2025-05-20 16:01:14 - Received add to cart request - {"productId":34,"quantity":1,"sizeId":6,"colorId":11}
+2025-05-20 16:01:14 - Session info - {"session_id":"0lfloact2d44s2qn10ir8osutm","user_id":3}
+2025-05-20 16:01:14 - Processed data - {"product_id":34,"quantity":1,"size_id":6,"color_id":11}
+2025-05-20 16:01:14 - Found existing cart - {"cart_id":21}
+2025-05-20 16:01:14 - Added new item - {"variant_id":143,"quantity":1}
+2025-05-20 16:01:14 - Request completed successfully - {"cart_count":"1"}
+2025-05-20 16:01:35 - Raw POST input - "{\"productId\":31,\"quantity\":1,\"sizeId\":6,\"colorId\":15}"
+2025-05-20 16:01:35 - Received add to cart request - {"productId":31,"quantity":1,"sizeId":6,"colorId":15}
+2025-05-20 16:01:35 - Session info - {"session_id":"0lfloact2d44s2qn10ir8osutm","user_id":3}
+2025-05-20 16:01:35 - Processed data - {"product_id":31,"quantity":1,"size_id":6,"color_id":15}
+2025-05-20 16:01:35 - Found existing cart - {"cart_id":21}
+2025-05-20 16:01:35 - Added new item - {"variant_id":126,"quantity":1}
+2025-05-20 16:01:35 - Request completed successfully - {"cart_count":"2"}
+2025-05-20 16:33:59 - Raw POST input - "{\"productId\":33,\"quantity\":1,\"sizeId\":8,\"colorId\":16}"
+2025-05-20 16:33:59 - Received add to cart request - {"productId":33,"quantity":1,"sizeId":8,"colorId":16}
+2025-05-20 16:33:59 - Session info - {"session_id":"0lfloact2d44s2qn10ir8osutm","user_id":3}
+2025-05-20 16:33:59 - Processed data - {"product_id":33,"quantity":1,"size_id":8,"color_id":16}
+2025-05-20 16:33:59 - Found existing cart - {"cart_id":21}
+2025-05-20 16:33:59 - Added new item - {"variant_id":137,"quantity":1}
+2025-05-20 16:33:59 - Request completed successfully - {"cart_count":"1"}

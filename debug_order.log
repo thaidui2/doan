@@ -1038,3 +1038,659 @@
 )
 
 2025-05-17 11:57:13 - Order details inserted successfully
+2025-05-18 16:09:44 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => thai
+    [phone] => 0123456781
+    [email] => thai2@gmail.com
+    [address] => xóm làng
+    [province] => 51
+    [district] => 525
+    [ward] => 21163
+    [payment_method] => cod
+    [promo_code] => test2
+    [discount_amount] => 900000
+    [discount_id] => 6
+    [note] => 
+    [province_name] => Quảng Ngãi
+    [district_name] => Trà Bồng
+    [ward_name] => Trà Xinh
+    [full_address] => xóm làng, Trà Xinh, Trà Bồng, Quảng Ngãi
+)
+
+2025-05-18 16:09:44 - Original payment method - cod
+2025-05-18 16:09:44 - Final payment method - cod
+2025-05-18 16:09:44 - Is Buy Now? - 1
+2025-05-18 16:09:44 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 33
+    [id_bienthe] => 137
+    [so_luong] => 1
+    [gia] => 900000.00
+    [ten_san_pham] => Dép Nike Air Max
+    [hinh_anh] => uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp
+    [ten_size] => 42
+    [ten_mau] => Xanh lá
+    [ma_mau] => #77ee77
+    [thanh_tien] => 900000
+)
+
+2025-05-18 16:09:44 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 33
+            [id_bienthe] => 137
+            [tensp] => Dép Nike Air Max
+            [thuoc_tinh] => Size: 42, Màu: Xanh lá
+            [gia] => 900000.00
+            [soluong] => 1
+            [thanh_tien] => 900000
+        )
+
+)
+
+2025-05-18 16:09:44 - Total amount - 900000
+2025-05-18 16:09:44 - Preparing order insertion with payment method - cod
+2025-05-18 16:09:44 - Order inserted successfully - Array
+(
+    [order_id] => 61
+    [payment_method] => cod
+)
+
+2025-05-18 16:09:44 - Inventory updated - Array
+(
+    [product_id] => 33
+    [variant_id] => 137
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-18 16:09:44 - Order details inserted successfully
+2025-05-18 16:09:44 - Updating promo code usage count - Array
+(
+    [code] => test2
+)
+
+2025-05-18 16:09:44 - Successfully updated promo code usage count - Array
+(
+    [affected_rows] => 1
+)
+
+2025-05-20 10:08:30 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => test thai 
+    [phone] => 0123456789
+    [email] => mail@gmmail.com
+    [address] => @@
+    [province] => 92
+    [district] => 927
+    [ward] => 31298
+    [payment_method] => vnpay
+    [promo_code] => test2
+    [discount_amount] => 2200000
+    [discount_id] => 6
+    [note] => test
+    [selected_items] => Array
+        (
+            [0] => 41
+        )
+
+    [province_name] => Cần Thơ
+    [district_name] => Thới Lai
+    [ward_name] => Trường Xuân B
+    [full_address] => @@, Trường Xuân B, Thới Lai, Cần Thơ
+)
+
+2025-05-20 10:08:30 - Original payment method - vnpay
+2025-05-20 10:08:30 - Final payment method - vnpay
+2025-05-20 10:08:30 - Is Buy Now? - 1
+2025-05-20 10:08:30 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-20 10:08:30 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 127
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 41, Màu: Xanh dương
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+)
+
+2025-05-20 10:08:30 - Total amount - 2200000
+2025-05-20 10:08:30 - Preparing order insertion with payment method - vnpay
+2025-05-20 10:08:30 - Order inserted successfully - Array
+(
+    [order_id] => 62
+    [payment_method] => vnpay
+)
+
+2025-05-20 10:08:30 - Inventory updated - Array
+(
+    [product_id] => 31
+    [variant_id] => 127
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-20 10:08:30 - Order details inserted successfully
+2025-05-20 15:20:52 - Order processing started - Array
+(
+    [fullname] => nguyen xuan thai
+    [phone] => 0123456789
+    [email] => tobenha4@gmail.com
+    [address] => đông tiến
+    [province] => 04
+    [district] => 053
+    [ward] => 01816
+    [payment_method] => cod
+    [promo_code] => test2
+    [discount_amount] => 1658000
+    [discount_id] => 6
+    [note] => test
+    [selected_items] => Array
+        (
+            [0] => 42
+        )
+
+    [province_name] => Cao Bằng
+    [district_name] => Thạch An
+    [ward_name] => Trọng Con
+    [full_address] => đông tiến, Trọng Con, Thạch An, Cao Bằng
+)
+
+2025-05-20 15:20:52 - Original payment method - cod
+2025-05-20 15:20:52 - Final payment method - cod
+2025-05-20 15:20:52 - Is Buy Now? - 
+2025-05-20 15:20:52 - Processing regular cart checkout
+2025-05-20 15:20:52 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 29
+            [id_bienthe] => 115
+            [tensp] => Giày Thể Thao Biti's Hunter Core Nữ Màu Xám HSW009100XAM
+            [thuoc_tinh] => Size: 43, Màu: Xám
+            [gia] => 829000.00
+            [soluong] => 2
+            [thanh_tien] => 1658000
+        )
+
+)
+
+2025-05-20 15:20:52 - Total amount - 1658000
+2025-05-20 15:20:52 - Preparing order insertion with payment method - cod
+2025-05-20 15:20:52 - Order inserted successfully - Array
+(
+    [order_id] => 63
+    [payment_method] => cod
+)
+
+2025-05-20 15:20:52 - Inventory updated - Array
+(
+    [product_id] => 29
+    [variant_id] => 115
+    [quantity_reduced] => 2
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-20 15:20:52 - Order details inserted successfully
+2025-05-20 15:20:52 - Updating promo code usage count - Array
+(
+    [code] => test2
+)
+
+2025-05-20 15:20:52 - Successfully updated promo code usage count - Array
+(
+    [affected_rows] => 1
+)
+
+2025-05-20 16:02:53 - Order processing started - Array
+(
+    [fullname] => lò vi sóng
+    [phone] => 0223456789
+    [email] => song@gmail.com
+    [address] => làng xóm
+    [province] => 10
+    [district] => 084
+    [ward] => 02824
+    [payment_method] => cod
+    [promo_code] => test2
+    [discount_amount] => 2700000
+    [discount_id] => 6
+    [note] => test
+    [province_name] => Lào Cai
+    [district_name] => Si Ma Cai
+    [ward_name] => Sín Chéng
+    [full_address] => làng xóm, Sín Chéng, Si Ma Cai, Lào Cai
+)
+
+2025-05-20 16:02:53 - Original payment method - cod
+2025-05-20 16:02:53 - Final payment method - cod
+2025-05-20 16:02:53 - Is Buy Now? - 
+2025-05-20 16:02:53 - Processing regular cart checkout
+2025-05-20 16:02:53 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 31
+            [id_bienthe] => 126
+            [tensp] => Giày Puma RS-X3
+            [thuoc_tinh] => Size: 40, Màu: Xanh dương
+            [gia] => 2200000.00
+            [soluong] => 1
+            [thanh_tien] => 2200000
+        )
+
+    [1] => Array
+        (
+            [id_sanpham] => 34
+            [id_bienthe] => 143
+            [tensp] => Urbas Love+ 23 - Slip On - Offwhite
+            [thuoc_tinh] => Size: 40, Màu: Trắng
+            [gia] => 500000.00
+            [soluong] => 1
+            [thanh_tien] => 500000
+        )
+
+)
+
+2025-05-20 16:02:53 - Total amount - 2700000
+2025-05-20 16:02:53 - Preparing order insertion with payment method - cod
+2025-05-20 16:02:53 - Order inserted successfully - Array
+(
+    [order_id] => 64
+    [payment_method] => cod
+)
+
+2025-05-20 16:02:53 - Inventory updated - Array
+(
+    [product_id] => 31
+    [variant_id] => 126
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-20 16:02:53 - Inventory updated - Array
+(
+    [product_id] => 34
+    [variant_id] => 143
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-20 16:02:53 - Order details inserted successfully
+2025-05-20 16:02:53 - Updating promo code usage count - Array
+(
+    [code] => test2
+)
+
+2025-05-20 16:02:53 - Successfully updated promo code usage count - Array
+(
+    [affected_rows] => 1
+)
+
+2025-05-20 16:34:31 - Order processing started - Array
+(
+    [fullname] => lò vi sóng
+    [phone] => 0223456789
+    [email] => song@gmail.com
+    [address] => làng xóm
+    [province] => 40
+    [district] => 420
+    [ward] => 17086
+    [province_name] => Nghệ An
+    [district_name] => Quỳ Hợp
+    [ward_name] => Nam Sơn
+    [payment_method] => cod
+    [promo_code] => test2
+    [discount_amount] => 900000
+    [discount_id] => 6
+    [note] => xóm phường
+    [full_address] => làng xóm, Nam Sơn, Quỳ Hợp, Nghệ An
+)
+
+2025-05-20 16:34:31 - Original payment method - cod
+2025-05-20 16:34:31 - Final payment method - cod
+2025-05-20 16:34:31 - Address information - Array
+(
+    [province] => Array
+        (
+            [code] => 40
+            [name] => Nghệ An
+        )
+
+    [district] => Array
+        (
+            [code] => 420
+            [name] => Quỳ Hợp
+        )
+
+    [ward] => Array
+        (
+            [code] => 17086
+            [name] => Nam Sơn
+        )
+
+)
+
+2025-05-20 16:34:31 - Is Buy Now? - 
+2025-05-20 16:34:31 - Processing regular cart checkout
+2025-05-20 16:34:31 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 33
+            [id_bienthe] => 137
+            [tensp] => Dép Nike Air Max
+            [thuoc_tinh] => Size: 42, Màu: Xanh lá
+            [gia] => 900000.00
+            [soluong] => 1
+            [thanh_tien] => 900000
+        )
+
+)
+
+2025-05-20 16:34:31 - Total amount - 900000
+2025-05-20 16:34:31 - Preparing order insertion with payment method - cod
+2025-05-20 16:34:31 - Order inserted successfully - Array
+(
+    [order_id] => 65
+    [payment_method] => cod
+)
+
+2025-05-20 16:34:31 - Inventory updated - Array
+(
+    [product_id] => 33
+    [variant_id] => 137
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-20 16:34:31 - Order details inserted successfully
+2025-05-20 16:34:31 - Updating promo code usage count - Array
+(
+    [code] => test2
+)
+
+2025-05-20 16:34:31 - Successfully updated promo code usage count - Array
+(
+    [affected_rows] => 1
+)
+
+2025-05-20 16:54:59 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => lò vi sóng
+    [phone] => 0223456789
+    [email] => song@gmail.com
+    [address] => làng xóm
+    [province] => 66
+    [district] => 656
+    [ward] => 24607
+    [province_name] => Đắk Lắk
+    [district_name] => Lắk
+    [ward_name] => Nam Ka
+    [payment_method] => cod
+    [promo_code] => test2
+    [discount_amount] => 2500000
+    [discount_id] => 6
+    [note] => test fix lỗi phường xã
+    [full_address] => làng xóm, Nam Ka, Lắk, Đắk Lắk
+)
+
+2025-05-20 16:54:59 - Original payment method - cod
+2025-05-20 16:54:59 - Final payment method - cod
+2025-05-20 16:54:59 - Using ward_name value for phuong_xa - Nam Ka
+2025-05-20 16:54:59 - Raw address POST values - Array
+(
+    [province] => 66
+    [province_name] => Đắk Lắk
+    [district] => 656
+    [district_name] => Lắk
+    [ward] => 24607
+    [ward_name] => Nam Ka
+)
+
+2025-05-20 16:54:59 - Address information - Array
+(
+    [province] => Array
+        (
+            [code] => 66
+            [name] => Đắk Lắk
+        )
+
+    [district] => Array
+        (
+            [code] => 656
+            [name] => Lắk
+        )
+
+    [ward] => Array
+        (
+            [code] => 24607
+            [name] => Nam Ka
+        )
+
+)
+
+2025-05-20 16:54:59 - Is Buy Now? - 1
+2025-05-20 16:54:59 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-20 16:54:59 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 30
+            [id_bienthe] => 118
+            [tensp] => Giày Adidas Ultraboost 21
+            [thuoc_tinh] => Size: 42, Màu: Trắng
+            [gia] => 2500000.00
+            [soluong] => 1
+            [thanh_tien] => 2500000
+        )
+
+)
+
+2025-05-20 16:54:59 - Total amount - 2500000
+2025-05-20 16:54:59 - Preparing order insertion with payment method - cod
+2025-05-20 16:54:59 - Final address values before DB insertion - Array
+(
+    [tinh_tp] => Đắk Lắk
+    [quan_huyen] => Lắk
+    [phuong_xa] => Nam Ka
+    [phuong_xa_type] => string
+    [phuong_xa_empty] => 
+)
+
+2025-05-20 16:54:59 - FINAL address values that will be saved to DB - Array
+(
+    [tinh_tp] => Đắk Lắk
+    [quan_huyen] => Lắk
+    [phuong_xa] => Nam Ka
+)
+
+2025-05-20 16:54:59 - Order inserted successfully - Array
+(
+    [order_id] => 66
+    [payment_method] => cod
+)
+
+2025-05-20 16:54:59 - Inventory updated - Array
+(
+    [product_id] => 30
+    [variant_id] => 118
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-20 16:54:59 - Order details inserted successfully
+2025-05-20 16:54:59 - Updating promo code usage count - Array
+(
+    [code] => test2
+)
+
+2025-05-20 16:54:59 - Successfully updated promo code usage count - Array
+(
+    [affected_rows] => 1
+)
+
+2025-05-20 17:08:04 - Order processing started - Array
+(
+    [buy_now] => 1
+    [fullname] => lò vi sóng
+    [phone] => 0223456789
+    [email] => song@gmail.com
+    [address] => làng xóm
+    [province] => 80
+    [district] => 800
+    [ward] => 27883
+    [province_name] => Long An
+    [district_name] => Thạnh Hóa
+    [ward_name] => Thủy Đông
+    [payment_method] => cod
+    [promo_code] => 
+    [discount_amount] => 0
+    [discount_id] => 0
+    [note] => test fix phuong xa
+    [full_address] => làng xóm, Thủy Đông, Thạnh Hóa, Long An
+)
+
+2025-05-20 17:08:04 - Original payment method - cod
+2025-05-20 17:08:04 - Final payment method - cod
+2025-05-20 17:08:04 - Using ward_name value for phuong_xa - Thủy Đông
+2025-05-20 17:08:04 - Raw address POST values - Array
+(
+    [province] => 80
+    [province_name] => Long An
+    [district] => 800
+    [district_name] => Thạnh Hóa
+    [ward] => 27883
+    [ward_name] => Thủy Đông
+)
+
+2025-05-20 17:08:04 - Address information - Array
+(
+    [province] => Array
+        (
+            [code] => 80
+            [name] => Long An
+        )
+
+    [district] => Array
+        (
+            [code] => 800
+            [name] => Thạnh Hóa
+        )
+
+    [ward] => Array
+        (
+            [code] => 27883
+            [name] => Thủy Đông
+        )
+
+)
+
+2025-05-20 17:08:04 - Is Buy Now? - 1
+2025-05-20 17:08:04 - Processing Buy Now cart - Array
+(
+    [id_sanpham] => 34
+    [id_bienthe] => 143
+    [so_luong] => 1
+    [gia] => 550000.00
+    [ten_san_pham] => Urbas Love+ 23 - Slip On - Offwhite
+    [hinh_anh] => uploads/products/1747749082_Pro_ALP2023_1.jpg
+    [ten_size] => 40
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 550000
+)
+
+2025-05-20 17:08:04 - Order items - Array
+(
+    [0] => Array
+        (
+            [id_sanpham] => 34
+            [id_bienthe] => 143
+            [tensp] => Urbas Love+ 23 - Slip On - Offwhite
+            [thuoc_tinh] => Size: 40, Màu: Trắng
+            [gia] => 550000.00
+            [soluong] => 1
+            [thanh_tien] => 550000
+        )
+
+)
+
+2025-05-20 17:08:04 - Total amount - 550000
+2025-05-20 17:08:04 - Preparing order insertion with payment method - cod
+2025-05-20 17:08:04 - Final address values before DB insertion - Array
+(
+    [tinh_tp] => Long An
+    [quan_huyen] => Thạnh Hóa
+    [phuong_xa] => Thủy Đông
+    [phuong_xa_type] => string
+    [phuong_xa_empty] => 
+)
+
+2025-05-20 17:08:04 - FINAL address values that will be saved to DB - Array
+(
+    [tinh_tp] => Long An
+    [quan_huyen] => Thạnh Hóa
+    [phuong_xa] => Thủy Đông
+)
+
+2025-05-20 17:08:04 - Order inserted and ward updated successfully - Array
+(
+    [order_id] => 93
+    [payment_method] => cod
+    [phuong_xa] => Thủy Đông
+)
+
+2025-05-20 17:08:04 - Inventory updated - Array
+(
+    [product_id] => 34
+    [variant_id] => 143
+    [quantity_reduced] => 1
+    [variant_rows_affected] => 1
+    [product_rows_affected] => 1
+)
+
+2025-05-20 17:08:04 - Order details inserted successfully

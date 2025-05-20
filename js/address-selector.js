@@ -145,7 +145,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Skip if elements don't exist
   if (!provinceSelect) return;
-
   // Lấy dữ liệu tỉnh/thành phố
   async function loadProvinces() {
     if (!provinceSelect) return;
@@ -158,7 +157,24 @@ document.addEventListener("DOMContentLoaded", function () {
     wardSelect.disabled = true;
 
     try {
-      const provinces = await VNAddressManager.loadProvinces();
+      // Kiểm tra cache trước khi gọi API
+      const cachedData = localStorage.getItem('vn_provinces');
+      let provinces;
+
+      if (cachedData) {
+        try {
+          provinces = JSON.parse(cachedData);
+          console.log('Sử dụng dữ liệu tỉnh/thành phố từ cache');
+        } catch (e) {
+          console.log('Dữ liệu cache không hợp lệ, tải lại từ API');
+          provinces = await VNAddressManager.loadProvinces();
+          localStorage.setItem('vn_provinces', JSON.stringify(provinces));
+        }
+      } else {
+        provinces = await VNAddressManager.loadProvinces();
+        localStorage.setItem('vn_provinces', JSON.stringify(provinces));
+      }
+
       VNAddressManager.populateSelect(
         provinceSelect,
         provinces,
@@ -235,13 +251,20 @@ document.addEventListener("DOMContentLoaded", function () {
       );
     }
   }
-
   // Thêm trường nhập địa chỉ thủ công khi API không hoạt động
   function addManualAddressField() {
     if (document.getElementById("manual_full_address")) return;
 
     const container = document.createElement("div");
-    container.className = "mb-3 mt-3";
+    container.className = "mb-3 mt-3 alert alert-warning";
+
+    const heading = document.createElement("h6");
+    heading.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Không thể tải dữ liệu địa chỉ';
+    heading.className = "mb-2";
+
+    const note = document.createElement("p");
+    note.className = "small mb-3";
+    note.textContent = "Hệ thống không thể kết nối đến máy chủ dữ liệu địa chỉ. Vui lòng nhập đầy đủ địa chỉ bên dưới hoặc thử lại sau.";
 
     const label = document.createElement("label");
     label.className = "form-label";
@@ -257,8 +280,36 @@ document.addEventListener("DOMContentLoaded", function () {
       "Nhập đầy đủ địa chỉ (Số nhà, Đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố)";
     input.required = true;
 
+    // Thêm hidden field để truyền địa chỉ đầy đủ
+    const hiddenField = document.createElement("input");
+    hiddenField.type = "hidden";
+    hiddenField.name = "manual_address_mode";
+    hiddenField.value = "1";
+
+    container.appendChild(heading);
+    container.appendChild(note);
     container.appendChild(label);
     container.appendChild(input);
+    container.appendChild(hiddenField);
+
+    // Thêm sự kiện để cập nhật hidden fields với dữ liệu manual
+    input.addEventListener('input', function () {
+      const manualValue = input.value.trim();
+
+      // Cập nhật hidden fields
+      const provinceField = document.getElementById('province_name_hidden');
+      const districtField = document.getElementById('district_name_hidden');
+      const wardField = document.getElementById('ward_name_hidden');
+
+      if (provinceField) provinceField.value = manualValue;
+      if (districtField) districtField.value = manualValue;
+      if (wardField) wardField.value = manualValue;
+
+      if (fullAddressPreview && fullAddressText) {
+        fullAddressText.textContent = manualValue;
+        fullAddressPreview.classList.remove("d-none");
+      }
+    });
 
     // Thêm vào DOM
     if (wardSelect && wardSelect.parentNode) {
@@ -269,35 +320,66 @@ document.addEventListener("DOMContentLoaded", function () {
       provinceSelect.parentNode.parentNode.appendChild(container);
     }
   }
-
-  // Cập nhật địa chỉ đầy đủ
+  // Cập nhật địa chỉ đầy đủ với màu sắc và định dạng rõ ràng hơn
   function updateFullAddressPreview() {
     if (!fullAddressPreview || !fullAddressText) return;
 
     const parts = [];
 
     if (addressInput && addressInput.value.trim()) {
-      parts.push(addressInput.value.trim());
+      parts.push(`<span class="text-dark">${addressInput.value.trim()}</span>`);
     }
 
     if (selectedWard.name) {
-      parts.push(selectedWard.name);
+      parts.push(`<span class="text-dark">${selectedWard.name}</span>`);
     }
 
     if (selectedDistrict.name) {
-      parts.push(selectedDistrict.name);
+      parts.push(`<span class="text-dark">${selectedDistrict.name}</span>`);
     }
 
     if (selectedProvince.name) {
-      parts.push(selectedProvince.name);
+      parts.push(`<span class="text-primary">${selectedProvince.name}</span>`);
     }
 
     if (parts.length > 0) {
-      fullAddressText.textContent = parts.join(", ");
+      fullAddressText.innerHTML = parts.join(", ");
       fullAddressPreview.classList.remove("d-none");
+
+      // Thêm class để styling
+      fullAddressPreview.classList.add("alert");
+      fullAddressPreview.classList.add("alert-light");
+      fullAddressPreview.classList.add("border");
     } else {
       fullAddressPreview.classList.add("d-none");
     }
+  }  // Tạo hoặc cập nhật hidden fields cho tên các địa chỉ  
+  function createOrUpdateHiddenField(name, value) {
+    // Tìm theo ID trước (ưu tiên)
+    let hiddenField = document.getElementById(`${name}_name_hidden`);
+
+    // Nếu không tìm thấy theo ID, thử tìm theo tên 
+    if (!hiddenField) {
+      hiddenField = document.querySelector(`input[name="${name}_name"]`);
+    }
+
+    // Nếu vẫn không tìm thấy, tạo mới
+    if (!hiddenField) {
+      hiddenField = document.createElement('input');
+      hiddenField.type = 'hidden';
+      hiddenField.name = `${name}_name`;
+      hiddenField.id = `${name}_name_hidden`;
+      const form = provinceSelect.form || provinceSelect.closest('form');
+      if (form) form.appendChild(hiddenField);
+    }
+
+    console.log(`Updating ${name}_name hidden field with value: "${value}" [type: ${typeof value}]`);
+
+    // Đảm bảo giá trị không bao giờ là rỗng hoặc undefined
+    hiddenField.value = value || '';
+
+    // Debug - hiển thị giá trị sau khi đã set
+    console.log(`${name}_name_hidden sau khi đặt giá trị: "${hiddenField.value}"`);
   }
 
   // Thiết lập các sự kiện
@@ -311,12 +393,14 @@ document.addEventListener("DOMContentLoaded", function () {
             ? selectedOption.text
             : "";
 
+        // Lưu tên tỉnh/thành phố vào hidden field
+        createOrUpdateHiddenField('province', selectedProvince.name);
+
         loadDistricts(this.value);
         resetWard();
         updateFullAddressPreview();
       });
     }
-
     if (districtSelect) {
       districtSelect.addEventListener("change", function () {
         const selectedOption = this.options[this.selectedIndex];
@@ -324,17 +408,28 @@ document.addEventListener("DOMContentLoaded", function () {
         selectedDistrict.name =
           selectedOption.text !== "Chọn quận/huyện" ? selectedOption.text : "";
 
+        // Lưu tên quận/huyện vào hidden field
+        createOrUpdateHiddenField('district', selectedDistrict.name);
+
         loadWards(this.value);
         updateFullAddressPreview();
       });
-    }
-
-    if (wardSelect) {
+    } if (wardSelect) {
       wardSelect.addEventListener("change", function () {
         const selectedOption = this.options[this.selectedIndex];
         selectedWard.code = this.value;
         selectedWard.name =
           selectedOption.text !== "Chọn phường/xã" ? selectedOption.text : "";
+
+        // Lưu tên phường/xã vào hidden field
+        createOrUpdateHiddenField('ward', selectedWard.name);
+
+        // Đảm bảo giá trị không bị để trống
+        if (!selectedWard.name && selectedWard.code) {
+          // Nếu không có tên nhưng có mã, sử dụng mã làm giá trị dự phòng
+          createOrUpdateHiddenField('ward', selectedWard.code);
+          console.log("Sử dụng mã phường/xã làm giá trị dự phòng: " + selectedWard.code);
+        }
 
         updateFullAddressPreview();
       });

@@ -277,10 +277,8 @@ if (!isset($product['diemdanhgia_tb']) || $product['diemdanhgia_tb'] === null) {
         .stock-low {
             border-left-color: #dc3545;
             background-color: #fff5f5;
-        }
-    </style>
+        }    </style>
     <script src="js/product-detail.js" defer></script>
-    <script src="js/cart-debug.js" defer></script>
 </head>
 <body>
 <?php 

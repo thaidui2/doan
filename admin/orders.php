@@ -27,27 +27,27 @@ if (isset($_POST['update_status']) && isset($_POST['order_id']) && isset($_POST[
     $check_order_stmt->bind_param('i', $order_id);
     $check_order_stmt->execute();
     $check_result = $check_order_stmt->get_result();
-    
+
     if ($check_result->num_rows > 0) {
         $current_status = $check_result->fetch_assoc()['trang_thai_don_hang'];
-        
+
         // Cập nhật trạng thái
         $update_sql = "UPDATE donhang SET trang_thai_don_hang = ?, ngay_capnhat = NOW() WHERE id = ?";
         $update_stmt = $conn->prepare($update_sql);
         $update_stmt->bind_param('ii', $new_status, $order_id);
-        
+
         if ($update_stmt->execute()) {
             // Xác định tên trạng thái
             $status_name = getOrderStatusName($new_status);
-            
+
             // Ghi vào lịch sử đơn hàng
             $history_sql = "INSERT INTO donhang_lichsu (id_donhang, hanh_dong, nguoi_thuchien, ghi_chu) 
                           VALUES (?, ?, ?, ?)";
             $history_stmt = $conn->prepare($history_sql);
             $action = "Cập nhật trạng thái";
             $admin_name = $_SESSION['admin_name'] ?? 'Quản trị viên';
-            $history_note = "Thay đổi trạng thái từ \"" . getOrderStatusName($current_status) . 
-                          "\" sang \"" . $status_name . "\"" . (!empty($note) ? ". Ghi chú: $note" : "");
+            $history_note = "Thay đổi trạng thái từ \"" . getOrderStatusName($current_status) .
+                "\" sang \"" . $status_name . "\"" . (!empty($note) ? ". Ghi chú: $note" : "");
             $history_stmt->bind_param('isss', $order_id, $action, $admin_name, $history_note);
             $history_stmt->execute();
 
@@ -60,7 +60,7 @@ if (isset($_POST['update_status']) && isset($_POST['order_id']) && isset($_POST[
             $ip = $_SERVER['REMOTE_ADDR'] ?? '';
             $log_stmt->bind_param('iiss', $admin_id, $order_id, $log_detail, $ip);
             $log_stmt->execute();
-            
+
             header("Location: orders.php?success=Cập nhật trạng thái đơn hàng thành công");
             exit();
         } else {
@@ -74,7 +74,7 @@ if (isset($_POST['update_status']) && isset($_POST['order_id']) && isset($_POST[
 }
 
 // Thiết lập tham số tìm kiếm và lọc
-$search = $_GET['search'] ?? '';
+$search = trim($_GET['search'] ?? '');
 $status = isset($_GET['status']) ? $_GET['status'] : '';
 $customer = isset($_GET['customer']) ? intval($_GET['customer']) : '';
 $payment_method = isset($_GET['payment_method']) ? $_GET['payment_method'] : '';
@@ -83,18 +83,19 @@ $date_from = isset($_GET['date_from']) ? $_GET['date_from'] : '';
 $date_to = isset($_GET['date_to']) ? $_GET['date_to'] : '';
 $sort = $_GET['sort'] ?? 'newest';
 
-// Phân trang
+// Thiết lập phân trang
+$items_per_page = 10; // Số đơn hàng mỗi trang
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$items_per_page = 10;
 $offset = ($page - 1) * $items_per_page;
 
-// Xây dựng câu truy vấn
+// Xây dựng câu truy vấn cơ bản
 $query = "SELECT d.*, u.ten as customer_name, u.email as customer_email, u.sodienthoai as customer_phone 
-          FROM donhang d
-          LEFT JOIN users u ON d.id_user = u.id
+          FROM donhang d 
+          LEFT JOIN users u ON d.id_user = u.id 
           WHERE 1=1";
 
-$count_query = "SELECT COUNT(*) as total FROM donhang d 
+$count_query = "SELECT COUNT(*) as total 
+                FROM donhang d 
                 LEFT JOIN users u ON d.id_user = u.id 
                 WHERE 1=1";
 
@@ -103,11 +104,28 @@ $param_types = "";
 
 // Thêm điều kiện tìm kiếm
 if (!empty($search)) {
-    $search_term = "%$search%";
-    $query .= " AND (d.ma_donhang LIKE ? OR d.ho_ten LIKE ? OR d.email LIKE ? OR d.sodienthoai LIKE ?)";
-    $count_query .= " AND (d.ma_donhang LIKE ? OR d.ho_ten LIKE ? OR d.email LIKE ? OR d.sodienthoai LIKE ?)";
-    $params = array_merge($params, [$search_term, $search_term, $search_term, $search_term]);
-    $param_types .= "ssss";
+    $search_conditions = " AND (
+        d.ma_donhang LIKE ? OR 
+        d.ho_ten LIKE ? OR 
+        d.sodienthoai LIKE ? OR 
+        d.email LIKE ? OR
+        COALESCE(u.ten, '') LIKE ? OR 
+        COALESCE(u.sodienthoai, '') LIKE ? OR 
+        COALESCE(u.email, '') LIKE ?
+    )";
+
+    $query .= $search_conditions;
+    $count_query .= $search_conditions;
+
+    $search_param = "%{$search}%";
+    $params = array_merge($params, array_fill(0, 7, $search_param));
+    $param_types .= "sssssss";
+}
+
+// Thêm debug để kiểm tra
+if (!empty($search)) {
+    error_log("Search Query: " . $query);
+    error_log("Search Params: " . print_r($params, true));
 }
 
 // Lọc theo trạng thái đơn hàng
@@ -119,7 +137,10 @@ if ($status !== '') {
 }
 
 // Lọc theo khách hàng
-if ($customer !== '') {
+if ($customer === 'guest') {
+    $query .= " AND d.id_user IS NULL";
+    $count_query .= " AND d.id_user IS NULL";
+} elseif ($customer !== '') {
     $query .= " AND d.id_user = ?";
     $count_query .= " AND d.id_user = ?";
     $params[] = $customer;
@@ -184,7 +205,7 @@ if (!empty($param_types)) {
     // Xóa 2 tham số cuối (limit và offset) vì query đếm không cần
     $count_param_types = substr($param_types, 0, -2);
     $count_params = array_slice($params, 0, -2);
-    
+
     // Chỉ bind_param nếu có parameter types
     if (!empty($count_param_types)) {
         $count_stmt->bind_param($count_param_types, ...$count_params);
@@ -200,14 +221,28 @@ if (!empty($params)) {
     $stmt->bind_param($param_types, ...$params);
 }
 $stmt->execute();
+
+// Thêm debug
+if (!$stmt->execute()) {
+    echo "Lỗi SQL: " . $stmt->error;
+}
+
 $orders = $stmt->get_result();
+// Hiển thị debug nếu không tìm thấy kết quả
+if ($orders->num_rows === 0 && !empty($search)) {
+    echo '<div class="alert alert-info">
+            Từ khóa tìm kiếm: ' . htmlspecialchars($search) . '<br>
+            Không tìm thấy kết quả nào phù hợp.
+          </div>';
+}
 
 // Lấy danh sách khách hàng cho dropdown lọc
 $customers_sql = "SELECT id, ten, email FROM users WHERE loai_user = 0 ORDER BY ten";
 $customers_result = $conn->query($customers_sql);
 
 // Hàm hiển thị trạng thái đơn hàng
-function getOrderStatusName($status) {
+function getOrderStatusName($status)
+{
     switch ($status) {
         case 1:
             return "Chờ xác nhận";
@@ -225,12 +260,14 @@ function getOrderStatusName($status) {
 }
 
 // Hàm hiển thị trạng thái thanh toán
-function getPaymentStatusName($status) {
+function getPaymentStatusName($status)
+{
     return $status ? "Đã thanh toán" : "Chưa thanh toán";
 }
 
 // Hàm hiển thị phương thức thanh toán
-function getPaymentMethodName($method) {
+function getPaymentMethodName($method)
+{
     switch ($method) {
         case 'cod':
             return "Tiền mặt khi nhận hàng";
@@ -244,7 +281,8 @@ function getPaymentMethodName($method) {
 }
 
 // Format tiền VNĐ
-function formatVND($amount) {
+function formatVND($amount)
+{
     return number_format($amount, 0, ',', '.') . ' ₫';
 }
 
@@ -278,7 +316,7 @@ $stats = $stats_result->fetch_assoc();
                 </a>
             </div>
         </div>
-        
+
         <!-- Thống kê nhanh -->
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-4">
@@ -288,7 +326,9 @@ $stats = $stats_result->fetch_assoc();
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Chờ xác nhận</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['pending'] ?? 0; ?></div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo $stats['pending'] ?? 0; ?>
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-clock fa-2x text-gray-300"></i>
@@ -297,7 +337,7 @@ $stats = $stats_result->fetch_assoc();
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-info h-100 py-2">
                     <div class="card-body">
@@ -305,7 +345,9 @@ $stats = $stats_result->fetch_assoc();
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                     Đang giao hàng</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['shipping'] ?? 0; ?></div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo $stats['shipping'] ?? 0; ?>
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-truck fa-2x text-gray-300"></i>
@@ -314,7 +356,7 @@ $stats = $stats_result->fetch_assoc();
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-success h-100 py-2">
                     <div class="card-body">
@@ -322,7 +364,9 @@ $stats = $stats_result->fetch_assoc();
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                     Hoàn thành</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $stats['completed'] ?? 0; ?></div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo $stats['completed'] ?? 0; ?>
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-check-circle fa-2x text-gray-300"></i>
@@ -331,7 +375,7 @@ $stats = $stats_result->fetch_assoc();
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-warning h-100 py-2">
                     <div class="card-body">
@@ -339,7 +383,9 @@ $stats = $stats_result->fetch_assoc();
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     Doanh thu</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo formatVND($stats['revenue'] ?? 0); ?></div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <?php echo formatVND($stats['revenue'] ?? 0); ?>
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -349,7 +395,7 @@ $stats = $stats_result->fetch_assoc();
                 </div>
             </div>
         </div>
-        
+
         <!-- Thông báo -->
         <?php if (isset($_GET['success'])): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -357,19 +403,20 @@ $stats = $stats_result->fetch_assoc();
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
-        
+
         <?php if (isset($_GET['error'])): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <?php echo htmlspecialchars($_GET['error']); ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
-        
+
         <!-- Tìm kiếm và lọc -->
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Tìm kiếm và lọc</h6>
-                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#filtersCollapse">
                     <i class="fas fa-filter me-1"></i> Lọc nâng cao
                 </button>
             </div>
@@ -378,9 +425,14 @@ $stats = $stats_result->fetch_assoc();
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             <label for="search" class="form-label">Tìm kiếm</label>
-                            <input type="text" class="form-control" id="search" name="search" 
-                                   placeholder="Mã đơn hàng, tên khách hàng, email, số điện thoại..." 
-                                   value="<?php echo htmlspecialchars($search); ?>">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="search" name="search"
+                                    placeholder="Mã đơn hàng, tên khách hàng, email, số điện thoại..."
+                                    value="<?php echo htmlspecialchars($search); ?>">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i> Tìm
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="status" class="form-label">Trạng thái đơn hàng</label>
@@ -388,21 +440,24 @@ $stats = $stats_result->fetch_assoc();
                                 <option value="">Tất cả trạng thái</option>
                                 <option value="1" <?php echo ($status === '1') ? 'selected' : ''; ?>>Chờ xác nhận</option>
                                 <option value="2" <?php echo ($status === '2') ? 'selected' : ''; ?>>Đã xác nhận</option>
-                                <option value="3" <?php echo ($status === '3') ? 'selected' : ''; ?>>Đang giao hàng</option>
+                                <option value="3" <?php echo ($status === '3') ? 'selected' : ''; ?>>Đang giao hàng
+                                </option>
                                 <option value="4" <?php echo ($status === '4') ? 'selected' : ''; ?>>Đã giao</option>
                                 <option value="5" <?php echo ($status === '5') ? 'selected' : ''; ?>>Đã hủy</option>
                             </select>
                         </div>
                     </div>
-                    
+
                     <!-- Lọc nâng cao -->
-                    <div class="collapse <?php echo ($customer !== '' || $payment_method !== '' || $payment_status !== '' || !empty($date_from) || !empty($date_to) || $sort !== 'newest') ? 'show' : ''; ?>" id="filtersCollapse">
+                    <div class="collapse <?php echo ($customer !== '' || $payment_method !== '' || $payment_status !== '' || !empty($date_from) || !empty($date_to) || $sort !== 'newest') ? 'show' : ''; ?>"
+                        id="filtersCollapse">
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="customer" class="form-label">Khách hàng</label>
                                 <select class="form-select" id="customer" name="customer">
                                     <option value="">Tất cả khách hàng</option>
-                                    <option value="guest" <?php echo ($customer === 'guest') ? 'selected' : ''; ?>>Khách không tài khoản</option>
+                                    <option value="guest" <?php echo ($customer === 'guest') ? 'selected' : ''; ?>>Khách
+                                        không tài khoản</option>
                                     <?php while ($cust = $customers_result->fetch_assoc()): ?>
                                         <option value="<?php echo $cust['id']; ?>" <?php echo ($customer == $cust['id']) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars($cust['ten']) . ' (' . htmlspecialchars($cust['email']) . ')'; ?>
@@ -414,8 +469,10 @@ $stats = $stats_result->fetch_assoc();
                                 <label for="payment_method" class="form-label">Phương thức thanh toán</label>
                                 <select class="form-select" id="payment_method" name="payment_method">
                                     <option value="">Tất cả phương thức</option>
-                                    <option value="cod" <?php echo ($payment_method === 'cod') ? 'selected' : ''; ?>>Tiền mặt khi nhận hàng</option>
-                                    <option value="vnpay" <?php echo ($payment_method === 'vnpay') ? 'selected' : ''; ?>>VNPAY</option>
+                                    <option value="cod" <?php echo ($payment_method === 'cod') ? 'selected' : ''; ?>>Tiền
+                                        mặt khi nhận hàng</option>
+                                    <option value="vnpay" <?php echo ($payment_method === 'vnpay') ? 'selected' : ''; ?>>
+                                        VNPAY</option>
                                     <option value="bank_transfer" <?php echo ($payment_method === 'bank_transfer') ? 'selected' : ''; ?>>Chuyển khoản ngân hàng</option>
                                 </select>
                             </div>
@@ -423,30 +480,36 @@ $stats = $stats_result->fetch_assoc();
                                 <label for="payment_status" class="form-label">Trạng thái thanh toán</label>
                                 <select class="form-select" id="payment_status" name="payment_status">
                                     <option value="">Tất cả</option>
-                                    <option value="1" <?php echo ($payment_status === '1') ? 'selected' : ''; ?>>Đã thanh toán</option>
-                                    <option value="0" <?php echo ($payment_status === '0') ? 'selected' : ''; ?>>Chưa thanh toán</option>
+                                    <option value="1" <?php echo ($payment_status === '1') ? 'selected' : ''; ?>>Đã thanh
+                                        toán</option>
+                                    <option value="0" <?php echo ($payment_status === '0') ? 'selected' : ''; ?>>Chưa
+                                        thanh toán</option>
                                 </select>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="sort" class="form-label">Sắp xếp theo</label>
                                 <select class="form-select" id="sort" name="sort">
-                                    <option value="newest" <?php echo ($sort === 'newest') ? 'selected' : ''; ?>>Mới nhất</option>
-                                    <option value="oldest" <?php echo ($sort === 'oldest') ? 'selected' : ''; ?>>Cũ nhất</option>
-                                    <option value="highest" <?php echo ($sort === 'highest') ? 'selected' : ''; ?>>Giá trị cao nhất</option>
-                                    <option value="lowest" <?php echo ($sort === 'lowest') ? 'selected' : ''; ?>>Giá trị thấp nhất</option>
+                                    <option value="newest" <?php echo ($sort === 'newest') ? 'selected' : ''; ?>>Mới nhất
+                                    </option>
+                                    <option value="oldest" <?php echo ($sort === 'oldest') ? 'selected' : ''; ?>>Cũ nhất
+                                    </option>
+                                    <option value="highest" <?php echo ($sort === 'highest') ? 'selected' : ''; ?>>Giá trị
+                                        cao nhất</option>
+                                    <option value="lowest" <?php echo ($sort === 'lowest') ? 'selected' : ''; ?>>Giá trị
+                                        thấp nhất</option>
                                 </select>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="date_from" class="form-label">Từ ngày</label>
-                                <input type="date" class="form-control datepicker" id="date_from" name="date_from" 
-                                       value="<?php echo htmlspecialchars($date_from); ?>">
+                                <input type="date" class="form-control datepicker" id="date_from" name="date_from"
+                                    value="<?php echo htmlspecialchars($date_from); ?>">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label for="date_to" class="form-label">Đến ngày</label>
-                                <input type="date" class="form-control datepicker" id="date_to" name="date_to" 
-                                       value="<?php echo htmlspecialchars($date_to); ?>">
+                                <input type="date" class="form-control datepicker" id="date_to" name="date_to"
+                                    value="<?php echo htmlspecialchars($date_to); ?>">
                             </div>
                             <div class="col-md-6 mb-3 d-flex align-items-end">
                                 <a href="orders.php" class="btn btn-outline-secondary me-2 flex-grow-1">
@@ -461,7 +524,7 @@ $stats = $stats_result->fetch_assoc();
                 </form>
             </div>
         </div>
-        
+
         <!-- Danh sách đơn hàng -->
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -500,7 +563,8 @@ $stats = $stats_result->fetch_assoc();
                                         </td>
                                         <td>
                                             <?php if ($order['id_user']): ?>
-                                                <a href="customer_detail.php?id=<?php echo $order['id_user']; ?>" class="customer-link">
+                                                <a href="customer_detail.php?id=<?php echo $order['id_user']; ?>"
+                                                    class="customer-link">
                                                     <?php echo htmlspecialchars($order['customer_name'] ?? $order['ho_ten']); ?>
                                                 </a>
                                             <?php else: ?>
@@ -509,9 +573,11 @@ $stats = $stats_result->fetch_assoc();
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <div><i class="fas fa-phone fa-sm text-muted me-1"></i> <?php echo htmlspecialchars($order['sodienthoai']); ?></div>
+                                            <div><i class="fas fa-phone fa-sm text-muted me-1"></i>
+                                                <?php echo htmlspecialchars($order['sodienthoai']); ?></div>
                                             <?php if (!empty($order['email'])): ?>
-                                                <div><i class="fas fa-envelope fa-sm text-muted me-1"></i> <?php echo htmlspecialchars($order['email']); ?></div>
+                                                <div><i class="fas fa-envelope fa-sm text-muted me-1"></i>
+                                                    <?php echo htmlspecialchars($order['email']); ?></div>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end">
@@ -519,8 +585,8 @@ $stats = $stats_result->fetch_assoc();
                                         </td>
                                         <td>
                                             <div>
-                                                <?php 
-                                                switch($order['phuong_thuc_thanh_toan']) {
+                                                <?php
+                                                switch ($order['phuong_thuc_thanh_toan']) {
                                                     case 'vnpay':
                                                         echo '<span class="badge bg-primary">VNPAY</span>';
                                                         break;
@@ -534,7 +600,8 @@ $stats = $stats_result->fetch_assoc();
                                             </div>
                                             <div class="small">
                                                 <?php if ($order['trang_thai_thanh_toan']): ?>
-                                                    <span class="text-success"><i class="fas fa-check-circle"></i> Đã thanh toán</span>
+                                                    <span class="text-success"><i class="fas fa-check-circle"></i> Đã thanh
+                                                        toán</span>
                                                 <?php else: ?>
                                                     <span class="text-warning"><i class="fas fa-clock"></i> Chưa thanh toán</span>
                                                 <?php endif; ?>
@@ -542,7 +609,7 @@ $stats = $stats_result->fetch_assoc();
                                         </td>
                                         <td>
                                             <?php
-                                            switch($order['trang_thai_don_hang']) {
+                                            switch ($order['trang_thai_don_hang']) {
                                                 case 1:
                                                     echo '<span class="badge bg-info">Chờ xác nhận</span>';
                                                     break;
@@ -565,18 +632,22 @@ $stats = $stats_result->fetch_assoc();
                                         </td>
                                         <td>
                                             <div class="d-flex gap-1">
-                                                <a href="order_detail.php?id=<?php echo $order['id']; ?>" class="btn btn-sm btn-info flex-grow-1" title="Xem chi tiết">
+                                                <a href="order_detail.php?id=<?php echo $order['id']; ?>"
+                                                    class="btn btn-sm btn-info flex-grow-1" title="Xem chi tiết">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-primary flex-grow-1 btn-update-status" 
-                                                       data-bs-toggle="modal" data-bs-target="#updateStatusModal"
-                                                       data-order-id="<?php echo $order['id']; ?>"
-                                                       data-order-code="<?php echo htmlspecialchars($order['ma_donhang']); ?>"
-                                                       data-current-status="<?php echo $order['trang_thai_don_hang']; ?>"
-                                                       title="Cập nhật trạng thái">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-primary flex-grow-1 btn-update-status"
+                                                    data-bs-toggle="modal" data-bs-target="#updateStatusModal"
+                                                    data-order-id="<?php echo $order['id']; ?>"
+                                                    data-order-code="<?php echo htmlspecialchars($order['ma_donhang']); ?>"
+                                                    data-current-status="<?php echo $order['trang_thai_don_hang']; ?>"
+                                                    title="Cập nhật trạng thái">
                                                     <i class="fas fa-sync-alt"></i>
                                                 </button>
-                                                <a href="order_print.php?id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline-dark flex-grow-1" title="In đơn hàng" target="_blank">
+                                                <a href="order_print.php?id=<?php echo $order['id']; ?>"
+                                                    class="btn btn-sm btn-outline-dark flex-grow-1" title="In đơn hàng"
+                                                    target="_blank">
                                                     <i class="fas fa-print"></i>
                                                 </a>
                                             </div>
@@ -598,18 +669,18 @@ $stats = $stats_result->fetch_assoc();
                     </table>
                 </div>
             </div>
-            
+
             <!-- Phân trang -->
             <?php if ($total_pages > 1): ?>
                 <div class="card-footer d-flex justify-content-between align-items-center">
                     <div>
-                        Hiển thị <?php echo min(($page - 1) * $items_per_page + 1, $total_items); ?> - 
-                        <?php echo min($page * $items_per_page, $total_items); ?> 
+                        Hiển thị <?php echo min(($page - 1) * $items_per_page + 1, $total_items); ?> -
+                        <?php echo min($page * $items_per_page, $total_items); ?>
                         trong <?php echo $total_items; ?> đơn hàng
                     </div>
                     <nav>
                         <ul class="pagination">
-                            <?php 
+                            <?php
                             $query_params = http_build_query(array_filter([
                                 'search' => $search,
                                 'status' => $status,
@@ -622,7 +693,7 @@ $stats = $stats_result->fetch_assoc();
                             ]));
                             $query_string = !empty($query_params) ? '&' . $query_params : '';
                             ?>
-                            
+
                             <?php if ($page > 1): ?>
                                 <li class="page-item">
                                     <a class="page-link" href="?page=1<?php echo $query_string; ?>">
@@ -635,20 +706,20 @@ $stats = $stats_result->fetch_assoc();
                                     </a>
                                 </li>
                             <?php endif; ?>
-                            
+
                             <?php
                             $start_page = max(1, min($page - 2, $total_pages - 4));
                             $end_page = min($total_pages, max($page + 2, 5));
-                            
+
                             for ($i = $start_page; $i <= $end_page; $i++):
-                            ?>
+                                ?>
                                 <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
                                     <a class="page-link" href="?page=<?php echo $i . $query_string; ?>">
                                         <?php echo $i; ?>
                                     </a>
                                 </li>
                             <?php endfor; ?>
-                            
+
                             <?php if ($page < $total_pages): ?>
                                 <li class="page-item">
                                     <a class="page-link" href="?page=<?php echo ($page + 1) . $query_string; ?>">
@@ -670,19 +741,20 @@ $stats = $stats_result->fetch_assoc();
 </div>
 
 <!-- Modal Cập nhật trạng thái -->
-<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="">
                 <input type="hidden" name="order_id" id="modal_order_id">
-                
+
                 <div class="modal-header">
                     <h5 class="modal-title" id="updateStatusModalLabel">Cập nhật trạng thái đơn hàng</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p>Đơn hàng: <strong id="modal_order_code"></strong></p>
-                    
+
                     <div class="mb-3">
                         <label for="new_status" class="form-label">Trạng thái mới</label>
                         <select class="form-select" id="new_status" name="new_status" required>
@@ -694,14 +766,16 @@ $stats = $stats_result->fetch_assoc();
                             <option value="5">Đã hủy</option>
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="note" class="form-label">Ghi chú</label>
-                        <textarea class="form-control" id="note" name="note" rows="2" placeholder="Nhập ghi chú nếu có..."></textarea>
+                        <textarea class="form-control" id="note" name="note" rows="2"
+                            placeholder="Nhập ghi chú nếu có..."></textarea>
                     </div>
-                    
+
                     <div class="alert alert-warning" id="cancelWarning" style="display: none;">
-                        <i class="fas fa-exclamation-triangle me-1"></i> Lưu ý: Hủy đơn hàng là hành động không thể hoàn tác. Vui lòng xác nhận kỹ trước khi thực hiện.
+                        <i class="fas fa-exclamation-triangle me-1"></i> Lưu ý: Hủy đơn hàng là hành động không thể hoàn
+                        tác. Vui lòng xác nhận kỹ trước khi thực hiện.
                     </div>
                 </div>
                 <div class="modal-footer">

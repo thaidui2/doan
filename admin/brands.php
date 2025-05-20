@@ -24,15 +24,15 @@ if (!is_dir($upload_dir)) {
 
 // Delete brand
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
-    $brand_id = $_GET['delete'];
-    
+    $brand_id = intval($_GET['delete']);
+
     // Check if brand is used in any products before deletion
     $check_used = $conn->prepare("SELECT COUNT(*) as count FROM sanpham WHERE thuonghieu = ?");
     $check_used->bind_param("i", $brand_id);
     $check_used->execute();
     $result = $check_used->get_result();
     $is_used = $result->fetch_assoc()['count'] > 0;
-    
+
     if ($is_used) {
         $message = 'Không thể xóa thương hiệu này vì đang được sử dụng trong sản phẩm.';
         $message_type = 'danger';
@@ -43,11 +43,11 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
         $get_logo->execute();
         $logo_result = $get_logo->get_result();
         $logo_data = $logo_result->fetch_assoc();
-        
+
         // Delete from database
         $delete = $conn->prepare("DELETE FROM thuong_hieu WHERE id = ?");
         $delete->bind_param("i", $brand_id);
-        
+
         if ($delete->execute()) {
             // Delete logo file if exists
             if (!empty($logo_data['logo'])) {
@@ -56,10 +56,10 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
                     unlink($logo_path);
                 }
             }
-            
+
             $message = 'Xóa thương hiệu thành công!';
             $message_type = 'success';
-            
+
             // Log the action
             $detail = 'Xóa thương hiệu ID: ' . $brand_id;
             $log_stmt = $conn->prepare("INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) VALUES (?, 'delete', 'brand', ?, ?, ?)");
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $brand_name = trim($_POST['brand_name']);
     $brand_description = trim($_POST['brand_description']);
     $logo_file = null;
-    
+
     if (empty($brand_name)) {
         $message = 'Vui lòng điền tên thương hiệu!';
         $message_type = 'danger';
@@ -89,23 +89,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $file_tmp = $_FILES['brand_logo']['tmp_name'];
                 $file_name = $_FILES['brand_logo']['name'];
                 $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-                
+
                 // Check file extension
                 $allowed_exts = array('jpg', 'jpeg', 'png', 'gif');
                 if (!in_array($file_ext, $allowed_exts)) {
                     throw new Exception('Chỉ chấp nhận file hình ảnh (JPG, JPEG, PNG, GIF)');
                 }
-                
+
                 // Generate unique filename
                 $logo_file = 'brand_' . uniqid() . '.' . $file_ext;
                 $upload_path = $upload_dir . $logo_file;
-                
+
                 // Move uploaded file
                 if (!move_uploaded_file($file_tmp, $upload_path)) {
                     throw new Exception('Không thể tải lên file hình ảnh. Vui lòng thử lại.');
                 }
             }
-            
+
             // Check if brand name already exists (for different records)
             if ($brand_id) {
                 // For update - exclude current record
@@ -118,14 +118,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $check_stmt = $conn->prepare($check_sql);
                 $check_stmt->bind_param("s", $brand_name);
             }
-            
+
             $check_stmt->execute();
             $check_result = $check_stmt->get_result();
-            
+
             if ($check_result->num_rows > 0) {
                 $message = 'Thương hiệu này đã tồn tại!';
                 $message_type = 'danger';
-                
+
                 // Delete uploaded file if name check failed
                 if ($logo_file && file_exists($upload_dir . $logo_file)) {
                     unlink($upload_dir . $logo_file);
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $get_logo->execute();
                         $logo_result = $get_logo->get_result();
                         $logo_data = $logo_result->fetch_assoc();
-                        
+
                         if (!empty($logo_data['logo'])) {
                             $old_logo = $upload_dir . $logo_data['logo'];
                             if (file_exists($old_logo)) {
@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                         $current_logo = $logo_file;
                     }
-                    
+
                     // Update existing brand
                     if ($logo_file !== null) {
                         // Update with new logo
@@ -168,11 +168,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $update = $conn->prepare("UPDATE thuong_hieu SET ten = ?, mo_ta = ? WHERE id = ?");
                         $update->bind_param("ssi", $brand_name, $brand_description, $brand_id);
                     }
-                    
+
                     if ($update->execute()) {
                         $message = 'Cập nhật thương hiệu thành công!';
                         $message_type = 'success';
-                        
+
                         // Log the action
                         $detail = 'Cập nhật thương hiệu: ' . $brand_name;
                         $log_stmt = $conn->prepare("INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) VALUES (?, 'update', 'brand', ?, ?, ?)");
@@ -186,12 +186,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Add new brand
                     $insert = $conn->prepare("INSERT INTO thuong_hieu (ten, mo_ta, logo) VALUES (?, ?, ?)");
                     $insert->bind_param("sss", $brand_name, $brand_description, $logo_file);
-                    
+
                     if ($insert->execute()) {
                         $new_brand_id = $conn->insert_id;
                         $message = 'Thêm thương hiệu thành công!';
                         $message_type = 'success';
-                        
+
                         // Log the action
                         $detail = 'Thêm thương hiệu mới: ' . $brand_name;
                         $log_stmt = $conn->prepare("INSERT INTO nhat_ky (id_user, hanh_dong, doi_tuong_loai, doi_tuong_id, chi_tiet, ip_address) VALUES (?, 'create', 'brand', ?, ?, ?)");
@@ -200,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         $message = 'Có lỗi xảy ra: ' . $conn->error;
                         $message_type = 'danger';
-                        
+
                         // Delete uploaded file if insert failed
                         if ($logo_file && file_exists($upload_dir . $logo_file)) {
                             unlink($upload_dir . $logo_file);
@@ -211,7 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             $message = 'Có lỗi xảy ra: ' . $e->getMessage();
             $message_type = 'danger';
-            
+
             // Delete uploaded file in case of error
             if ($logo_file && file_exists($upload_dir . $logo_file)) {
                 unlink($upload_dir . $logo_file);
@@ -229,7 +229,7 @@ if ($edit_id) {
     $edit_stmt->bind_param("i", $edit_id);
     $edit_stmt->execute();
     $result = $edit_stmt->get_result();
-    
+
     if ($result->num_rows > 0) {
         $edit_data = $result->fetch_assoc();
     }
@@ -240,7 +240,7 @@ $brands = [];
 try {
     $sql = "SELECT * FROM thuong_hieu ORDER BY ten ASC";
     $result = $conn->query($sql);
-    
+
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $brands[] = $row;
@@ -280,26 +280,27 @@ if (file_exists('includes/header.php')) {
 
 <div class="container-fluid">
     <div class="row">
-        <?php 
+        <?php
         if (file_exists('includes/sidebar.php')) {
             include('includes/sidebar.php');
         } else {
             echo "<div class='col-md-2'><p class='text-danger'>Sidebar file not found!</p></div>";
         }
         ?>
-        
+
         <main class="col-md-10 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <div
+                class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Quản lý thương hiệu</h1>
             </div>
-            
+
             <?php if (!empty($message)): ?>
                 <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
                     <?php echo $message; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             <?php endif; ?>
-            
+
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="card">
@@ -311,33 +312,35 @@ if (file_exists('includes/header.php')) {
                                 <?php if ($edit_data): ?>
                                     <input type="hidden" name="brand_id" value="<?php echo $edit_data['id']; ?>">
                                 <?php endif; ?>
-                                
+
                                 <div class="mb-3">
                                     <label for="brand_name" class="form-label">Tên thương hiệu</label>
-                                    <input type="text" class="form-control" id="brand_name" name="brand_name" 
-                                           value="<?php echo $edit_data ? htmlspecialchars($edit_data['ten']) : ''; ?>" 
-                                           placeholder="VD: Nike" required>
+                                    <input type="text" class="form-control" id="brand_name" name="brand_name"
+                                        value="<?php echo $edit_data ? htmlspecialchars($edit_data['ten']) : ''; ?>"
+                                        placeholder="VD: Nike" required>
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="brand_description" class="form-label">Mô tả</label>
-                                    <textarea class="form-control" id="brand_description" name="brand_description" 
-                                              rows="3" placeholder="Mô tả ngắn về thương hiệu"><?php echo $edit_data ? htmlspecialchars($edit_data['mo_ta']) : ''; ?></textarea>
+                                    <textarea class="form-control" id="brand_description" name="brand_description"
+                                        rows="3"
+                                        placeholder="Mô tả ngắn về thương hiệu"><?php echo $edit_data ? htmlspecialchars($edit_data['mo_ta']) : ''; ?></textarea>
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="brand_logo" class="form-label">Logo</label>
                                     <?php if ($edit_data && $edit_data['logo']): ?>
                                         <div class="mb-2">
-                                            <img src="<?php echo '../uploads/brands/' . htmlspecialchars($edit_data['logo']); ?>" 
-                                                 alt="<?php echo htmlspecialchars($edit_data['ten']); ?>" 
-                                                 class="img-thumbnail" style="max-height: 100px;">
+                                            <img src="<?php echo '../uploads/brands/' . htmlspecialchars($edit_data['logo']); ?>"
+                                                alt="<?php echo htmlspecialchars($edit_data['ten']); ?>"
+                                                class="img-thumbnail" style="max-height: 100px;">
                                         </div>
                                     <?php endif; ?>
                                     <input type="file" class="form-control" id="brand_logo" name="brand_logo">
-                                    <div class="form-text">Chọn file hình ảnh để tải lên. Định dạng: JPG, PNG, GIF.</div>
+                                    <div class="form-text">Chọn file hình ảnh để tải lên. Định dạng: JPG, PNG, GIF.
+                                    </div>
                                 </div>
-                                
+
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary">
                                         <?php echo $edit_id ? 'Cập nhật thương hiệu' : 'Thêm thương hiệu'; ?>
@@ -375,31 +378,33 @@ if (file_exists('includes/header.php')) {
                                                     <td><?php echo $brand['id']; ?></td>
                                                     <td>
                                                         <?php if (!empty($brand['logo'])): ?>
-                                                            <img src="<?php echo '../uploads/brands/' . htmlspecialchars($brand['logo']); ?>" 
-                                                                 alt="<?php echo htmlspecialchars($brand['ten']); ?>" 
-                                                                 class="img-thumbnail" style="max-height: 50px;">
+                                                            <img src="<?php echo '../uploads/brands/' . htmlspecialchars($brand['logo']); ?>"
+                                                                alt="<?php echo htmlspecialchars($brand['ten']); ?>"
+                                                                class="img-thumbnail" style="max-height: 50px;">
                                                         <?php else: ?>
                                                             <span class="text-muted">Không có logo</span>
                                                         <?php endif; ?>
                                                     </td>
                                                     <td><?php echo htmlspecialchars($brand['ten']); ?></td>
-                                                    <td><?php echo !empty($brand['mo_ta']) ? htmlspecialchars(substr($brand['mo_ta'], 0, 50)) . (strlen($brand['mo_ta']) > 50 ? '...' : '') : '-'; ?></td>
+                                                    <td><?php echo !empty($brand['mo_ta']) ? htmlspecialchars(substr($brand['mo_ta'], 0, 50)) . (strlen($brand['mo_ta']) > 50 ? '...' : '') : '-'; ?>
+                                                    </td>
                                                     <td>
                                                         <?php echo $brand_usage[$brand['id']]; ?> sản phẩm
                                                     </td>
                                                     <td>
                                                         <div class="btn-group btn-group-sm">
-                                                            <a href="brands.php?edit=<?php echo $brand['id']; ?>" class="btn btn-outline-primary">
+                                                            <a href="brands.php?edit=<?php echo $brand['id']; ?>"
+                                                                class="btn btn-outline-primary">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <?php if ($brand_usage[$brand['id']] == 0): ?>
-                                                                <a href="brands.php?delete=<?php echo $brand['id']; ?>" 
-                                                                   class="btn btn-outline-danger" 
-                                                                   onclick="return confirm('Bạn có chắc chắn muốn xóa thương hiệu này?');">
+                                                            <?php if ($brand_usage[$brand['id']] == 0): ?> <button type="button"
+                                                                    class="btn btn-outline-danger delete-brand-btn"
+                                                                    data-id="<?php echo $brand['id']; ?>">
                                                                     <i class="fas fa-trash"></i>
-                                                                </a>
+                                                                </button>
                                                             <?php else: ?>
-                                                                <button class="btn btn-outline-danger" disabled title="Không thể xóa thương hiệu đang được sử dụng">
+                                                                <button class="btn btn-outline-danger" disabled
+                                                                    title="Không thể xóa thương hiệu đang được sử dụng">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             <?php endif; ?>
@@ -423,10 +428,30 @@ if (file_exists('includes/header.php')) {
     </div>
 </div>
 
-<?php 
+<?php
 if (file_exists('includes/footer.php')) {
     include('includes/footer.php');
 } else {
     echo "Error: Footer file not found!";
 }
 ?>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Find all delete brand buttons
+        const deleteButtons = document.querySelectorAll('.delete-brand-btn');
+
+        // Add click event to each button
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const brandId = this.getAttribute('data-id');
+
+                // Show confirmation dialog
+                if (confirm('Bạn có chắc chắn muốn xóa thương hiệu này?')) {
+                    // Redirect to the delete URL
+                    window.location.href = 'brands.php?delete=' + brandId;
+                }
+            });
+        });
+    });
+</script>

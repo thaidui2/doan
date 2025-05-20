@@ -38,10 +38,67 @@ $ho_ten = $_POST['fullname'] ?? '';
 $email = $_POST['email'] ?? '';
 $sodienthoai = $_POST['phone'] ?? '';
 $diachi = $_POST['address'] ?? '';
+
+// Xử lý đặc biệt cho địa chỉ để tránh lỗi phường/xã = '0'
 $tinh_tp = $_POST['province_name'] ?? $_POST['province'] ?? '';
 $quan_huyen = $_POST['district_name'] ?? $_POST['district'] ?? '';
-$phuong_xa = $_POST['ward_name'] ?? $_POST['ward'] ?? '';
+$phuong_xa = '';
+
+// Ưu tiên lấy ward_name nếu có
+if (isset($_POST['ward_name']) && !empty($_POST['ward_name']) && $_POST['ward_name'] !== '0') {
+    $phuong_xa = $_POST['ward_name'];
+    debug_log('Using ward_name value for phuong_xa', $phuong_xa);
+}
+// Nếu không, thử lấy ward (code)
+else if (isset($_POST['ward']) && !empty($_POST['ward']) && $_POST['ward'] !== '0') {
+    $phuong_xa = $_POST['ward'];
+    debug_log('Using ward code value for phuong_xa', $phuong_xa);
+}
+
+// Log các giá trị để debug
+debug_log('Raw address POST values', [
+    'province' => $_POST['province'] ?? 'not set',
+    'province_name' => $_POST['province_name'] ?? 'not set',
+    'district' => $_POST['district'] ?? 'not set',
+    'district_name' => $_POST['district_name'] ?? 'not set',
+    'ward' => $_POST['ward'] ?? 'not set',
+    'ward_name' => $_POST['ward_name'] ?? 'not set',
+]);
+
 $ghi_chu = $_POST['note'] ?? '';
+
+// Debug address fields
+debug_log('Address information', [
+    'province' => [
+        'code' => $_POST['province'] ?? 'not set',
+        'name' => $_POST['province_name'] ?? 'not set'
+    ],
+    'district' => [
+        'code' => $_POST['district'] ?? 'not set',
+        'name' => $_POST['district_name'] ?? 'not set'
+    ],
+    'ward' => [
+        'code' => $_POST['ward'] ?? 'not set',
+        'name' => $_POST['ward_name'] ?? 'not set'
+    ]
+]);
+
+// Check if using manual address mode
+$manual_mode = isset($_POST['manual_address_mode']) && $_POST['manual_address_mode'] == '1';
+$manual_address = $_POST['manual_full_address'] ?? '';
+
+// In manual mode, we use the full address value for all fields if needed
+if ($manual_mode && !empty($manual_address)) {
+    // Use manual address as fallback for empty fields
+    if (empty($tinh_tp))
+        $tinh_tp = $manual_address;
+    if (empty($quan_huyen))
+        $quan_huyen = $manual_address;
+    if (empty($phuong_xa))
+        $phuong_xa = $manual_address;
+
+    debug_log('Using manual address mode', $manual_address);
+}
 
 // Validate required fields
 if (empty($ho_ten) || empty($sodienthoai) || empty($diachi) || empty($tinh_tp) || empty($quan_huyen)) {
@@ -215,7 +272,39 @@ try {
 
     if (!$order_stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
+    }    // Log data before binding, especially phuong_xa
+    debug_log('Final address values before DB insertion', [
+        'tinh_tp' => $tinh_tp,
+        'quan_huyen' => $quan_huyen,
+        'phuong_xa' => $phuong_xa,
+        'phuong_xa_type' => gettype($phuong_xa),
+        'phuong_xa_empty' => empty($phuong_xa),
+    ]);
+
+    // Ensure phuong_xa is never empty, null or "0"
+    if (empty($phuong_xa) || $phuong_xa === "0") {
+        // If empty, use quan_huyen as fallback
+        $phuong_xa = $quan_huyen;
+        debug_log('Replaced empty phuong_xa with quan_huyen value', $phuong_xa);
     }
+
+    // Kiểm tra lại lần cuối
+    if (empty($phuong_xa) || $phuong_xa === "0") {
+        $phuong_xa = $tinh_tp;
+        debug_log('Replaced empty phuong_xa with tinh_tp value as last resort', $phuong_xa);
+    }
+
+    // Đảm bảo không có giá trị rỗng cuối cùng
+    $tinh_tp = !empty($tinh_tp) ? $tinh_tp : 'Không xác định';
+    $quan_huyen = !empty($quan_huyen) ? $quan_huyen : 'Không xác định';
+    $phuong_xa = !empty($phuong_xa) ? $phuong_xa : 'Không xác định';
+
+    // Log lại giá trị cuối cùng
+    debug_log('FINAL address values that will be saved to DB', [
+        'tinh_tp' => $tinh_tp,
+        'quan_huyen' => $quan_huyen,
+        'phuong_xa' => $phuong_xa,
+    ]);
 
     // Make sure to bind the payment_method parameter
     $order_stmt->bind_param(
@@ -228,7 +317,7 @@ try {
         $diachi,
         $tinh_tp,
         $quan_huyen,
-        $phuong_xa,
+        $phuong_xa, // Vẫn giữ tham số này để không phải thay đổi cấu trúc SQL
         $total_amount,
         $shipping_fee,
         $discount_amount,
@@ -243,7 +332,19 @@ try {
     }
 
     $order_id = $conn->insert_id;
-    debug_log('Order inserted successfully', ['order_id' => $order_id, 'payment_method' => $payment_method]);
+
+    // Cập nhật lại giá trị phường/xã trong một câu lệnh riêng biệt
+    // để tránh lỗi khi binding nhiều tham số
+    $update_ward_stmt = $conn->prepare("UPDATE donhang SET phuong_xa = ? WHERE id = ?");
+    $update_ward_stmt->bind_param("si", $phuong_xa, $order_id);
+    $update_ward_stmt->execute();
+
+    // Log thông tin sau khi cập nhật
+    debug_log('Order inserted and ward updated successfully', [
+        'order_id' => $order_id,
+        'payment_method' => $payment_method,
+        'phuong_xa' => $phuong_xa
+    ]);
 
     // Insert order details
     if (!empty($order_items)) {

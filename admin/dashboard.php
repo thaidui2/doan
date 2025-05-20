@@ -59,12 +59,12 @@ $revenue_by_month = [];
 for ($i = 5; $i >= 0; $i--) {
     $month = $current_month - $i;
     $year = $current_year;
-    
+
     if ($month <= 0) {
         $month += 12;
         $year -= 1;
     }
-    
+
     $sql_revenue_month = "SELECT SUM(thanh_tien) as revenue 
                           FROM donhang 
                           WHERE MONTH(ngay_dat) = $month 
@@ -72,7 +72,7 @@ for ($i = 5; $i >= 0; $i--) {
                           AND trang_thai_don_hang = 4";
     $result_revenue_month = $conn->query($sql_revenue_month);
     $revenue = $result_revenue_month->fetch_assoc()['revenue'];
-    
+
     $revenue_by_month[] = [
         'month' => date('M', mktime(0, 0, 0, $month, 1, $year)),
         'revenue' => $revenue ? $revenue : 0
@@ -83,7 +83,7 @@ for ($i = 5; $i >= 0; $i--) {
 $revenue_by_day = [];
 for ($i = 6; $i >= 0; $i--) {
     $date = date('Y-m-d', strtotime("-$i days"));
-    
+
     $sql_revenue_day = "SELECT SUM(thanh_tien) as revenue, 
                                COUNT(*) as order_count
                         FROM donhang 
@@ -91,7 +91,7 @@ for ($i = 6; $i >= 0; $i--) {
                         AND trang_thai_don_hang IN (2, 3, 4)"; // Include confirmed, shipping, and completed orders
     $result_revenue_day = $conn->query($sql_revenue_day);
     $row = $result_revenue_day->fetch_assoc();
-    
+
     $revenue_by_day[] = [
         'date' => date('d/m', strtotime($date)),
         'full_date' => date('d/m/Y', strtotime($date)),
@@ -119,7 +119,8 @@ $sql_best_sellers = "SELECT sp.id, sp.tensanpham, COUNT(dct.id) as total_sold
 $result_best_sellers = $conn->query($sql_best_sellers);
 
 // Hàm trạng thái đơn hàng
-function getOrderStatusLabel($status) {
+function getOrderStatusLabel($status)
+{
     switch ($status) {
         case 1:
             return '<span class="badge bg-warning">Chờ xác nhận</span>';
@@ -137,7 +138,8 @@ function getOrderStatusLabel($status) {
 }
 
 // Function to format VND
-function formatVND($amount) {
+function formatVND($amount)
+{
     return number_format($amount, 0, ',', '.') . ' ₫';
 }
 
@@ -264,7 +266,8 @@ include 'includes/sidebar.php';
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     Khách hàng
                                 </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $total_customers; ?></div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $total_customers; ?>
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-users fa-2x text-gray-300 stat-icon"></i>
@@ -286,7 +289,7 @@ include 'includes/sidebar.php';
                     </div>
                 </div>
             </div>
-            
+
             <!-- Confirmed Orders -->
             <div class="col-md-4 col-lg mb-4">
                 <div class="card shadow h-100">
@@ -296,7 +299,7 @@ include 'includes/sidebar.php';
                     </div>
                 </div>
             </div>
-            
+
             <!-- Shipping Orders -->
             <div class="col-md-4 col-lg mb-4">
                 <div class="card shadow h-100">
@@ -306,7 +309,7 @@ include 'includes/sidebar.php';
                     </div>
                 </div>
             </div>
-            
+
             <!-- Completed Orders -->
             <div class="col-md-6 col-lg mb-4">
                 <div class="card shadow h-100">
@@ -316,7 +319,7 @@ include 'includes/sidebar.php';
                     </div>
                 </div>
             </div>
-            
+
             <!-- Canceled Orders -->
             <div class="col-md-6 col-lg mb-4">
                 <div class="card shadow h-100">
@@ -347,166 +350,194 @@ include 'includes/sidebar.php';
             <div class="col-xl-4 col-lg-5">
                 <!-- Pending Returns -->
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Hoạt động gần đây</h6>
+                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-bell me-1"></i>Hoạt động cần xử lý
+                        </h6>
+                        <button class="btn btn-sm p-0 text-muted" data-bs-toggle="tooltip" title="Làm mới">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3 p-3 bg-light rounded">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h4 class="mb-0"><?php echo $pending_returns; ?></h4>
-                                    <div class="small text-muted">Yêu cầu hoàn trả mới</div>
-                                </div>
-                                <div class="fa-stack fa-2x">
-                                    <i class="fas fa-circle fa-stack-2x text-danger opacity-25"></i>
-                                    <i class="fas fa-undo fa-stack-1x text-danger"></i>
-                                </div>
-                            </div>
-                            <a href="returns.php" class="btn btn-sm btn-outline-danger mt-2">Xem chi tiết</a>
-                        </div>
-                        
-                        <div class="mb-3 p-3 bg-light rounded">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h4 class="mb-0"><?php echo $pending_reviews; ?></h4>
-                                    <div class="small text-muted">Đánh giá chưa duyệt</div>
-                                </div>
-                                <div class="fa-stack fa-2x">
-                                    <i class="fas fa-circle fa-stack-2x text-warning opacity-25"></i>
-                                    <i class="fas fa-star fa-stack-1x text-warning"></i>
+                    <div class="card-body p-0">
+                        <!-- Compact notification items -->
+                        <div class="list-group list-group-flush border-bottom">
+                            <!-- Return requests -->
+                            <div class="list-group-item px-3 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span
+                                            class="badge rounded-pill bg-danger me-2"><?php echo $pending_returns; ?></span>
+                                        <span>Yêu cầu hoàn trả mới</span>
+                                    </div>
+                                    <a href="returns.php" class="btn btn-sm btn-link text-danger p-0">
+                                        <i class="fas fa-undo me-1"></i>Xem
+                                    </a>
                                 </div>
                             </div>
-                            <a href="reviews.php" class="btn btn-sm btn-outline-warning mt-2">Xem chi tiết</a>
-                        </div>
-                        
-                        <!-- Best Sellers -->
-                        <h6 class="font-weight-bold mb-3">Sản phẩm bán chạy</h6>
-                        <ul class="list-group small">
+
+                            <!-- Reviews -->
+                            <div class="list-group-item px-3 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span
+                                            class="badge rounded-pill bg-warning me-2"><?php echo $pending_reviews; ?></span>
+                                        <span>Đánh giá chưa duyệt</span>
+                                    </div>
+                                    <a href="reviews.php" class="btn btn-sm btn-link text-warning p-0">
+                                        <i class="fas fa-star me-1"></i>Xem
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Best Sellers -->
+                            <div class="list-group-item px-3 py-2 bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class="fas fa-fire-alt text-danger me-1"></i>Sản phẩm bán chạy
+                                    </h6>
+                                    <a href="products.php?sort=bestselling"
+                                        class="btn btn-sm btn-link p-0 text-primary">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
                             <?php if ($result_best_sellers && $result_best_sellers->num_rows > 0): ?>
-                                <?php while($row = $result_best_sellers->fetch_assoc()): ?>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><?php echo $row['tensanpham']; ?></span>
-                                        <span class="badge bg-primary rounded-pill"><?php echo $row['total_sold']; ?></span>
-                                    </li>
+                                <?php $count = 1;
+                                while ($row = $result_best_sellers->fetch_assoc()): ?>
+                                    <div class="list-group-item px-3 py-1 border-0 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="text-truncate" style="max-width: 80%;">
+                                                <small class="text-muted">#<?php echo $count++; ?></small>
+                                                <span class="ms-1"><?php echo $row['tensanpham']; ?></span>
+                                            </div>
+                                            <span class="badge bg-primary rounded-pill"><?php echo $row['total_sold']; ?></span>
+                                        </div>
+                                    </div>
                                 <?php endwhile; ?>
                             <?php else: ?>
-                                <li class="list-group-item">Chưa có dữ liệu</li>
+                                <div class="list-group-item px-3 py-2 text-center text-muted">
+                                    <small>Chưa có dữ liệu</small>
+                                </div>
                             <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Revenue Stats -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Thống kê doanh thu theo ngày (7 ngày gần nhất)</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <li><a class="dropdown-item" href="#" id="refreshDailyStats">Làm mới dữ liệu</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="#" id="exportDailyStats">Xuất báo cáo</a></li>
                         </ul>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Daily Revenue Stats -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Thống kê doanh thu theo ngày (7 ngày gần nhất)</h6>
-                <div class="dropdown no-arrow">
-                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                        <li><a class="dropdown-item" href="#" id="refreshDailyStats">Làm mới dữ liệu</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" id="exportDailyStats">Xuất báo cáo</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="chart-container" style="height: 250px">
-                            <canvas id="dailyRevenueChart"></canvas>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="chart-container" style="height: 250px">
+                                <canvas id="dailyRevenueChart"></canvas>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered">
-                                <thead>
-                                    <tr class="bg-light">
-                                        <th>Ngày</th>
-                                        <th>Đơn hàng</th>
-                                        <th>Doanh thu</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php 
-                                    $total_daily_revenue = 0;
-                                    $total_daily_orders = 0;
-                                    
-                                    foreach ($revenue_by_day as $day): 
-                                        $total_daily_revenue += $day['revenue'];
-                                        $total_daily_orders += $day['order_count'];
-                                    ?>
-                                    <tr>
-                                        <td><?php echo $day['full_date']; ?></td>
-                                        <td class="text-center"><?php echo $day['order_count']; ?></td>
-                                        <td class="text-end"><?php echo formatVND($day['revenue']); ?></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                    <tr class="fw-bold bg-light">
-                                        <td>Tổng</td>
-                                        <td class="text-center"><?php echo $total_daily_orders; ?></td>
-                                        <td class="text-end"><?php echo formatVND($total_daily_revenue); ?></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="col-lg-4">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th>Ngày</th>
+                                            <th>Đơn hàng</th>
+                                            <th>Doanh thu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $total_daily_revenue = 0;
+                                        $total_daily_orders = 0;
+
+                                        foreach ($revenue_by_day as $day):
+                                            $total_daily_revenue += $day['revenue'];
+                                            $total_daily_orders += $day['order_count'];
+                                            ?>
+                                            <tr>
+                                                <td><?php echo $day['full_date']; ?></td>
+                                                <td class="text-center"><?php echo $day['order_count']; ?></td>
+                                                <td class="text-end"><?php echo formatVND($day['revenue']); ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        <tr class="fw-bold bg-light">
+                                            <td>Tổng</td>
+                                            <td class="text-center"><?php echo $total_daily_orders; ?></td>
+                                            <td class="text-end"><?php echo formatVND($total_daily_revenue); ?></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Recent Orders Table -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Đơn hàng gần đây</h6>
-                <a href="orders.php" class="btn btn-sm btn-primary">Xem tất cả</a>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th>Mã đơn</th>
-                                <th>Khách hàng</th>
-                                <th>Giá trị</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày đặt</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($result_recent_orders && $result_recent_orders->num_rows > 0): ?>
-                                <?php while($row = $result_recent_orders->fetch_assoc()): ?>
-                                    <tr>
-                                        <td><?php echo $row['ma_donhang']; ?></td>
-                                        <td><?php echo $row['ho_ten']; ?></td>
-                                        <td><?php echo formatVND($row['thanh_tien']); ?></td>
-                                        <td><?php echo getOrderStatusLabel($row['trang_thai_don_hang']); ?></td>
-                                        <td><?php echo date('d/m/Y H:i', strtotime($row['ngay_dat'])); ?></td>
-                                        <td>
-                                            <a href="order_detail.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endwhile; ?>
-                            <?php else: ?>
+            <!-- Recent Orders Table -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Đơn hàng gần đây</h6>
+                    <a href="orders.php" class="btn btn-sm btn-primary">Xem tất cả</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
                                 <tr>
-                                    <td colspan="6" class="text-center">Chưa có đơn hàng nào</td>
+                                    <th>Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Giá trị</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày đặt</th>
+                                    <th>Thao tác</th>
                                 </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php if ($result_recent_orders && $result_recent_orders->num_rows > 0): ?>
+                                    <?php while ($row = $result_recent_orders->fetch_assoc()): ?>
+                                        <tr>
+                                            <td><?php echo $row['ma_donhang']; ?></td>
+                                            <td><?php echo $row['ho_ten']; ?></td>
+                                            <td><?php echo formatVND($row['thanh_tien']); ?></td>
+                                            <td><?php echo getOrderStatusLabel($row['trang_thai_don_hang']); ?></td>
+                                            <td><?php echo date('d/m/Y H:i', strtotime($row['ngay_dat'])); ?></td>
+                                            <td>
+                                                <a href="order_detail.php?id=<?php echo $row['id']; ?>"
+                                                    class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" class="text-center">Chưa có đơn hàng nào</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<?php
-// Include footer
-include 'includes/footer.php';
-?>
+    <?php
+    // Include footer
+    include 'includes/footer.php';
+    ?>

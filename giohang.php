@@ -300,9 +300,8 @@ while ($item = $cart_items_result->fetch_assoc()) {
                         </div>
                     </div>
                 </div>
-                
-                <div class="card-body p-0">
-                    <form method="post" action="thanhtoan.php">
+                  <div class="card-body p-0">
+                    <form method="post" action="giohang.php" id="cart-form">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -436,8 +435,7 @@ while ($item = $cart_items_result->fetch_assoc()) {
                             </table>
                         </div>
                         
-                        <div class="p-3 border-top d-flex justify-content-between">
-                            <div>
+                        <div class="p-3 border-top d-flex justify-content-between">                            <div>
                                 <a href="sanpham.php" class="btn btn-outline-primary">
                                     <i class="bi bi-arrow-left"></i> Tiếp tục mua sắm
                                 </a>
@@ -446,35 +444,21 @@ while ($item = $cart_items_result->fetch_assoc()) {
                                 </button>
                             </div>
                             <div>
-                                <button type="submit" name="update_cart" class="btn btn-outline-secondary me-2" formaction="giohang.php">
+                                <button type="submit" name="update_cart" class="btn btn-outline-secondary me-2">
                                     <i class="bi bi-arrow-clockwise"></i> Cập nhật giỏ hàng
                                 </button>
-                                <button type="submit" name="checkout_all" class="btn btn-primary me-2" id="checkout-all-btn">
+                                <button type="submit" name="checkout_all" class="btn btn-primary me-2" id="checkout-all-btn" formaction="thanhtoan.php">
                                     <i class="bi bi-credit-card"></i> Thanh toán tất cả
                                 </button>
-                                <button type="submit" name="checkout_selected" class="btn btn-success" id="checkout-selected-btn" disabled>
+                                <button type="submit" name="checkout_selected" class="btn btn-success" id="checkout-selected-btn" disabled formaction="thanhtoan.php">
                                     <i class="bi bi-check2-square"></i> Thanh toán đã chọn (<span id="selected-count">0</span>)
                                 </button>
                             </div>
                         </div>
                     </form>
                 </div>
-            </div>
-        <?php endif; ?>
+            </div>        <?php endif; ?>
         
-        <!-- Cart actions -->
-        <div class="d-flex justify-content-between mt-4">
-            <a href="sanpham.php" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Tiếp tục mua hàng
-            </a>
-            
-            <?php if ($total_items > 0): ?>
-                <a href="thanhtoan.php" class="btn btn-primary">
-                    <i class="bi bi-credit-card me-1"></i> Tiến hành thanh toán
-                </a>
-            <?php endif; ?>
-        </div>
-
         <!-- Additional notice for guest users -->
         <?php if ($total_items > 0 && (!isset($_SESSION['user']) || !$_SESSION['user']['logged_in'])): ?>
             <div class="alert alert-info mt-3">

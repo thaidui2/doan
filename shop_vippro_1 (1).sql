@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th4 25, 2025 lúc 09:23 AM
+-- Thời gian đã tạo: Th5 20, 2025 lúc 04:35 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -20,35 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Cơ sở dữ liệu: `shop_vippro_1`
 --
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `cai_dat`
---
-
-CREATE TABLE `cai_dat` (
-  `id` int(11) NOT NULL,
-  `nhom` varchar(50) NOT NULL,
-  `khoa` varchar(100) NOT NULL,
-  `gia_tri` text DEFAULT NULL,
-  `kieu_du_lieu` varchar(20) DEFAULT 'string',
-  `mo_ta` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đang đổ dữ liệu cho bảng `cai_dat`
---
-
-INSERT INTO `cai_dat` (`id`, `nhom`, `khoa`, `gia_tri`, `kieu_du_lieu`, `mo_ta`) VALUES
-(1, 'general', 'site_name', 'Bug Shop', 'string', 'Tên website'),
-(2, 'general', 'site_description', 'Cửa hàng giày dép chất lượng', 'string', 'Mô tả website'),
-(3, 'general', 'contact_email', 'contact@bugshop.com', 'string', 'Email liên hệ'),
-(4, 'general', 'contact_phone', '0987654321', 'string', 'Số điện thoại liên hệ'),
-(5, 'general', 'contact_address', '123 Đường ABC, Quận XYZ, TP HCM', 'string', 'Địa chỉ cửa hàng'),
-(6, 'payment', 'cod_enabled', '1', 'boolean', 'Cho phép thanh toán khi nhận hàng'),
-(7, 'payment', 'bank_transfer_enabled', '1', 'boolean', 'Cho phép thanh toán chuyển khoản'),
-(8, 'shipping', 'free_shipping_min', '300000', 'number', 'Giá trị đơn hàng tối thiểu để được miễn phí vận chuyển');
 
 -- --------------------------------------------------------
 
@@ -103,11 +74,11 @@ CREATE TABLE `danhmuc` (
 --
 
 INSERT INTO `danhmuc` (`id`, `ten`, `slug`, `mo_ta`, `hinhanh`, `danhmuc_cha`, `thu_tu`, `meta_title`, `meta_description`, `trang_thai`, `ngay_tao`) VALUES
-(1, 'Giày Nam', 'giay-nam', 'Các mẫu giày dành cho nam', NULL, NULL, 0, NULL, NULL, 1, '2025-04-17 06:03:11'),
-(2, 'Giày Nữ', 'giay-nu', 'Các mẫu giày dành cho nữ', NULL, NULL, 0, NULL, NULL, 1, '2025-04-17 06:03:11'),
-(3, 'Giày Thể Thao', 'giay-the-thao', 'Các mẫu giày thể thao', NULL, NULL, 0, NULL, NULL, 1, '2025-04-17 06:03:11'),
-(4, 'Giày Thời Trang', 'giay-thoi-trang', 'Các mẫu giày thời trang', NULL, NULL, 0, NULL, NULL, 1, '2025-04-17 06:03:11'),
-(5, 'Giày Trẻ Em', 'giay-tre-em', 'Các mẫu giày dành cho trẻ em', NULL, NULL, 0, NULL, NULL, 1, '2025-04-17 06:03:11'),
+(1, 'Giày Nam', 'giay-nam', 'Các mẫu giày dành cho nam', 'uploads/categories/1747728218_Geometric Bearded Man Logo.jpg', NULL, 0, '', '', 1, '2025-04-17 06:03:11'),
+(2, 'Giày Nữ', 'giay-nu', 'Các mẫu giày dành cho nữ', 'uploads/categories/1747728199_Premium Vector _ Hair woman and face logo and symbols.jpg', NULL, 0, '', '', 1, '2025-04-17 06:03:11'),
+(3, 'Giày Thể Thao', 'giay-the-thao', 'Các mẫu giày thể thao', 'uploads/categories/1747728182_Elevator Shoes IN 2023.jpg', NULL, 0, '', '', 1, '2025-04-17 06:03:11'),
+(4, 'Giày Thời Trang', 'giay-thoi-trang', 'Các mẫu giày thời trang', 'uploads/categories/1747728165_danh_muc_thoi_trang.png', NULL, 0, '', '', 1, '2025-04-17 06:03:11'),
+(5, 'Giày Trẻ Em', 'giay-tre-em', 'Các mẫu giày dành cho trẻ em', 'uploads/categories/1747728153_download (3).jpg', NULL, 0, '', '', 1, '2025-04-17 06:03:11'),
 (7, 'dép', 'd', '', 'uploads/categories/1745130294_Sandal Icon - Free PNG & SVG 315091 - Noun Project.jpg', NULL, 2, '', '0', 1, '2025-04-20 06:24:54');
 
 -- --------------------------------------------------------
@@ -177,7 +148,36 @@ INSERT INTO `donhang` (`id`, `ma_donhang`, `id_user`, `ho_ten`, `email`, `sodien
 (33, 'BUG250420534F98E', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đắk Lắk', 'Krông Năng', '0', 829000.00, 30000.00, 0.00, 859000.00, '', 'vnpay', '14916646', 1, 2, '', '2025-04-20 08:58:54', '2025-04-20 08:59:30'),
 (34, 'BUG250422033A390', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đà Nẵng', 'Liên Chiểu', '0', 1650000.00, 30000.00, 0.00, 1680000.00, '', 'vnpay', NULL, 0, 1, '', '2025-04-22 08:20:33', NULL),
 (35, 'BUG2504232474BE3', NULL, 'lâm', 'lam@gmail.com', '0982858305', '96', 'Cao Bằng', 'Nguyên Bình', '0', 2200000.00, 30000.00, 0.00, 2230000.00, '', 'vnpay', NULL, 0, 1, '', '2025-04-23 09:57:27', NULL),
-(36, 'BUG2504233452CDF', NULL, 'lâm', 'lam@gmail.com', '0223456784', '99', 'Đà Nẵng', 'Liên Chiểu', '0', 2500000.00, 30000.00, 0.00, 2530000.00, '', 'vnpay', '14922639', 1, 2, '', '2025-04-23 09:59:05', '2025-04-23 09:59:36');
+(36, 'BUG2504233452CDF', NULL, 'lâm', 'lam@gmail.com', '0223456784', '99', 'Đà Nẵng', 'Liên Chiểu', '0', 2500000.00, 30000.00, 0.00, 2530000.00, '', 'vnpay', '14922639', 1, 2, '', '2025-04-23 09:59:05', '2025-04-23 09:59:36'),
+(37, 'BUG250507050AC38', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Bạc Liêu', 'Giá Rai', '0', 1658000.00, 30000.00, 0.00, 1688000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 08:04:10', NULL),
+(38, 'BUG250507352F26A', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đà Nẵng', 'Sơn Trà', '0', 2200000.00, 30000.00, 0.00, 2230000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 08:09:12', NULL),
+(39, 'BUG250507396F370', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Bạc Liêu', 'Hoà Bình', '0', 900000.00, 30000.00, 0.00, 930000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 08:09:56', NULL),
+(40, 'BUG2505076452BB6', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đắk Nông', 'Gia Nghĩa', '0', 2200000.00, 30000.00, 0.00, 2230000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 08:30:45', NULL),
+(41, 'BUG25050753696EF', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đắk Lắk', 'Krông Năng', '0', 900000.00, 30000.00, 0.00, 930000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 09:02:16', NULL),
+(42, 'BUG2505079620609', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Cần Thơ', 'Thốt Nốt', '0', 2200000.00, 30000.00, 0.00, 2230000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 09:42:42', NULL),
+(43, 'BUG250507044DAE3', NULL, 'chưa đăng nhập', 'chuadangnhap@gmail.com', '0475729543', 'làng xóm', 'Đắk Lắk', 'Krông Năng', '0', 2500000.00, 30000.00, 0.00, 2530000.00, '', 'vnpay', '14943891', 1, 2, 'chưa đăng nhập', '2025-05-07 09:44:04', '2025-05-07 09:45:09'),
+(44, 'BUG25050790636D5', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Bà Rịa - Vũng Tàu', 'Long Điền', '0', 2500000.00, 30000.00, 0.00, 2530000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 09:58:26', NULL),
+(45, 'BUG25050721890C1', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đà Nẵng', 'Ngũ Hành Sơn', '0', 2500000.00, 30000.00, 0.00, 2530000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 10:03:38', NULL),
+(46, 'BUG250507419655F', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Cần Thơ', 'Thốt Nốt', '0', 2500000.00, 30000.00, 0.00, 2530000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 10:06:59', NULL),
+(47, 'BUG250507557462F', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đắk Lắk', 'Lắk', '0', 7500000.00, 30000.00, 0.00, 7530000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 10:09:17', NULL),
+(48, 'BUG250507857526B', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đà Nẵng', 'Thanh Khê', '0', 5000000.00, 30000.00, 0.00, 5030000.00, '', 'cod', NULL, 0, 1, 'ok', '2025-05-07 10:14:17', NULL),
+(49, 'BUG2505079948024', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đắk Lắk', 'Lắk', '0', 7500000.00, 30000.00, 0.00, 7530000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 10:16:34', NULL),
+(50, 'BUG2505070818060', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Đắk Nông', 'Krông Nô', '0', 2200000.00, 30000.00, 0.00, 2230000.00, '', 'cod', NULL, 0, 1, '', '2025-05-07 10:18:01', NULL),
+(51, 'BUG250516639E751', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Cà Mau', 'Đầm Dơi', '0', 2200000.00, 30000.00, 0.00, 2230000.00, '', 'cod', NULL, 0, 4, '', '2025-05-16 10:00:39', '2025-05-16 10:15:59'),
+(52, 'BUG250516377303E', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Bắc Ninh', 'Từ Sơn', '0', 2200000.00, 30000.00, 2200000.00, 30000.00, 'testadmin1', 'vnpay', '14961586', 1, 2, '', '2025-05-16 14:06:17', '2025-05-16 14:07:01'),
+(53, 'BUG2505161080B1B', 9, 'thaidui', 'thaidui@gmail.com', '0123456789', 'xóm làng', 'Đắk Nông', 'Gia Nghĩa', '0', 2200000.00, 30000.00, 2200000.00, 30000.00, 'testadmin1', 'cod', NULL, 0, 1, '', '2025-05-16 16:15:08', NULL),
+(54, 'BUG250516939FD7C', 9, 'thaidui', 'thaidui@gmail.com', '0123456789', 'làng xóm', 'Đắk Nông', 'Krông Nô', '0', 900000.00, 30000.00, 0.00, 930000.00, '', 'cod', NULL, 0, 4, '', '2025-05-16 16:28:59', '2025-05-16 16:30:19'),
+(55, 'BUG250516738B7A7', 9, 'thaidui', 'thaidui@gmail.com', '0123456789', 'xóm làng', 'Cần Thơ', 'Thới Lai', '0', 1500000.00, 30000.00, 1500000.00, 30000.00, 'testadmin1', 'cod', NULL, 0, 1, '', '2025-05-16 16:58:58', NULL),
+(56, 'BUG250516827CA07', 9, 'thaidui', 'thaidui@gmail.com', '0123456789', 'xóm làng', 'Cần Thơ', 'Thới Lai', '0', 1500000.00, 30000.00, 1500000.00, 30000.00, 'testadmin1', 'cod', NULL, 0, 1, '', '2025-05-16 17:00:27', NULL),
+(57, 'BUG2505179877FF4', 11, 'thai', 'thai2@gmail.com', '0123456781', 'xóm làng', 'Đồng Tháp', 'Tháp Mười', '0', 2200000.00, 30000.00, 2200000.00, 30000.00, 'testadmin1', 'cod', NULL, 0, 5, '', '2025-05-17 07:13:07', '2025-05-17 09:56:29'),
+(58, 'BUG250517385EAA1', 11, 'thai', 'thai2@gmail.com', '0123456781', 'xóm làng', 'Đồng Nai', 'Trảng Bom', '0', 2200000.00, 30000.00, 2200000.00, 30000.00, 'testadmin1', 'cod', NULL, 0, 5, '', '2025-05-17 07:19:45', '2025-05-17 09:53:17'),
+(59, 'BUG250517833F835', 11, 'thai', 'thai2@gmail.com', '0123456781', 'xóm làng', 'Hưng Yên', 'Văn Giang', '0', 2200000.00, 30000.00, 0.00, 2230000.00, '', 'cod', NULL, 0, 4, '', '2025-05-17 09:57:13', '2025-05-17 09:57:37'),
+(60, 'BUG2505179216ABF', NULL, 'không biết', 'idk@gmail.com', '0987654421', 'xóm làng', 'Đắk Lắk', 'Lắk', '0', 2200000.00, 30000.00, 2200000.00, 30000.00, 'testadmin1', 'vnpay', '14963031', 1, 2, '', '2025-05-17 15:32:01', '2025-05-17 15:35:48'),
+(61, 'BUG2505183842782', 11, 'thai', 'thai2@gmail.com', '0123456781', 'xóm làng', 'Quảng Ngãi', 'Trà Bồng', '0', 900000.00, 30000.00, 900000.00, 30000.00, 'test2', 'cod', NULL, 0, 1, '', '2025-05-18 14:09:44', NULL),
+(62, 'BUG250520510F406', NULL, 'test thai ', 'mail@gmmail.com', '0123456789', '@@', 'Cần Thơ', 'Thới Lai', '0', 2200000.00, 30000.00, 2200000.00, 30000.00, 'test2', 'vnpay', '14968035', 1, 2, 'test', '2025-05-20 08:08:30', '2025-05-20 08:09:57'),
+(63, 'BUG2505202525C94', 2, 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Cao Bằng', 'Thạch An', '0', 1658000.00, 30000.00, 1658000.00, 30000.00, 'test2', 'cod', NULL, 0, 2, 'test', '2025-05-20 13:20:52', '2025-05-20 13:21:35'),
+(64, 'BUG2505207732A61', 3, 'lò vi sóng', 'song@gmail.com', '0223456789', 'làng xóm', 'Lào Cai', 'Si Ma Cai', '0', 2700000.00, 30000.00, 2700000.00, 30000.00, 'test2', 'cod', NULL, 0, 1, 'test', '2025-05-20 14:02:53', NULL),
+(65, 'BUG25052067164A1', 3, 'lò vi sóng', 'song@gmail.com', '0223456789', 'làng xóm', 'Nghệ An', 'Quỳ Hợp', '0', 900000.00, 30000.00, 900000.00, 30000.00, 'test2', 'cod', NULL, 0, 1, 'xóm phường', '2025-05-20 14:34:31', NULL);
 
 -- --------------------------------------------------------
 
@@ -214,7 +214,37 @@ INSERT INTO `donhang_chitiet` (`id`, `id_donhang`, `id_sanpham`, `id_bienthe`, `
 (33, 33, 29, 114, 'Giày Thể Thao Biti\'s Hunter Core Nữ Màu Xám HSW009100XAM', 'Size: 42, Màu: Trắng', 829000.00, 1, 829000.00, 0),
 (34, 34, 27, 111, 'Giày Nike Court Vision Mid Smoke Grey DN3577-002', 'Size: 45.5, Màu: Xanh dương', 1650000.00, 1, 1650000.00, 0),
 (35, 35, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
-(36, 36, 30, 118, 'Giày Adidas Ultraboost 21', 'Size: 42, Màu: Trắng', 2500000.00, 1, 2500000.00, 0);
+(36, 36, 30, 118, 'Giày Adidas Ultraboost 21', 'Size: 42, Màu: Trắng', 2500000.00, 1, 2500000.00, 0),
+(37, 37, 29, 114, 'Giày Thể Thao Biti\'s Hunter Core Nữ Màu Xám HSW009100XAM', 'Size: 42, Màu: Trắng', 829000.00, 2, 1658000.00, 0),
+(38, 38, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(39, 39, 33, 137, 'Dép Nike Air Max', 'Size: 42, Màu: Xanh lá', 900000.00, 1, 900000.00, 0),
+(40, 40, 31, 122, 'Giày Puma RS-X3', 'Size: 39, Màu: Đỏ', 2200000.00, 1, 2200000.00, 0),
+(41, 41, 33, 137, 'Dép Nike Air Max', 'Size: 42, Màu: Xanh lá', 900000.00, 1, 900000.00, 0),
+(42, 42, 31, 122, 'Giày Puma RS-X3', 'Size: 39, Màu: Đỏ', 2200000.00, 1, 2200000.00, 0),
+(43, 43, 30, 118, 'Giày Adidas Ultraboost 21', 'Size: 42, Màu: Trắng', 2500000.00, 1, 2500000.00, 0),
+(44, 44, 30, 118, 'Giày Adidas Ultraboost 21', 'Size: 42, Màu: Trắng', 2500000.00, 1, 2500000.00, 0),
+(45, 45, 30, 118, 'Giày Adidas Ultraboost 21', 'Size: 42, Màu: Trắng', 2500000.00, 1, 2500000.00, 0),
+(46, 46, 30, 117, 'Giày Adidas Ultraboost 21', 'Size: 41, Màu: Trắng', 2500000.00, 1, 2500000.00, 0),
+(47, 47, 30, 118, 'Giày Adidas Ultraboost 21', 'Size: 42, Màu: Trắng', 2500000.00, 3, 7500000.00, 0),
+(48, 48, 30, 117, 'Giày Adidas Ultraboost 21', 'Size: 41, Màu: Trắng', 2500000.00, 2, 5000000.00, 0),
+(49, 49, 30, 118, 'Giày Adidas Ultraboost 21', 'Size: 42, Màu: Trắng', 2500000.00, 3, 7500000.00, 0),
+(50, 50, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(51, 51, 31, 122, 'Giày Puma RS-X3', 'Size: 39, Màu: Đỏ', 2200000.00, 1, 2200000.00, 0),
+(52, 52, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(53, 53, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(54, 54, 33, 137, 'Dép Nike Air Max', 'Size: 42, Màu: Xanh lá', 900000.00, 1, 900000.00, 0),
+(55, 55, 32, 130, 'Giày Converse Chuck Taylor All Star', 'Size: 40, Màu: Trắng', 1500000.00, 1, 1500000.00, 0),
+(56, 56, 32, 130, 'Giày Converse Chuck Taylor All Star', 'Size: 40, Màu: Trắng', 1500000.00, 1, 1500000.00, 0),
+(57, 57, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(58, 58, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(59, 59, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(60, 60, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(61, 61, 33, 137, 'Dép Nike Air Max', 'Size: 42, Màu: Xanh lá', 900000.00, 1, 900000.00, 0),
+(62, 62, 31, 127, 'Giày Puma RS-X3', 'Size: 41, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(63, 63, 29, 115, 'Giày Thể Thao Biti\'s Hunter Core Nữ Màu Xám HSW009100XAM', 'Size: 43, Màu: Xám', 829000.00, 2, 1658000.00, 0),
+(64, 64, 31, 126, 'Giày Puma RS-X3', 'Size: 40, Màu: Xanh dương', 2200000.00, 1, 2200000.00, 0),
+(65, 64, 34, 143, 'Urbas Love+ 23 - Slip On - Offwhite', 'Size: 40, Màu: Trắng', 500000.00, 1, 500000.00, 0),
+(66, 65, 33, 137, 'Dép Nike Air Max', 'Size: 42, Màu: Xanh lá', 900000.00, 1, 900000.00, 0);
 
 -- --------------------------------------------------------
 
@@ -314,7 +344,43 @@ INSERT INTO `donhang_lichsu` (`id`, `id_donhang`, `hanh_dong`, `nguoi_thuchien`,
 (76, 35, 'Thanh toán VNPAY thất bại', 'Hệ thống', 'Thanh toán qua VNPAY thất bại. Mã lỗi: 01', '2025-04-23 09:58:18'),
 (77, 36, 'Thanh toán VNPAY thành công', 'Hệ thống', 'Thanh toán qua VNPAY với mã giao dịch: 14922639', '2025-04-23 09:59:36'),
 (78, 36, 'Thanh toán VNPAY thành công', 'Hệ thống', 'Thanh toán qua VNPAY với mã giao dịch: 14922639', '2025-04-23 09:59:56'),
-(79, 31, 'Cập nhật trạng thái', 'Quản trị viên', 'Thay đổi trạng thái từ \"Đã xác nhận\" sang \"Đã giao\"', '2025-04-23 10:00:29');
+(79, 31, 'Cập nhật trạng thái', 'Quản trị viên', 'Thay đổi trạng thái từ \"Đã xác nhận\" sang \"Đã giao\"', '2025-04-23 10:00:29'),
+(80, 37, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 08:04:10'),
+(81, 38, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 08:09:12'),
+(82, 39, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 08:09:56'),
+(83, 40, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 08:30:45'),
+(84, 41, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 09:02:16'),
+(85, 42, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 09:42:42'),
+(86, 43, 'Thanh toán VNPAY thành công', 'Hệ thống', 'Thanh toán qua VNPAY với mã giao dịch: 14943891', '2025-05-07 09:45:09'),
+(87, 44, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 09:58:26'),
+(88, 45, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 10:03:38'),
+(89, 46, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 10:06:59'),
+(90, 47, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 10:09:17'),
+(91, 48, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 10:14:17'),
+(92, 49, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 10:16:34'),
+(93, 50, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-07 10:18:01'),
+(94, 51, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-16 10:00:39'),
+(95, 51, 'Cập nhật trạng thái', 'Quản trị viên', 'Thay đổi trạng thái từ \"Chờ xác nhận\" sang \"Đã giao\"', '2025-05-16 10:15:59'),
+(96, 52, 'Thanh toán VNPAY thành công', 'Hệ thống', 'Thanh toán qua VNPAY với mã giao dịch: 14961586', '2025-05-16 14:07:01'),
+(97, 53, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-16 16:15:08'),
+(98, 54, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-16 16:28:59'),
+(99, 54, 'Cập nhật trạng thái', 'Quản trị viên', 'Thay đổi trạng thái từ \"Chờ xác nhận\" sang \"Đã giao\"', '2025-05-16 16:30:19'),
+(100, 55, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-16 16:58:58'),
+(101, 56, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-16 17:00:27'),
+(102, 57, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-17 07:13:07'),
+(103, 58, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-17 07:19:45'),
+(104, 58, 'Hủy đơn hàng', 'Khách hàng', 'Đơn hàng đã bị hủy với lý do: Tôi muốn thay đổi phương thức thanh toán', '2025-05-17 09:53:17'),
+(105, 57, 'Hủy đơn hàng', 'Khách hàng', 'Đơn hàng đã bị hủy với lý do: Tôi muốn thay đổi phương thức thanh toán', '2025-05-17 09:56:29'),
+(106, 59, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-17 09:57:13'),
+(107, 59, 'Cập nhật trạng thái', 'Quản trị viên', 'Thay đổi trạng thái từ \"Chờ xác nhận\" sang \"Đã giao\"', '2025-05-17 09:57:37'),
+(108, 60, 'Thanh toán VNPAY thành công', 'Hệ thống', 'Thanh toán qua VNPAY với mã giao dịch: 14963031', '2025-05-17 15:35:48'),
+(109, 61, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-18 14:09:44'),
+(110, 62, 'Thanh toán VNPAY thành công', 'Hệ thống', 'Thanh toán qua VNPAY với mã giao dịch: 14968035', '2025-05-20 08:09:57'),
+(111, 63, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-20 13:20:52'),
+(112, 63, 'update_status', 'Quản trị viên', 'Thay đổi trạng thái từ \"Chờ xác nhận\" sang \"Đã xác nhận\". Ghi chú: ok', '2025-05-20 13:21:21'),
+(113, 63, 'update_status', 'Quản trị viên', 'Thay đổi trạng thái từ \"Đã xác nhận\" sang \"Đã xác nhận\". Ghi chú: ok', '2025-05-20 13:21:35'),
+(114, 64, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-20 14:02:53'),
+(115, 65, 'Tạo đơn hàng', 'Người dùng', 'Đơn hàng mới được tạo với phương thức thanh toán: cod', '2025-05-20 14:34:31');
 
 -- --------------------------------------------------------
 
@@ -336,13 +402,19 @@ CREATE TABLE `giohang` (
 
 INSERT INTO `giohang` (`id`, `id_user`, `session_id`, `ngay_tao`, `ngay_capnhat`) VALUES
 (1, NULL, 'pvlgmqsrka1ng58jj6rh5vko73', '2025-04-17 13:58:41', '2025-04-17 14:54:42'),
-(2, 2, 'bs7h66gvn36j3pae4372k5funj', '2025-04-17 17:49:42', NULL),
+(2, 2, 'bs7h66gvn36j3pae4372k5funj', '2025-04-17 17:49:42', '2025-05-18 16:13:52'),
 (3, NULL, 'h2ojr2dfo8ib1a8mdu68431dad', '2025-04-17 18:57:17', NULL),
 (4, NULL, 'ppd115333pgtbkl5l93q1sjp8v', '2025-04-18 10:47:19', NULL),
 (5, NULL, '9aqo88t8lg46hti1aev0oeor21', '2025-04-18 13:27:31', NULL),
 (6, NULL, 'hnpend9lvbvthattg5d8ceudl4', '2025-04-19 05:12:48', NULL),
 (7, NULL, 'lb3ufu77ae9b2u62t03im5ifpa', '2025-04-20 15:46:22', '2025-04-20 15:46:31'),
-(8, NULL, '5k8h38iqgs526vos1fr3f7q0cg', '2025-04-23 09:58:20', NULL);
+(8, NULL, '5k8h38iqgs526vos1fr3f7q0cg', '2025-04-23 09:58:20', NULL),
+(9, NULL, 'un5088f98puj3866ub8ib8vboi', '2025-05-07 07:40:29', NULL),
+(10, NULL, 'uubu5b2nekpvkr6hcd82km47sl', '2025-05-07 09:34:41', NULL),
+(11, NULL, 'kbgk6ohck8skrdp2rqgcctlhqh', '2025-05-17 15:57:50', '2025-05-17 16:07:48'),
+(12, NULL, 'mmlpmnoqemlgauobpn0pq378vu', '2025-05-18 10:20:00', NULL),
+(13, NULL, 'o6tjcg7qcmtudikn8sntrgu54i', '2025-05-20 08:05:23', NULL),
+(21, 3, '0lfloact2d44s2qn10ir8osutm', '2025-05-20 14:01:05', NULL);
 
 -- --------------------------------------------------------
 
@@ -363,7 +435,14 @@ CREATE TABLE `giohang_chitiet` (
 --
 
 INSERT INTO `giohang_chitiet` (`id`, `id_giohang`, `id_bienthe`, `so_luong`, `gia`) VALUES
-(25, 2, 114, 2, 829000.00);
+(26, 9, 122, 1, 2200000.00),
+(29, 10, 122, 1, 2200000.00),
+(34, 11, 127, 1, 2200000.00),
+(36, 11, 137, 1, 900000.00),
+(37, 11, 92, 1, 1750000.00),
+(38, 11, 107, 3, 1650000.00),
+(39, 12, 115, 1, 829000.00),
+(41, 13, 127, 1, 2200000.00);
 
 -- --------------------------------------------------------
 
@@ -423,9 +502,10 @@ CREATE TABLE `khuyen_mai` (
 INSERT INTO `khuyen_mai` (`id`, `ten`, `ma_khuyenmai`, `loai_giamgia`, `gia_tri`, `dieu_kien_toithieu`, `so_luong`, `da_su_dung`, `ngay_bat_dau`, `ngay_ket_thuc`, `trang_thai`, `ngay_tao`, `max_su_dung_per_user`) VALUES
 (1, 'test1', 'TEST1', 0, 100.00, 0.00, 99, 2, '2025-04-17 17:00:00', '2025-04-18 17:00:00', 1, '2025-04-20 07:25:38', NULL),
 (2, 'Khuyến mãi mùa hè', 'SUMMER2025', 0, 15.00, 500000.00, 100, 0, '2025-04-30 17:00:00', '2025-06-30 16:59:59', 1, '2025-04-20 07:25:38', NULL),
-(3, 'Giảm giá đặc biệt', 'SPECIAL200K', 1, 200000.00, 1000000.00, 50, 0, '2025-04-19 17:00:00', '2025-05-20 16:59:59', 1, '2025-04-20 07:25:38', NULL),
-(4, 'Chào mừng thành viên mới', 'NEWUSER', 0, 10.00, 0.00, 200, 0, '2025-03-31 17:00:00', '2025-12-31 16:59:59', 1, '2025-04-20 07:25:38', NULL),
-(5, 'testadmin1', 'TESTADMIN1', 0, 100.00, 0.00, 99, 0, NULL, '2025-04-21 16:59:59', 1, '2025-04-20 07:26:58', 2);
+(3, 'Giảm giá đặc biệt', 'SPECIAL200K', 1, 200000.00, 1000000.00, 50, 0, '0000-00-00 00:00:00', '2025-05-21 16:59:59', 1, '2025-04-20 07:25:38', NULL),
+(4, 'Chào mừng thành viên mới', 'NEWUSER', 0, 10.00, 0.00, 200, 0, NULL, '2025-12-31 16:59:59', 1, '2025-04-20 07:25:38', 1),
+(5, 'testadmin1', 'TESTADMIN1', 0, 100.00, 0.00, 99, 2, '0000-00-00 00:00:00', '2025-05-19 16:59:59', 1, '2025-04-20 07:26:58', NULL),
+(6, 'test', 'TEST2', 0, 100.00, 0.00, 1234, 4, NULL, '2025-05-21 16:59:59', 1, '2025-05-17 07:22:52', NULL);
 
 -- --------------------------------------------------------
 
@@ -447,23 +527,33 @@ CREATE TABLE `khuyen_mai_apdung` (
 INSERT INTO `khuyen_mai_apdung` (`id`, `id_khuyenmai`, `loai_doi_tuong`, `id_doi_tuong`) VALUES
 (1, 1, 0, NULL),
 (2, 2, 1, 3),
-(3, 3, 2, 14),
-(4, 4, 0, NULL),
-(8, 5, 0, NULL);
+(18, 3, 2, NULL),
+(10, 4, 0, NULL),
+(20, 5, 0, NULL),
+(24, 6, 0, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `khuyen_mai_sudung`
+-- Cấu trúc bảng cho bảng `khuyen_mai_su_dung`
 --
 
-CREATE TABLE `khuyen_mai_sudung` (
+CREATE TABLE `khuyen_mai_su_dung` (
   `id` int(11) NOT NULL,
   `id_khuyenmai` int(11) NOT NULL,
-  `id_user` int(11) NOT NULL,
-  `so_lan_su_dung` int(11) NOT NULL DEFAULT 1,
-  `lan_su_dung_cuoi` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `id_user` int(11) DEFAULT NULL,
+  `id_donhang` int(11) NOT NULL,
+  `ma_khuyenmai` varchar(50) NOT NULL,
+  `ngay_su_dung` datetime NOT NULL DEFAULT current_timestamp(),
+  `giam_gia` decimal(15,2) NOT NULL DEFAULT 0.00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `khuyen_mai_su_dung`
+--
+
+INSERT INTO `khuyen_mai_su_dung` (`id`, `id_khuyenmai`, `id_user`, `id_donhang`, `ma_khuyenmai`, `ngay_su_dung`, `giam_gia`) VALUES
+(1, 5, 9, 56, 'testadmin1', '2025-05-17 00:00:27', 1500000.00);
 
 -- --------------------------------------------------------
 
@@ -648,7 +738,83 @@ INSERT INTO `nhat_ky` (`id`, `id_user`, `hanh_dong`, `doi_tuong_loai`, `doi_tuon
 (146, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-04-23 08:28:59'),
 (147, 1, 'update_status', 'order', 31, 'Cập nhật trạng thái đơn hàng #31 thành: Đã giao', '::1', '2025-04-23 10:00:29'),
 (148, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-04-23 14:27:11'),
-(149, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-04-25 04:36:12');
+(149, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-04-25 04:36:12'),
+(150, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-07 08:08:30'),
+(151, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-07 09:30:15'),
+(152, 1, 'update', 'product', 30, 'Chỉnh sửa sản phẩm: Giày Adidas Ultraboost 21 (ID: 30)', '::1', '2025-05-07 10:08:21'),
+(153, 1, 'update', 'product', 30, 'Chỉnh sửa sản phẩm: Giày Adidas Ultraboost 21 (ID: 30)', '::1', '2025-05-07 10:08:34'),
+(154, 1, 'update', 'product', 30, 'Chỉnh sửa sản phẩm: Giày Adidas Ultraboost 21 (ID: 30)', '::1', '2025-05-07 10:15:35'),
+(155, 1, 'update', 'product', 33, 'Chỉnh sửa sản phẩm: Dép Nike Air Max (ID: 33)', '::1', '2025-05-07 10:17:17'),
+(156, 1, 'update', 'product', 29, 'Chỉnh sửa sản phẩm: Giày Thể Thao Biti\'s Hunter Core Nữ Màu Xám HSW009100XAM (ID: 29)', '::1', '2025-05-07 10:17:33'),
+(157, 1, 'update', 'product', 33, 'Chỉnh sửa sản phẩm: Dép Nike Air Max (ID: 33)', '::1', '2025-05-07 10:17:41'),
+(158, 1, 'unfeature', 'product', 33, 'Bỏ nổi bật cho sản phẩm ID: 33', '::1', '2025-05-07 14:35:48'),
+(159, 1, 'feature', 'product', 33, 'Đặt nổi bật cho sản phẩm ID: 33', '::1', '2025-05-07 14:35:50'),
+(160, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 15:50:34'),
+(161, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 15:54:27'),
+(162, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 15:57:24'),
+(163, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 15:59:58'),
+(164, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 16:05:21'),
+(165, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 16:21:10'),
+(166, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 16:23:27'),
+(167, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-07 16:25:59'),
+(168, 1, 'update', 'admin', 10, 'Cập nhật thông tin nhân viên: mng1 (ID: 10)', '::1', '2025-05-07 16:27:10'),
+(169, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-16 10:11:38'),
+(170, 1, 'logout', 'admin', 1, 'Đăng xuất khỏi hệ thống quản trị', '::1', '2025-05-16 10:13:30'),
+(171, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-16 10:13:59'),
+(172, 1, 'update_status', 'order', 51, 'Cập nhật trạng thái đơn hàng #51 thành: Đã giao', '::1', '2025-05-16 10:15:59'),
+(173, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-16 13:51:36'),
+(174, 1, 'export', 'order', 1, 'Xuất danh sách đơn hàng ra Excel', '::1', '2025-05-16 13:51:54'),
+(175, 1, 'update', 'promotion', 4, 'Cập nhật khuyến mãi: Chào mừng thành viên mới (ID: 4)', '::1', '2025-05-16 13:54:50'),
+(176, 1, 'update', 'promotion', 4, 'Cập nhật khuyến mãi: Chào mừng thành viên mới (ID: 4)', '::1', '2025-05-16 13:54:54'),
+(177, 1, 'update', 'promotion', 5, 'Cập nhật khuyến mãi: testadmin1 (ID: 5)', '::1', '2025-05-16 14:05:59'),
+(178, 1, 'update', 'promotion', 5, 'Cập nhật khuyến mãi: testadmin1 (ID: 5)', '::1', '2025-05-16 14:07:08'),
+(179, 1, 'reset_password', 'customer', 9, 'Đã đặt lại mật khẩu cho khách hàng: thaidui', '::1', '2025-05-16 16:12:39'),
+(180, 1, 'update', 'promotion', 5, 'Cập nhật khuyến mãi: testadmin1 (ID: 5)', '::1', '2025-05-16 16:29:42'),
+(181, 1, 'update', 'promotion', 5, 'Cập nhật khuyến mãi: testadmin1 (ID: 5)', '::1', '2025-05-16 16:29:49'),
+(182, 1, 'update', 'promotion', 5, 'Cập nhật khuyến mãi: testadmin1 (ID: 5)', '::1', '2025-05-16 16:29:51'),
+(183, 1, 'update_status', 'order', 54, 'Cập nhật trạng thái đơn hàng #54 thành: Đã giao', '::1', '2025-05-16 16:30:19'),
+(184, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-17 06:58:44'),
+(185, 1, 'update', 'promotion', 5, 'Cập nhật khuyến mãi: testadmin1 (ID: 5)', '::1', '2025-05-17 07:20:17'),
+(186, 1, 'update', 'promotion', 3, 'Cập nhật khuyến mãi: Giảm giá đặc biệt (ID: 3)', '::1', '2025-05-17 07:20:34'),
+(187, 1, 'update', 'promotion', 3, 'Cập nhật khuyến mãi: Giảm giá đặc biệt (ID: 3)', '::1', '2025-05-17 07:21:23'),
+(188, 1, 'create', 'promotion', 6, 'Thêm mã khuyến mãi mới: test (TEST2)', '::1', '2025-05-17 07:22:52'),
+(189, 1, 'update', 'promotion', 5, 'Cập nhật khuyến mãi: testadmin1 (ID: 5)', '::1', '2025-05-17 07:23:42'),
+(190, 1, 'update_status', 'order', 59, 'Cập nhật trạng thái đơn hàng #59 thành: Đã giao', '::1', '2025-05-17 09:57:37'),
+(191, 11, 'change_password', 'user', 11, 'Người dùng đã thay đổi mật khẩu', '::1', '2025-05-17 10:08:22'),
+(192, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-17 15:29:36'),
+(193, 1, 'lock', 'customer', 11, 'Đã khóa tài khoản khách hàng: thai', '::1', '2025-05-17 15:37:31'),
+(194, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-17 15:38:05'),
+(195, 1, 'unlock', 'customer', 11, 'Đã mở khóa tài khoản khách hàng: thai', '::1', '2025-05-17 15:38:12'),
+(196, 1, 'lock', 'customer', 11, 'Đã khóa tài khoản khách hàng: thai', '::1', '2025-05-17 15:38:35'),
+(197, 1, 'unlock', 'customer', 11, 'Đã mở khóa tài khoản khách hàng: thai', '::1', '2025-05-17 15:38:42'),
+(198, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-18 03:31:18'),
+(199, 1, 'update', 'category', 5, 'Cập nhật danh mục: Giày Trẻ Em (ID: 5)', '::1', '2025-05-18 03:35:16'),
+(200, 1, 'update', 'category', 1, 'Cập nhật danh mục: Giày Nam (ID: 1)', '::1', '2025-05-18 03:38:18'),
+(201, 1, 'update', 'category', 1, 'Cập nhật danh mục: Giày Nam (ID: 1)', '::1', '2025-05-18 03:40:47'),
+(202, 1, 'update', 'category', 2, 'Cập nhật danh mục: Giày Nữ (ID: 2)', '::1', '2025-05-18 03:44:44'),
+(203, 1, 'update', 'category', 3, 'Cập nhật danh mục: Giày Thể Thao (ID: 3)', '::1', '2025-05-18 06:03:50'),
+(204, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-18 14:09:06'),
+(205, 1, 'update', 'promotion', 6, 'Cập nhật khuyến mãi: test (ID: 6)', '::1', '2025-05-18 14:10:09'),
+(206, 1, 'update', 'promotion', 6, 'Cập nhật khuyến mãi: test (ID: 6)', '::1', '2025-05-18 14:19:09'),
+(207, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-20 08:01:28'),
+(208, 1, 'update', 'category', 5, 'Cập nhật danh mục: Giày Trẻ Em (ID: 5)', '::1', '2025-05-20 08:02:33'),
+(209, 1, 'update', 'category', 4, 'Cập nhật danh mục: Giày Thời Trang (ID: 4)', '::1', '2025-05-20 08:02:45'),
+(210, 1, 'update', 'category', 3, 'Cập nhật danh mục: Giày Thể Thao (ID: 3)', '::1', '2025-05-20 08:03:02'),
+(211, 1, 'update', 'category', 2, 'Cập nhật danh mục: Giày Nữ (ID: 2)', '::1', '2025-05-20 08:03:19'),
+(212, 1, 'update', 'category', 1, 'Cập nhật danh mục: Giày Nam (ID: 1)', '::1', '2025-05-20 08:03:24'),
+(213, 1, 'update', 'category', 1, 'Cập nhật danh mục: Giày Nam (ID: 1)', '::1', '2025-05-20 08:03:38'),
+(214, 1, 'update', 'promotion', 6, 'Cập nhật khuyến mãi: test (ID: 6)', '::1', '2025-05-20 08:08:21'),
+(215, 1, 'update', 'promotion', 6, 'Cập nhật khuyến mãi: test (ID: 6)', '::1', '2025-05-20 08:08:56'),
+(216, 1, 'update_status', 'order', 63, 'Cập nhật trạng thái đơn hàng #63 thành: Đã xác nhận', '::1', '2025-05-20 13:21:21'),
+(217, 1, 'update_status', 'order', 63, 'Cập nhật trạng thái đơn hàng #63 thành: Đã xác nhận', '::1', '2025-05-20 13:21:35'),
+(218, 1, 'create', 'brand', 8, 'Thêm thương hiệu mới: ananas', '::1', '2025-05-20 13:45:05'),
+(219, 1, 'delete', 'brand', 8, 'Xóa thương hiệu ID: 8', '::1', '2025-05-20 13:45:22'),
+(220, 1, 'create', 'brand', 9, 'Thêm thương hiệu mới: ananas', '::1', '2025-05-20 13:45:37'),
+(221, 1, 'create', 'product', 34, 'Thêm sản phẩm mới: Urbas Love+ 23 - Slip On - Offwhite', '::1', '2025-05-20 13:51:22'),
+(222, 1, 'update', 'product', 34, 'Chỉnh sửa sản phẩm: Urbas Love+ 23 - Slip On - Offwhite (ID: 34)', '::1', '2025-05-20 13:51:44'),
+(223, 1, 'feature', 'product', 34, 'Đặt nổi bật cho sản phẩm ID: 34', '::1', '2025-05-20 13:52:26'),
+(224, 1, 'login', 'admin', 1, 'Đăng nhập hệ thống quản trị', '::1', '2025-05-20 14:00:58'),
+(225, 1, 'update', 'product', 34, 'Chỉnh sửa sản phẩm: Urbas Love+ 23 - Slip On - Offwhite (ID: 34)', '::1', '2025-05-20 14:02:17');
 
 -- --------------------------------------------------------
 
@@ -695,7 +861,15 @@ INSERT INTO `payment_logs` (`id`, `order_id`, `user_id`, `payment_method`, `tran
 (19, 35, NULL, 'vnpay', '14922636', 2230000.00, '0', '01', '{\"vnp_Amount\":\"223000000\",\"vnp_BankCode\":\"NCB\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG2504232474BE3 tai Bug Shop\",\"vnp_PayDate\":\"20250423165823\",\"vnp_ResponseCode\":\"01\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14922636\",\"vnp_TransactionStatus\":\"02\",\"vnp_TxnRef\":\"BUG2504232474BE3\",\"vnp_SecureHash\":\"c233184d205121936ea7b8624818cb2cc1df576061dd31b0d0361a42189c5521502fc9e0e86f5fe50f444ffe2e0bfdb368e3a02288bae3c0de4b027295ec6d2c\"}', '2025-04-23 09:58:18'),
 (20, 36, NULL, 'vnpay', NULL, 2530000.00, 'pending', NULL, '{\"vnp_Version\":\"2.1.0\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_Amount\":253000000,\"vnp_Command\":\"pay\",\"vnp_CreateDate\":\"20250423165905\",\"vnp_CurrCode\":\"VND\",\"vnp_IpAddr\":\"::1\",\"vnp_Locale\":\"vn\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG2504233452CDF tai Bug Shop\",\"vnp_OrderType\":\"billpayment\",\"vnp_ReturnUrl\":\"http:\\/\\/localhost\\/bug_shop\\/vnpay_return.php\",\"vnp_TxnRef\":\"BUG2504233452CDF\"}', '2025-04-23 09:59:05'),
 (21, 36, NULL, 'vnpay', '14922639', 2530000.00, '0', '00', '{\"vnp_Amount\":\"253000000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14922639\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG2504233452CDF tai Bug Shop\",\"vnp_PayDate\":\"20250423165946\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14922639\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"BUG2504233452CDF\",\"vnp_SecureHash\":\"956dd0ff674480a5624131409695e3e27c7d2dd0aea31728a539aa3a7e6fd818d6958068ef8d32cd10de3064fba24b2f58063d4433a14c84a9d9c4ae8c9e749c\"}', '2025-04-23 09:59:36'),
-(22, 36, NULL, 'vnpay', '14922639', 2530000.00, '0', '00', '{\"vnp_Amount\":\"253000000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14922639\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG2504233452CDF tai Bug Shop\",\"vnp_PayDate\":\"20250423165946\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14922639\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"BUG2504233452CDF\",\"vnp_SecureHash\":\"956dd0ff674480a5624131409695e3e27c7d2dd0aea31728a539aa3a7e6fd818d6958068ef8d32cd10de3064fba24b2f58063d4433a14c84a9d9c4ae8c9e749c\"}', '2025-04-23 09:59:56');
+(22, 36, NULL, 'vnpay', '14922639', 2530000.00, '0', '00', '{\"vnp_Amount\":\"253000000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14922639\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG2504233452CDF tai Bug Shop\",\"vnp_PayDate\":\"20250423165946\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14922639\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"BUG2504233452CDF\",\"vnp_SecureHash\":\"956dd0ff674480a5624131409695e3e27c7d2dd0aea31728a539aa3a7e6fd818d6958068ef8d32cd10de3064fba24b2f58063d4433a14c84a9d9c4ae8c9e749c\"}', '2025-04-23 09:59:56'),
+(23, 43, NULL, 'vnpay', NULL, 2530000.00, 'pending', NULL, '{\"vnp_Version\":\"2.1.0\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_Amount\":253000000,\"vnp_Command\":\"pay\",\"vnp_CreateDate\":\"20250507164405\",\"vnp_CurrCode\":\"VND\",\"vnp_IpAddr\":\"::1\",\"vnp_Locale\":\"vn\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG250507044DAE3 tai Bug Shop\",\"vnp_OrderType\":\"billpayment\",\"vnp_ReturnUrl\":\"http:\\/\\/localhost\\/bug_shop\\/vnpay_return.php\",\"vnp_TxnRef\":\"BUG250507044DAE3\"}', '2025-05-07 09:44:05'),
+(24, 43, NULL, 'vnpay', '14943891', 2530000.00, '0', '00', '{\"vnp_Amount\":\"253000000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14943891\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG250507044DAE3 tai Bug Shop\",\"vnp_PayDate\":\"20250507164514\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14943891\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"BUG250507044DAE3\",\"vnp_SecureHash\":\"ffc15b70bbeb800c2ec19cac9c7351ce931cace14d880d1643098719ab0f2183333a367a933042db83394d1ffd268440f268a3ce74e829e53131e92379f5e981\"}', '2025-05-07 09:45:09'),
+(25, 52, 2, 'vnpay', NULL, 30000.00, 'pending', NULL, '{\"vnp_Version\":\"2.1.0\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_Amount\":3000000,\"vnp_Command\":\"pay\",\"vnp_CreateDate\":\"20250516210617\",\"vnp_CurrCode\":\"VND\",\"vnp_IpAddr\":\"::1\",\"vnp_Locale\":\"vn\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG250516377303E tai Bug Shop\",\"vnp_OrderType\":\"billpayment\",\"vnp_ReturnUrl\":\"http:\\/\\/localhost\\/bug_shop\\/vnpay_return.php\",\"vnp_TxnRef\":\"BUG250516377303E\"}', '2025-05-16 14:06:17'),
+(26, 52, 2, 'vnpay', '14961586', 30000.00, '0', '00', '{\"vnp_Amount\":\"3000000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14961586\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG250516377303E tai Bug Shop\",\"vnp_PayDate\":\"20250516210724\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14961586\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"BUG250516377303E\",\"vnp_SecureHash\":\"be88ed037db65040d529d7e3ac9f5eaf4f0dae0d2064e2df38f0c7b769db6b457801bc7b36fc32fa57a2b506c5bafa6178ca6a9561694b99166c18e3f5e277d0\"}', '2025-05-16 14:07:01'),
+(27, 60, NULL, 'vnpay', NULL, 30000.00, 'pending', NULL, '{\"vnp_Version\":\"2.1.0\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_Amount\":3000000,\"vnp_Command\":\"pay\",\"vnp_CreateDate\":\"20250517223201\",\"vnp_CurrCode\":\"VND\",\"vnp_IpAddr\":\"::1\",\"vnp_Locale\":\"vn\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG2505179216ABF tai Bug Shop\",\"vnp_OrderType\":\"billpayment\",\"vnp_ReturnUrl\":\"http:\\/\\/localhost\\/bug_shop\\/vnpay_return.php\",\"vnp_TxnRef\":\"BUG2505179216ABF\"}', '2025-05-17 15:32:01'),
+(28, 60, NULL, 'vnpay', '14963031', 30000.00, '0', '00', '{\"vnp_Amount\":\"3000000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14963031\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG2505179216ABF tai Bug Shop\",\"vnp_PayDate\":\"20250517223605\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14963031\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"BUG2505179216ABF\",\"vnp_SecureHash\":\"f8fe1ce2788bb86f5719e909b2c804ccb365413452b30d36081496947203cacb3ca7c0d624274df4f46e7f93996609f2c950aacd86c47459159860c5238be552\"}', '2025-05-17 15:35:48'),
+(29, 62, NULL, 'vnpay', NULL, 30000.00, 'pending', NULL, '{\"vnp_Version\":\"2.1.0\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_Amount\":3000000,\"vnp_Command\":\"pay\",\"vnp_CreateDate\":\"20250520150830\",\"vnp_CurrCode\":\"VND\",\"vnp_IpAddr\":\"::1\",\"vnp_Locale\":\"vn\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG250520510F406 tai Bug Shop\",\"vnp_OrderType\":\"billpayment\",\"vnp_ReturnUrl\":\"http:\\/\\/localhost\\/bug_shop\\/vnpay_return.php\",\"vnp_TxnRef\":\"BUG250520510F406\"}', '2025-05-20 08:08:30'),
+(30, 62, NULL, 'vnpay', '14968035', 30000.00, '0', '00', '{\"vnp_Amount\":\"3000000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14968035\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang BUG250520510F406 tai Bug Shop\",\"vnp_PayDate\":\"20250520151022\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"HQTPW4RO\",\"vnp_TransactionNo\":\"14968035\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"BUG250520510F406\",\"vnp_SecureHash\":\"ae18ca0cfad46d160c74095d05f5088094d2b4f618cb16951925f4d05e46a378ad09004612a20267d8c3dc72c4067ea82891f56c8ad99cde33e580f2bf8f3960\"}', '2025-05-20 08:09:57');
 
 -- --------------------------------------------------------
 
@@ -743,11 +917,12 @@ CREATE TABLE `sanpham` (
 INSERT INTO `sanpham` (`id`, `tensanpham`, `slug`, `id_danhmuc`, `gia`, `giagoc`, `hinhanh`, `mota`, `mota_ngan`, `thuoc_tinh_chung`, `so_luong`, `da_ban`, `noibat`, `trangthai`, `ngay_tao`, `ngay_capnhat`, `thuonghieu`) VALUES
 (25, 'Giày VANS OLD SKOOL LOGO CHECK BLACK', 'gi-y-vans-old-skool-logo-check-black', 1, 1750000.00, 1750000.00, 'uploads/products/1744982672_giay-vans-old-skool-logo-check-black-vn0005ufcji-1.webp', 'đẹp', NULL, NULL, 459, 0, 0, 1, '2025-04-18 13:24:32', '2025-04-19 13:29:17', 6),
 (27, 'Giày Nike Court Vision Mid Smoke Grey DN3577-002', 'gi-y-nike-court-vision-mid-smoke-grey-dn3577-002', 1, 1650000.00, 1950000.00, 'uploads/products/1745072553_giay-nike-court-vision-mid-smoke-grey-dn3577-002-44-500x333.jpg', 'đẹp', NULL, NULL, 1185, 0, 0, 1, '2025-04-19 14:22:33', '2025-04-19 14:38:30', 1),
-(29, 'Giày Thể Thao Biti\'s Hunter Core Nữ Màu Xám HSW009100XAM', 'giay-the-thao-biti-s-hunter-core-nu-mau-xam-hsw009100xam', 2, 829000.00, 829000.00, 'uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp', '<p>test</p>', 'đẹp', NULL, 598, 0, 0, 1, '2025-04-20 08:46:07', '2025-04-20 08:46:07', 2),
-(30, 'Giày Adidas Ultraboost 21', 'giay-adidas-ultraboost-21', 3, 2500000.00, 3000000.00, 'uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp', 'Giày Adidas Ultraboost 21 với công nghệ Boost tiên tiến, mang lại cảm giác êm ái và hỗ trợ tối ưu khi chạy bộ.', 'Giày chạy bộ cao cấp từ Adidas', NULL, 600, 0, 1, 1, '2025-04-20 09:58:47', '2025-04-20 10:04:08', 7),
-(31, 'Giày Puma RS-X3', 'giay-puma-rsx3', 3, 2200000.00, 2500000.00, 'uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp', 'Giày Puma RS-X3 mang phong cách năng động, phù hợp cho các hoạt động thể thao và thời trang hàng ngày.', 'Giày thể thao Puma RS-X3 với thiết kế hiện đại', NULL, 420, 0, 1, 1, '2025-04-20 10:00:26', '2025-04-20 10:05:05', 5),
-(32, 'Giày Converse Chuck Taylor All Star', 'giay-converse-chuck-taylor-all-star', 4, 1500000.00, 1800000.00, 'uploads/products/1745143609_download (8).jpg', 'Giày Converse Chuck Taylor All Star với thiết kế cổ điển, phù hợp cho mọi lứa tuổi.', 'Giày Converse cổ điển, phong cách trẻ trung', NULL, 600, 0, 0, 1, '2025-04-20 10:00:26', '2025-04-20 10:06:49', 4),
-(33, 'Dép Nike Air Max', 'dep-nike-air-max', 7, 900000.00, 1200000.00, 'uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp', 'Dép Nike Air Max với đế êm ái, phù hợp cho các hoạt động ngoài trời.', 'Dép Nike Air Max thoải mái cho mùa hè', NULL, 300, 0, 1, 1, '2025-04-20 10:00:26', '2025-04-20 14:46:04', 1);
+(29, 'Giày Thể Thao Biti\'s Hunter Core Nữ Màu Xám HSW009100XAM', 'giay-the-thao-biti-s-hunter-core-nu-mau-xam-hsw009100xam', 2, 829000.00, 829000.00, 'uploads/products/1745138767_hsw009100xam__9__2e78f77d4ddf440791f12cc6a96eb54d_master.webp', '<p>test</p>', 'đẹp', NULL, 592, 0, 0, 1, '2025-04-20 08:46:07', '2025-05-20 13:20:52', 2),
+(30, 'Giày Adidas Ultraboost 21', 'giay-adidas-ultraboost-21', 3, 2500000.00, 3000000.00, 'uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp', 'Giày Adidas Ultraboost 21 với công nghệ Boost tiên tiến, mang lại cảm giác êm ái và hỗ trợ tối ưu khi chạy bộ.', 'Giày chạy bộ cao cấp từ Adidas', NULL, 597, 0, 1, 1, '2025-04-20 09:58:47', '2025-05-07 10:16:34', 7),
+(31, 'Giày Puma RS-X3', 'giay-puma-rsx3', 3, 2200000.00, 2500000.00, 'uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp', 'Giày Puma RS-X3 mang phong cách năng động, phù hợp cho các hoạt động thể thao và thời trang hàng ngày.', 'Giày thể thao Puma RS-X3 với thiết kế hiện đại', NULL, 410, 0, 1, 1, '2025-04-20 10:00:26', '2025-05-20 14:02:53', 5),
+(32, 'Giày Converse Chuck Taylor All Star', 'giay-converse-chuck-taylor-all-star', 4, 1500000.00, 1800000.00, 'uploads/products/1745143609_download (8).jpg', 'Giày Converse Chuck Taylor All Star với thiết kế cổ điển, phù hợp cho mọi lứa tuổi.', 'Giày Converse cổ điển, phong cách trẻ trung', NULL, 598, 0, 0, 1, '2025-04-20 10:00:26', '2025-05-16 17:00:27', 4),
+(33, 'Dép Nike Air Max', 'dep-nike-air-max', 7, 900000.00, 1200000.00, 'uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp', 'Dép Nike Air Max với đế êm ái, phù hợp cho các hoạt động ngoài trời.', 'Dép Nike Air Max thoải mái cho mùa hè', NULL, 295, 0, 1, 1, '2025-04-20 10:00:26', '2025-05-20 14:34:31', 1),
+(34, 'Urbas Love+ 23 - Slip On - Offwhite', 'urbas-love-23-slip-on-offwhite', 4, 550000.00, 1000000.00, 'uploads/products/1747749082_Pro_ALP2023_1.jpg', '', 'hiệu nhà dứa', NULL, 199, 0, 1, 1, '2025-05-20 13:51:22', '2025-05-20 14:02:53', 9);
 
 -- --------------------------------------------------------
 
@@ -790,30 +965,35 @@ INSERT INTO `sanpham_bien_the` (`id`, `id_sanpham`, `id_mau`, `id_size`, `ma_bie
 (109, 27, 15, 10, NULL, NULL, NULL, 99),
 (110, 27, 11, 19, NULL, NULL, NULL, 99),
 (111, 27, 15, 19, NULL, NULL, NULL, 98),
-(114, 29, 11, 8, NULL, NULL, NULL, 543),
-(115, 29, 13, 9, NULL, NULL, NULL, 53),
+(114, 29, 11, 8, NULL, NULL, NULL, 541),
+(115, 29, 13, 9, NULL, NULL, NULL, 51),
 (116, 30, 11, 6, NULL, NULL, NULL, 100),
 (117, 30, 11, 7, NULL, NULL, NULL, 100),
-(118, 30, 11, 8, NULL, NULL, NULL, 99),
+(118, 30, 11, 8, NULL, NULL, NULL, 97),
 (119, 30, 12, 6, NULL, NULL, NULL, 100),
 (120, 30, 12, 7, NULL, NULL, NULL, 100),
 (121, 30, 12, 8, NULL, NULL, NULL, 100),
-(122, 31, 14, 5, NULL, NULL, NULL, 70),
+(122, 31, 14, 5, NULL, NULL, NULL, 67),
 (123, 31, 14, 6, NULL, NULL, NULL, 70),
 (124, 31, 14, 7, NULL, NULL, NULL, 70),
 (125, 31, 15, 5, NULL, NULL, NULL, 70),
-(126, 31, 15, 6, NULL, NULL, NULL, 70),
-(127, 31, 15, 7, NULL, NULL, NULL, 69),
+(126, 31, 15, 6, NULL, NULL, NULL, 69),
+(127, 31, 15, 7, NULL, NULL, NULL, 60),
 (128, 32, 11, 4, NULL, NULL, NULL, 100),
 (129, 32, 11, 5, NULL, NULL, NULL, 100),
-(130, 32, 11, 6, NULL, NULL, NULL, 100),
+(130, 32, 11, 6, NULL, NULL, NULL, 98),
 (131, 32, 12, 4, NULL, NULL, NULL, 100),
 (132, 32, 12, 5, NULL, NULL, NULL, 100),
 (133, 32, 12, 6, NULL, NULL, NULL, 100),
 (134, 33, 13, 7, NULL, NULL, NULL, 75),
 (135, 33, 13, 8, NULL, NULL, NULL, 75),
 (136, 33, 16, 7, NULL, NULL, NULL, 75),
-(137, 33, 16, 8, NULL, NULL, NULL, 75);
+(137, 33, 16, 8, NULL, NULL, NULL, 70),
+(138, 34, 11, 2, NULL, NULL, NULL, 20),
+(140, 34, 11, 3, NULL, NULL, NULL, 10),
+(141, 34, 11, 4, NULL, NULL, NULL, 20),
+(142, 34, 11, 5, NULL, NULL, NULL, 50),
+(143, 34, 11, 6, NULL, NULL, NULL, 99);
 
 -- --------------------------------------------------------
 
@@ -843,7 +1023,9 @@ INSERT INTO `sanpham_hinhanh` (`id`, `id_sanpham`, `id_bienthe`, `hinhanh`, `la_
 (36, 32, NULL, 'uploads/products/1745143609_0_85_d6e9ffc23f734be2986e02de06117d68_master.webp', 0),
 (38, 33, NULL, 'uploads/products/1745143725_0_DC1460-004-1.webp', 0),
 (39, 33, NULL, 'uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp', 1),
-(40, 33, NULL, 'uploads/products/1745160364_0_DC1460-004-1.webp', 0);
+(40, 33, NULL, 'uploads/products/1745160364_0_DC1460-004-1.webp', 0),
+(41, 34, NULL, 'uploads/products/1747749082_Pro_ALP2023_1.jpg', 1),
+(42, 34, NULL, 'uploads/products/1747749082_0_đáy dứa.jpg', 0);
 
 -- --------------------------------------------------------
 
@@ -867,9 +1049,9 @@ CREATE TABLE `settings` (
 INSERT INTO `settings` (`id`, `setting_key`, `setting_value`, `setting_group`, `created_at`, `updated_at`) VALUES
 (1, 'site_name', 'Bug Shop', 'general', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
 (2, 'site_description', 'Cửa hàng giày dép chất lượng cao', 'general', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
-(3, 'contact_email', 'contact@bugshop.com', 'general', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
+(3, 'contact_email', '20210140@eaut.edu.vn', 'general', '2025-04-17 07:59:57', '2025-05-07 16:24:46'),
 (4, 'contact_phone', '0123456789', 'general', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
-(5, 'address', 'Số 123, Đường ABC, Quận XYZ, TP. HCM', 'general', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
+(5, 'address', 'Đại học Công Nghệ Đông Á', 'general', '2025-04-17 07:59:57', '2025-05-07 16:24:20'),
 (6, 'logo', '', 'general', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
 (7, 'favicon', '', 'general', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
 (8, 'smtp_host', '', 'email', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
@@ -884,7 +1066,7 @@ INSERT INTO `settings` (`id`, `setting_key`, `setting_value`, `setting_group`, `
 (17, 'order_prefix', 'BUG-', 'order', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
 (18, 'enable_cod', '1', 'order', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
 (19, 'enable_bank_transfer', '1', 'order', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
-(20, 'facebook_url', '', 'social', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
+(20, 'facebook_url', 'https://www.facebook.com/thai.dui57', 'social', '2025-04-17 07:59:57', '2025-05-17 15:14:55'),
 (21, 'instagram_url', '', 'social', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
 (22, 'twitter_url', '', 'social', '2025-04-17 07:59:57', '2025-04-17 07:59:57'),
 (23, 'youtube_url', '', 'social', '2025-04-17 07:59:57', '2025-04-17 07:59:57');
@@ -953,7 +1135,8 @@ INSERT INTO `thuong_hieu` (`id`, `ten`, `mo_ta`, `logo`) VALUES
 (4, 'Converse', 'Thương hiệu giày classic với lịch sử lâu đời', 'brand_68027a2f47105.jpg'),
 (5, 'Puma', 'Thương hiệu thời trang thể thao từ Đức', 'brand_68027a120bf39.jpg'),
 (6, 'Vans', 'Thương hiệu giày skate nổi tiếng từ Mỹ', 'brand_680279f54832e.jpg'),
-(7, 'adidas', 'đẹp', 'brand_6804c03ebebb9.png');
+(7, 'adidas', 'đẹp', 'brand_6804c03ebebb9.png'),
+(9, 'ananas', 'dứa', 'brand_682c8781d7286.png');
 
 -- --------------------------------------------------------
 
@@ -984,7 +1167,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `taikhoan`, `matkhau`, `ten`, `email`, `sodienthoai`, `diachi`, `tinh_tp`, `quan_huyen`, `phuong_xa`, `loai_user`, `anh_dai_dien`, `trang_thai`, `ngay_tao`, `lan_dang_nhap_cuoi`) VALUES
-(1, 'admin', '$2y$10$OgfjPpPCdm5ifub40rOkBelmuuN7QanMzqYblp1wNDxcyQ0P8nr8G', 'Super Administrator', 'admin@bugshop.com', NULL, NULL, NULL, NULL, NULL, 2, NULL, 1, '2025-04-17 06:03:11', '2025-04-25 04:36:12'),
+(1, 'admin', '$2y$10$OgfjPpPCdm5ifub40rOkBelmuuN7QanMzqYblp1wNDxcyQ0P8nr8G', 'Super Administrator', 'admin@bugshop.com', NULL, NULL, NULL, NULL, NULL, 2, NULL, 1, '2025-04-17 06:03:11', '2025-05-20 14:04:52'),
 (2, 'thai', '$2y$10$A35ZWJyrY12PksyMgMoRZewmz5.Kiho4dZCpGRyc2NxlbZuXMPrZi', 'nguyen xuan thai', 'tobenha4@gmail.com', '0123456789', 'đông tiến', 'Hải Dương', 'Tứ Kỳ', 'Hưng Đạo', 0, NULL, 1, '2025-04-17 06:52:30', '2025-04-17 14:54:21'),
 (3, 'lovisong', '$2y$10$C/1B7YYeDnyCstxtncvyIOpGGuUNkFMLLZWhedrimMBsL46Yhhb6e', 'lò vi sóng', 'song@gmail.com', '0223456789', 'làng xóm', NULL, NULL, NULL, 0, NULL, 1, '2025-04-17 17:09:40', NULL),
 (4, 'thaimng', '$2y$10$9HStd.K629E/yrxBkc2JEOxmGmwT1ZcLXavW5wYIHn5FkVD4ByhOu', 'mng', 'mng@gmail.com', NULL, NULL, NULL, NULL, NULL, 1, NULL, 1, '2025-04-18 10:34:09', '2025-04-20 08:30:44'),
@@ -992,8 +1175,9 @@ INSERT INTO `users` (`id`, `taikhoan`, `matkhau`, `ten`, `email`, `sodienthoai`,
 (6, 'tranthib', '$2y$10$OgfjPpPCdm5ifub40rOkBelmuuN7QanMzqYblp1wNDxcyQ0P8nr8G', 'Trần Thị B', 'tranthib@example.com', '0912345678', '27 Lê Lợi', 'Hà Nội', 'Hoàn Kiếm', NULL, 0, NULL, 1, '2025-04-18 10:46:04', NULL),
 (7, 'phamtuanc', '$2y$10$OgfjPpPCdm5ifub40rOkBelmuuN7QanMzqYblp1wNDxcyQ0P8nr8G', 'Phạm Tuấn C', 'phamtuanc@example.com', '0956781234', '72 Trần Phú', 'Đà Nẵng', 'Hải Châu', NULL, 0, NULL, 1, '2025-04-18 10:46:04', NULL),
 (8, 'staff1', '$2y$10$TULD9RZwssYxaMSeFPeWLew8KVYtSC4hdMtso35mOk6O5eBmkHjKu', 'Nhân viên Kinh doanh', 'staff1@bugshop.com', '0901234567', NULL, NULL, NULL, NULL, 1, NULL, 1, '2025-04-18 10:46:04', '2025-04-20 14:46:28'),
-(9, 'thaidui', '$2y$10$XpuDx8tnl9luR.fXbFoUy.AIEwr1x9OSUND99bH9We3U/R.njbGAi', 'thaidui', 'thaidui@gmail.com', '0123456789', NULL, NULL, NULL, NULL, 0, NULL, 1, '2025-04-19 07:35:49', NULL),
-(10, 'mng1', '$2y$10$4zXl9yRMVhEd5mloIwKjKOREm97SV4MjDsPqYiSruacStZqbKxVZe', 'mng1', 'mng1@gmail.com', '0123456782', NULL, NULL, NULL, NULL, 1, NULL, 1, '2025-04-20 09:51:49', '2025-04-20 09:52:09');
+(9, 'thaidui', '$2y$10$L8NleMv41wPEOaiVXwR7t.XbiBT.QQG0IvQdAKBAtsn/IIHzDNTy2', 'thaidui', 'thaidui@gmail.com', '0123456789', NULL, NULL, NULL, NULL, 0, NULL, 1, '2025-04-19 07:35:49', NULL),
+(10, 'mng1', '$2y$10$4zXl9yRMVhEd5mloIwKjKOREm97SV4MjDsPqYiSruacStZqbKxVZe', 'mng1', 'mng1@gmail.com', '0123456785', NULL, NULL, NULL, NULL, 1, NULL, 1, '2025-04-20 09:51:49', '2025-04-20 09:52:09'),
+(11, 'thai2', '$2y$10$/scLgoCWQSmH7oIjiU9I6uoAtUnrZVsKZ6KoLzBU9waINBftbJVnG', 'thai', 'thai2@gmail.com', '0123456781', 'xóm làng', NULL, NULL, NULL, 0, NULL, 1, '2025-05-17 03:10:48', NULL);
 
 -- --------------------------------------------------------
 
@@ -1009,15 +1193,17 @@ CREATE TABLE `yeu_thich` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Chỉ mục cho các bảng đã đổ
+-- Đang đổ dữ liệu cho bảng `yeu_thich`
 --
 
+INSERT INTO `yeu_thich` (`id`, `id_user`, `id_sanpham`, `ngay_tao`) VALUES
+(136, 11, 31, '2025-05-17 08:32:11'),
+(140, 3, 34, '2025-05-20 14:01:29'),
+(141, 3, 31, '2025-05-20 14:01:30');
+
 --
--- Chỉ mục cho bảng `cai_dat`
+-- Chỉ mục cho các bảng đã đổ
 --
-ALTER TABLE `cai_dat`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `nhom` (`nhom`,`khoa`);
 
 --
 -- Chỉ mục cho bảng `danhgia`
@@ -1102,12 +1288,13 @@ ALTER TABLE `khuyen_mai_apdung`
   ADD KEY `fk_khuyenmai_apdung_idx` (`id_khuyenmai`);
 
 --
--- Chỉ mục cho bảng `khuyen_mai_sudung`
+-- Chỉ mục cho bảng `khuyen_mai_su_dung`
 --
-ALTER TABLE `khuyen_mai_sudung`
+ALTER TABLE `khuyen_mai_su_dung`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `id_khuyenmai_user` (`id_khuyenmai`,`id_user`),
-  ADD KEY `fk_km_sudung_user` (`id_user`);
+  ADD KEY `fk_kmsd_khuyenmai` (`id_khuyenmai`),
+  ADD KEY `fk_kmsd_user` (`id_user`),
+  ADD KEY `fk_kmsd_donhang` (`id_donhang`);
 
 --
 -- Chỉ mục cho bảng `mausac_hinhanh`
@@ -1206,12 +1393,6 @@ ALTER TABLE `yeu_thich`
 --
 
 --
--- AUTO_INCREMENT cho bảng `cai_dat`
---
-ALTER TABLE `cai_dat`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
---
 -- AUTO_INCREMENT cho bảng `danhgia`
 --
 ALTER TABLE `danhgia`
@@ -1227,31 +1408,31 @@ ALTER TABLE `danhmuc`
 -- AUTO_INCREMENT cho bảng `donhang`
 --
 ALTER TABLE `donhang`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- AUTO_INCREMENT cho bảng `donhang_chitiet`
 --
 ALTER TABLE `donhang_chitiet`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- AUTO_INCREMENT cho bảng `donhang_lichsu`
 --
 ALTER TABLE `donhang_lichsu`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=116;
 
 --
 -- AUTO_INCREMENT cho bảng `giohang`
 --
 ALTER TABLE `giohang`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT cho bảng `giohang_chitiet`
 --
 ALTER TABLE `giohang_chitiet`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT cho bảng `hoantra`
@@ -1263,19 +1444,19 @@ ALTER TABLE `hoantra`
 -- AUTO_INCREMENT cho bảng `khuyen_mai`
 --
 ALTER TABLE `khuyen_mai`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT cho bảng `khuyen_mai_apdung`
 --
 ALTER TABLE `khuyen_mai_apdung`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
--- AUTO_INCREMENT cho bảng `khuyen_mai_sudung`
+-- AUTO_INCREMENT cho bảng `khuyen_mai_su_dung`
 --
-ALTER TABLE `khuyen_mai_sudung`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `khuyen_mai_su_dung`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `mausac_hinhanh`
@@ -1287,13 +1468,13 @@ ALTER TABLE `mausac_hinhanh`
 -- AUTO_INCREMENT cho bảng `nhat_ky`
 --
 ALTER TABLE `nhat_ky`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=150;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=226;
 
 --
 -- AUTO_INCREMENT cho bảng `payment_logs`
 --
 ALTER TABLE `payment_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT cho bảng `quyen_han`
@@ -1305,19 +1486,19 @@ ALTER TABLE `quyen_han`
 -- AUTO_INCREMENT cho bảng `sanpham`
 --
 ALTER TABLE `sanpham`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT cho bảng `sanpham_bien_the`
 --
 ALTER TABLE `sanpham_bien_the`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=138;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=144;
 
 --
 -- AUTO_INCREMENT cho bảng `sanpham_hinhanh`
 --
 ALTER TABLE `sanpham_hinhanh`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT cho bảng `settings`
@@ -1335,19 +1516,19 @@ ALTER TABLE `thuoc_tinh`
 -- AUTO_INCREMENT cho bảng `thuong_hieu`
 --
 ALTER TABLE `thuong_hieu`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT cho bảng `yeu_thich`
 --
 ALTER TABLE `yeu_thich`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=142;
 
 --
 -- Các ràng buộc cho các bảng đã đổ
@@ -1408,11 +1589,12 @@ ALTER TABLE `khuyen_mai_apdung`
   ADD CONSTRAINT `fk_khuyenmai_apdung` FOREIGN KEY (`id_khuyenmai`) REFERENCES `khuyen_mai` (`id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `khuyen_mai_sudung`
+-- Các ràng buộc cho bảng `khuyen_mai_su_dung`
 --
-ALTER TABLE `khuyen_mai_sudung`
-  ADD CONSTRAINT `fk_km_sudung_km` FOREIGN KEY (`id_khuyenmai`) REFERENCES `khuyen_mai` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_km_sudung_user` FOREIGN KEY (`id_user`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+ALTER TABLE `khuyen_mai_su_dung`
+  ADD CONSTRAINT `fk_kmsd_donhang` FOREIGN KEY (`id_donhang`) REFERENCES `donhang` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_kmsd_khuyenmai` FOREIGN KEY (`id_khuyenmai`) REFERENCES `khuyen_mai` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_kmsd_user` FOREIGN KEY (`id_user`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
 -- Các ràng buộc cho bảng `nhat_ky`

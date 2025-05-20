@@ -332,13 +332,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_method'])) {
                                             <select class="form-select" id="ward" name="ward" required disabled>
                                                 <option value="">Chọn phường/xã</option>
                                             </select>
-                                        </div>
-                                        <div class="col-12 mt-3">
+                                        </div>                                        <div class="col-12 mt-3">
                                             <div class="address-preview d-none" id="full-address-preview">
                                                 <i class="bi bi-geo-alt-fill me-2"></i>
                                                 <strong>Địa chỉ giao hàng đầy đủ:</strong>
                                                 <span id="full-address-text"></span>
                                             </div>
+                                            <!-- Hidden fields để lưu tên đầy đủ của địa chỉ -->
+                                            <input type="hidden" name="province_name" id="province_name_hidden" value="">
+                                            <input type="hidden" name="district_name" id="district_name_hidden" value="">
+                                            <input type="hidden" name="ward_name" id="ward_name_hidden" value="">
                                         </div>
                                     </div>
                                 </div>

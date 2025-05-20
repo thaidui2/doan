@@ -73,7 +73,7 @@ $page_title = "Tài khoản bị khóa";
                     
                     <div class="mt-4">
                         <a href="index.php" class="btn btn-primary me-2">Quay lại trang chủ</a>
-                        <a href="lien-he.php" class="btn btn-outline-secondary">Liên hệ hỗ trợ</a>
+                        <a href="lienhe.php" class="btn btn-outline-secondary">Liên hệ hỗ trợ</a>
                     </div>
                 </div>
             </div>

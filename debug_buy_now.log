@@ -1194,3 +1194,253 @@
 )
 
 2025-05-17 11:57:02 - Redirecting to checkout
+2025-05-18 16:09:32 - Buy Now request received - Array
+(
+    [productId] => 33
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 16
+)
+
+2025-05-18 16:09:32 - Extracted data - Array
+(
+    [product_id] => 33
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 16
+)
+
+2025-05-18 16:09:32 - Executing query with params - Array
+(
+    [0] => 33
+    [1] => 8
+    [2] => 16
+)
+
+2025-05-18 16:09:32 - Product variant found - Array
+(
+    [variant_id] => 137
+    [id] => 33
+    [tensanpham] => Dép Nike Air Max
+    [gia] => 900000.00
+    [hinhanh] => uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp
+    [ten_size] => 42
+    [ten_mau] => Xanh lá
+    [ma_mau] => #77ee77
+)
+
+2025-05-18 16:09:32 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 33
+    [id_bienthe] => 137
+    [so_luong] => 1
+    [gia] => 900000.00
+    [ten_san_pham] => Dép Nike Air Max
+    [hinh_anh] => uploads/products/1745160364_dc14600072e372836368eb4493b7b5-0d37fff9-697e-478f-951c-6105da6aa61b.webp
+    [ten_size] => 42
+    [ten_mau] => Xanh lá
+    [ma_mau] => #77ee77
+    [thanh_tien] => 900000
+)
+
+2025-05-18 16:09:32 - Redirecting to checkout
+2025-05-20 10:06:53 - Buy Now request received - Array
+(
+    [productId] => 31
+    [quantity] => 1
+    [sizeId] => 7
+    [colorId] => 15
+)
+
+2025-05-20 10:06:53 - Extracted data - Array
+(
+    [product_id] => 31
+    [quantity] => 1
+    [size_id] => 7
+    [color_id] => 15
+)
+
+2025-05-20 10:06:53 - Executing query with params - Array
+(
+    [0] => 31
+    [1] => 7
+    [2] => 15
+)
+
+2025-05-20 10:06:53 - Product variant found - Array
+(
+    [variant_id] => 127
+    [id] => 31
+    [tensanpham] => Giày Puma RS-X3
+    [gia] => 2200000.00
+    [hinhanh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+)
+
+2025-05-20 10:06:53 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 31
+    [id_bienthe] => 127
+    [so_luong] => 1
+    [gia] => 2200000.00
+    [ten_san_pham] => Giày Puma RS-X3
+    [hinh_anh] => uploads/products/1745143505_05_371570_1_187846925565492498b18d9f07574556_large.webp
+    [ten_size] => 41
+    [ten_mau] => Xanh dương
+    [ma_mau] => #0000FF
+    [thanh_tien] => 2200000
+)
+
+2025-05-20 10:06:53 - Redirecting to checkout
+2025-05-20 16:18:09 - Buy Now request received - Array
+(
+    [productId] => 34
+    [quantity] => 1
+    [sizeId] => 6
+    [colorId] => 11
+)
+
+2025-05-20 16:18:09 - Extracted data - Array
+(
+    [product_id] => 34
+    [quantity] => 1
+    [size_id] => 6
+    [color_id] => 11
+)
+
+2025-05-20 16:18:09 - Executing query with params - Array
+(
+    [0] => 34
+    [1] => 6
+    [2] => 11
+)
+
+2025-05-20 16:18:09 - Product variant found - Array
+(
+    [variant_id] => 143
+    [id] => 34
+    [tensanpham] => Urbas Love+ 23 - Slip On - Offwhite
+    [gia] => 550000.00
+    [hinhanh] => uploads/products/1747749082_Pro_ALP2023_1.jpg
+    [ten_size] => 40
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-20 16:18:09 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 34
+    [id_bienthe] => 143
+    [so_luong] => 1
+    [gia] => 550000.00
+    [ten_san_pham] => Urbas Love+ 23 - Slip On - Offwhite
+    [hinh_anh] => uploads/products/1747749082_Pro_ALP2023_1.jpg
+    [ten_size] => 40
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 550000
+)
+
+2025-05-20 16:18:09 - Redirecting to checkout
+2025-05-20 16:54:27 - Buy Now request received - Array
+(
+    [productId] => 30
+    [quantity] => 1
+    [sizeId] => 8
+    [colorId] => 11
+)
+
+2025-05-20 16:54:27 - Extracted data - Array
+(
+    [product_id] => 30
+    [quantity] => 1
+    [size_id] => 8
+    [color_id] => 11
+)
+
+2025-05-20 16:54:27 - Executing query with params - Array
+(
+    [0] => 30
+    [1] => 8
+    [2] => 11
+)
+
+2025-05-20 16:54:27 - Product variant found - Array
+(
+    [variant_id] => 118
+    [id] => 30
+    [tensanpham] => Giày Adidas Ultraboost 21
+    [gia] => 2500000.00
+    [hinhanh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-20 16:54:27 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 30
+    [id_bienthe] => 118
+    [so_luong] => 1
+    [gia] => 2500000.00
+    [ten_san_pham] => Giày Adidas Ultraboost 21
+    [hinh_anh] => uploads/products/1745143448_swift-run-x-shoes-blue-fy2137-05-standard-06d44d80-aeba-438a-bbe5-8a06b450d041.webp
+    [ten_size] => 42
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 2500000
+)
+
+2025-05-20 16:54:27 - Redirecting to checkout
+2025-05-20 17:07:36 - Buy Now request received - Array
+(
+    [productId] => 34
+    [quantity] => 1
+    [sizeId] => 6
+    [colorId] => 11
+)
+
+2025-05-20 17:07:36 - Extracted data - Array
+(
+    [product_id] => 34
+    [quantity] => 1
+    [size_id] => 6
+    [color_id] => 11
+)
+
+2025-05-20 17:07:36 - Executing query with params - Array
+(
+    [0] => 34
+    [1] => 6
+    [2] => 11
+)
+
+2025-05-20 17:07:36 - Product variant found - Array
+(
+    [variant_id] => 143
+    [id] => 34
+    [tensanpham] => Urbas Love+ 23 - Slip On - Offwhite
+    [gia] => 550000.00
+    [hinhanh] => uploads/products/1747749082_Pro_ALP2023_1.jpg
+    [ten_size] => 40
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+)
+
+2025-05-20 17:07:36 - Session buy_now_cart set - Array
+(
+    [id_sanpham] => 34
+    [id_bienthe] => 143
+    [so_luong] => 1
+    [gia] => 550000.00
+    [ten_san_pham] => Urbas Love+ 23 - Slip On - Offwhite
+    [hinh_anh] => uploads/products/1747749082_Pro_ALP2023_1.jpg
+    [ten_size] => 40
+    [ten_mau] => Trắng
+    [ma_mau] => #FFFFFF
+    [thanh_tien] => 550000
+)
+
+2025-05-20 17:07:36 - Redirecting to checkout
